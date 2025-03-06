@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class IndexingService:
     def __init__(
         self,
-        documents_dir: str = "../documents",
+        documents_dir: str = "/data/documents",
         collection_name: str = "documents",
         chunk_size: int = 256,
         chunk_overlap: int = 10,
@@ -89,28 +89,17 @@ class IndexingService:
         Settings.llm = llm
         Settings.embed_model = embed_model
         
-    def process_directory(self, directory_name: str):
+    def process_directory(self):
         """
         Process documents from a specific directory
-        
-        Args:
-            directory_name: Name of the subdirectory within documents_dir
-            
+                    
         Returns:
             dict: Results of the processing
         """
         try:
             # Construct full directory path
-            target_dir = self.documents_dir / directory_name
-            
-            if not target_dir.exists():
-                logger.error(f"Directory not found: {target_dir}")
-                return {"status": "error", "message": f"Directory not found: {directory_name}"}
-            
-            if not target_dir.is_dir():
-                logger.error(f"Not a directory: {target_dir}")
-                return {"status": "error", "message": f"Not a directory: {directory_name}"}
-                
+            target_dir = self.documents_dir
+                            
             # Load documents
             logger.info(f"Loading documents from: {target_dir}")
             reader = SimpleDirectoryReader(input_dir=str(target_dir))
@@ -121,7 +110,6 @@ class IndexingService:
                 logger.info(f"No documents found in directory: {target_dir}")
                 return {
                     "status": "completed", 
-                    "directory": directory_name,
                     "document_count": 0,
                     "message": "No documents found in the directory"
                 }
@@ -137,16 +125,14 @@ class IndexingService:
             
             return {
                 "status": "completed",
-                "directory": directory_name,
                 "document_count": document_count,
                 "message": f"Successfully processed {document_count} documents"
             }
                 
         except Exception as e:
-            logger.error(f"Error processing directory {directory_name}: {str(e)}")
+            logger.error(f"Error processing directory")
             return {
                 "status": "error",
-                "directory": directory_name,
                 "message": f"Error processing directory: {str(e)}"
             }
     

@@ -11,14 +11,12 @@ from app.api import directories
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Configure directories
-LOG_DIR = os.path.join(PROJECT_ROOT, "data", "logs")
-DOCUMENTS_DIR = os.path.join(PROJECT_ROOT, "data", "documents")
-INDEXES_DIR = os.path.join(PROJECT_ROOT, "data", "indexes")
+LOG_DIR = os.path.join(PROJECT_ROOT, "logs")
+DOCUMENTS_DIR = os.path.join("/", "data", "documents")
+INDEXES_DIR = os.path.join("/", "data", "indexes")
 
 # Create necessary directories
 os.makedirs(LOG_DIR, exist_ok=True)
-os.makedirs(DOCUMENTS_DIR, exist_ok=True)
-os.makedirs(INDEXES_DIR, exist_ok=True)
 
 # Configure logging
 logging.basicConfig(

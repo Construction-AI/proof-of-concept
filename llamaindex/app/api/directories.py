@@ -11,13 +11,12 @@ def get_indexing_service(request: Request):
     documents_dir = request.app.state.documents_dir
     return IndexingService(documents_dir=documents_dir)
 
-@router.post("/{directory_name}/process")
+@router.post("/process")
 async def process_directory(
-    directory_name: str = Path(..., description="Name of the directory to process"),
     indexing_service: IndexingService = Depends(get_indexing_service)
 ):
     """Process all documents in the specified directory"""
-    result = indexing_service.process_directory(directory_name)
+    result = indexing_service.process_directory()
     
     if result.get("status") == "error":
         raise HTTPException(status_code=400, detail=result["message"])
