@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # LlamaIndex service for document processing and RAG
+  llamaindex:
+    build:
+      context: ./llamaindex
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../:/workspaces:cached
+      - ./llamaindex:/app
+      - uploaded_docs:/app/data/documents:ro
+      - index_data:/app/data/indexes
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - QDRANT_URL=http://qdrant:6333
+    depends_on:
+      - qdrant
+      - ollama
+    networks:
+      - app-network
+
+  # Vector database
+  qdrant:
+    image: qdrant/qdrant
+    volumes:
+      - qdrant_data:/qdrant/storage
+    ports:
+      - "6333:6333"
+    networks:
+      - app-network
+
+  # LLM service
+  ollama:
+    build:
+      context: ./ollama
+      dockerfile: Dockerfile
+    volumes:
+      - ollama:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - app-network
+
+volumes:
+  qdrant_data:
+  uploaded_docs:
+  index_data:
+  ollama:
+
+networks:
+  app-network:
+    driver: bridge
