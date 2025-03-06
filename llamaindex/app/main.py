@@ -47,6 +47,7 @@ app.add_middleware(
 
 # Pass the correct documents directory to the router
 app.include_router(api.router)
+# app.include_router(document_routes.router)
 
 # Make the directories available to other modules
 app.state.documents_dir = DOCUMENTS_DIR

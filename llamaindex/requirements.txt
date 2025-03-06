@@ -12,6 +12,7 @@ dataclasses-json==0.6.7
 Deprecated==1.2.18
 dirtyjson==1.0.8
 distro==1.9.0
+et_xmlfile==2.0.0
 fastapi==0.115.11
 filetype==1.2.0
 frozenlist==1.5.0
@@ -46,6 +47,7 @@ llama-index-readers-file==0.4.6
 llama-index-readers-llama-parse==0.4.0
 llama-index-vector-stores-qdrant==0.4.3
 llama-parse==0.6.2
+lxml==5.3.1
 marshmallow==3.26.1
 multidict==6.1.0
 mypy-extensions==1.0.0
@@ -55,6 +57,7 @@ nltk==3.9.1
 numpy==2.2.3
 ollama==0.4.7
 openai==1.65.4
+openpyxl==3.1.5
 packaging==24.2
 pandas==2.2.3
 pathlib==1.0.1
@@ -66,7 +69,9 @@ pydantic==2.10.6
 pydantic_core==2.27.2
 pypdf==5.3.1
 python-dateutil==2.9.0.post0
+python-docx==1.1.2
 python-dotenv==1.0.1
+python-multipart==0.0.20
 pytz==2025.1
 PyYAML==6.0.2
 qdrant-client==1.13.3
