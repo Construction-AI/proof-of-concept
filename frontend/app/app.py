@@ -19,91 +19,149 @@ if not os.path.exists(UPLOAD_DIR):
 st.title("Project Document Generator")
 
 # Check if documents exist in directory
-existing_documents = os.listdir(UPLOAD_DIR) if os.path.exists(UPLOAD_DIR) else []
+existing_documents = [f for f in os.listdir(UPLOAD_DIR) if os.path.isfile(os.path.join(UPLOAD_DIR, f))] if os.path.exists(UPLOAD_DIR) else []
 has_documents = len(existing_documents) > 0
 
-# Step 1 & 2: Show clear button if documents exist
-if has_documents:
-    st.warning(f"There are {len(existing_documents)} documents in the directory.")
-    if st.button("Clear All Documents"):
-        try:
-            url = API_URL + "clear"
-            response = requests.delete(url)
-            response.raise_for_status()
+# Create tabs for different actions
+tab1, tab2 = st.tabs(["Generate Document", "Manage Files"])
 
-            # Remove all files from the directory
-            for file in existing_documents:
-                file_path = os.path.join(UPLOAD_DIR, file)
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-            st.success("All documents have been cleared!")
-            st.rerun()
-        except Exception as e:
-            st.error(f"Error clearing documents: {str(e)}")
-    st.write("Please clear the documents before continuing.")
-else:
-    # Step 3: Show form with required fields
-    with st.form(key="project_form"):
-        st.subheader("Project Details")
+with tab2:
+    st.header("Manage Uploaded Files")
+    
+    if not has_documents:
+        st.info("No files have been uploaded yet.")
+    else:
+        st.write(f"**Currently uploaded files:** {len(existing_documents)}")
         
-        # Project name input
-        project_name = st.text_input("Project Name")
+        # Display file list with checkboxes for selection
+        st.write("### Files in Directory")
+        files_to_remove = []
         
-        # Project industry dropdown
-        industry = st.selectbox(
-            "Project Industry",
-            options=["Construction"]
-        )
-        
-        # Document type selection
-        document_type = st.selectbox(
-            "Typ dokumentu do wygenerowania",
-            options=[
-                "Plany BIOZ",
-                "Opisy techniczne (dla projektów budowlanych i wykonawczych)",
-                "Karty materiałowe",
-                "Specyfikacje techniczne wykonania i odbioru robót budowlanych (STWiORB)",
-                "Zestawienia materiałowe i harmonogramy robót"
-            ]
-        )
-        
-        # File uploader
-        uploaded_files = st.file_uploader(
-            "Upload Project Files",
-            type=["pdf", "docx", "xlsx", "csv", "txt"],
-            accept_multiple_files=True
-        )
-        
-        # Step 4: Generate button
-        generate_button = st.form_submit_button(label="Generate")
-        
-        # Process the form data when submitted
-        if generate_button:
-            if not project_name:
-                st.error("Please enter a project name.")
-            elif not uploaded_files:
-                st.warning("Please upload at least one file.")
+        # Create columns for better layout
+        col1, col2, col3 = st.columns([3, 2, 1])
+        with col1:
+            st.write("**Filename**")
+        with col2:
+            st.write("**Size**")
+        with col3:
+            st.write("**Remove**")
+            
+        for file in existing_documents:
+            file_path = os.path.join(UPLOAD_DIR, file)
+            file_size = os.path.getsize(file_path)
+            
+            # Format file size
+            if file_size < 1024:
+                size_str = f"{file_size} B"
+            elif file_size < 1024 * 1024:
+                size_str = f"{file_size / 1024:.1f} KB"
             else:
+                size_str = f"{file_size / (1024 * 1024):.1f} MB"
+            
+            col1, col2, col3 = st.columns([3, 2, 1])
+            with col1:
+                st.write(file)
+            with col2:
+                st.write(size_str)
+            with col3:
+                if st.checkbox("", key=f"remove_{file}"):
+                    files_to_remove.append(file)
+        
+        # Add buttons for file actions
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Remove Selected Files"):
+                if files_to_remove:
+                    for file in files_to_remove:
+                        file_path = os.path.join(UPLOAD_DIR, file)
+                        os.remove(file_path)
+                    st.success(f"Removed {len(files_to_remove)} files")
+                    st.rerun()
+                else:
+                    st.info("No files selected for removal")
+        
+        with col2:
+            if st.button("Clear All Files"):
                 try:
-                    # Save uploaded files to the directory
-                    saved_files = []
-                    for uploaded_file in uploaded_files:
-                        # Create file path
-                        file_path = os.path.join(UPLOAD_DIR, uploaded_file.name)
-                        # Save the file
-                        with open(file_path, "wb") as f:
-                            f.write(uploaded_file.getbuffer())
-                        saved_files.append(file_path)
-                    
-                    # Print to console for debugging
-                    print(f"Generating document for: {project_name}, Industry: {industry}, Type: {document_type}")
-                    
-                    # Display the submitted information
-                    st.write("### Files Uploaded")
-                    st.write(f"**Files saved to:** {UPLOAD_DIR}")
-                    for file_path in saved_files:
-                        st.write(f"- {os.path.basename(file_path)}")
-                    
+                    url = API_URL + "clear"
+                    response = requests.delete(url)
+                    response.raise_for_status()
+
+                    # Remove all files from the directory
+                    for file in existing_documents:
+                        file_path = os.path.join(UPLOAD_DIR, file)
+                        if os.path.isfile(file_path):
+                            os.remove(file_path)
+                    st.success("All documents have been cleared!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error clearing documents: {str(e)}")
+    
+    # Allow uploading more files
+    st.write("### Upload Additional Files")
+    uploaded_files = st.file_uploader(
+        "Select files to upload",
+        type=["pdf", "docx", "xlsx", "csv", "txt"],
+        accept_multiple_files=True
+    )
+    
+    if uploaded_files and st.button("Upload Files"):
+        saved_files = []
+        for uploaded_file in uploaded_files:
+            # Create file path
+            file_path = os.path.join(UPLOAD_DIR, uploaded_file.name)
+            # Save the file
+            with open(file_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            saved_files.append(file_path)
+        
+        st.success(f"Successfully uploaded {len(saved_files)} files")
+        st.rerun()
+
+with tab1:
+    st.header("Generate Document")
+    
+    if not has_documents:
+        st.warning("No files are currently uploaded. Please upload files in the 'Manage Files' tab first.")
+    else:
+        st.write(f"Using {len(existing_documents)} uploaded files for document generation.")
+        with st.expander("View files"):
+            for file in existing_documents:
+                st.write(f"- {file}")
+    
+        # Step 3: Show form with required fields
+        with st.form(key="project_form"):
+            st.subheader("Project Details")
+            
+            # Project name input
+            project_name = st.text_input("Project Name")
+            
+            # Project industry dropdown
+            industry = st.selectbox(
+                "Project Industry",
+                options=["Construction"]
+            )
+            
+            # Document type selection
+            document_type = st.selectbox(
+                "Typ dokumentu do wygenerowania",
+                options=[
+                    "Plany BIOZ",
+                    "Opisy techniczne (dla projektów budowlanych i wykonawczych)",
+                    "Karty materiałowe",
+                    "Specyfikacje techniczne wykonania i odbioru robót budowlanych (STWiORB)",
+                    "Zestawienia materiałowe i harmonogramy robót"
+                ]
+            )
+            
+            # Step 4: Generate button
+            generate_button = st.form_submit_button(label="Generate")
+            
+            # Process the form data when submitted
+            if generate_button:
+                if not project_name:
+                    st.error("Please enter a project name.")
+                else:
                     # First step: Process/index the documents
                     with st.spinner("Processing documents..."):
                         try:
@@ -166,8 +224,3 @@ else:
                                 
                         except requests.exceptions.RequestException as e:
                             st.error(f"Failed to generate document: {str(e)}")
-                    
-                except PermissionError:
-                    st.error(f"Permission denied: Cannot write to {UPLOAD_DIR}. Please check permissions.")
-                except Exception as e:
-                    st.error(f"An error occurred: {str(e)}")
