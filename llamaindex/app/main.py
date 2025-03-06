@@ -5,7 +5,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import directories
+from app.api import api
 
 # Get the project root directory
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -46,7 +46,7 @@ app.add_middleware(
 )
 
 # Pass the correct documents directory to the router
-app.include_router(directories.router)
+app.include_router(api.router)
 
 # Make the directories available to other modules
 app.state.documents_dir = DOCUMENTS_DIR

@@ -30,8 +30,6 @@ services:
     volumes:
       - ./frontend:/app
       - uploaded_docs:/data/documents
-    environment:
-      - LLAMAINDEX_API_URL=http://llamaindex:8000
     depends_on:
       - llamaindex
     networks:
