@@ -23,8 +23,8 @@ class IndexingService:
 		chunk_overlap: int = 10,
 		ollama_base_url: Optional[str] = None,
 		qdrant_url: Optional[str] = None,
-		embedding_model: str = "nomic-embed-text",
-		llm_model: str = "qwen2.5:14b",
+		embedding_model: Optional[str] = None,
+		llm_model: Optional[str] = None,
 	):
 		"""
 		Initialize the indexing service
@@ -48,8 +48,11 @@ class IndexingService:
 		self.ollama_base_url = ollama_base_url or os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 		self.qdrant_url = qdrant_url or os.getenv("QDRANT_URL", "http://localhost:6333")
 		
-		self.embedding_model = embedding_model
-		self.llm_model = llm_model
+		self.embedding_model = embedding_model or os.getenv("EMBEDDINGS_MODEL", "nomic-embed-text")
+		self.llm_model = llm_model or os.getenv("QUERY_MODEL", "qwen2.5:14b")
+		
+		logger.info(f"Initialized embeddings model as {self.embedding_model}")
+		logger.info(f"Initialized query model as {self.llm_model}")
 		
 		# Create documents directory if it doesn't exist
 		os.makedirs(self.documents_dir, exist_ok=True)
@@ -66,11 +69,14 @@ class IndexingService:
 			model_name=self.embedding_model,
 			base_url=self.ollama_base_url
 		)
+
+		timeout = os.getenv("OLLAMA_TIMEOUT", 120.0)
+		logger.info(f"OLLAMA TIMEOUT: {timeout}")		
 		
 		llm = Ollama(
 			model=self.llm_model,
 			base_url=self.ollama_base_url,
-			request_timeout=120.0,
+			request_timeout=timeout,
 		)
 		
 		# Initialize Qdrant client

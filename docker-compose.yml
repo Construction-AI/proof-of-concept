@@ -16,6 +16,7 @@ services:
       - QDRANT_URL=${QDRANT_URL}
       - QUERY_MODEL=${QUERY_MODEL}
       - EMBEDDINGS_MODEL=${EMBEDDINGS_MODEL}
+      - OLLAMA_TIMEOUT=${OLLAMA_TIMEOUT}
     depends_on:
       - qdrant
       - ollama
@@ -34,6 +35,8 @@ services:
       - uploaded_docs:/data/documents
     depends_on:
       - llamaindex
+    environment:
+      - LLAMAINDEX_BASE_URL=${LLAMAINDEX_BASE_URL}
     networks:
       - app-network
 

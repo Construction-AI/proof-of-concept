@@ -1,73 +1,46 @@
-# app/main.py - Updated with absolute paths
-import logging
 import uvicorn
-import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import api
-
-# Get the project root directory
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# Configure directories
-LOG_DIR = os.path.join(PROJECT_ROOT, "logs")
-DOCUMENTS_DIR = os.path.join("/", "data", "documents")
-INDEXES_DIR = os.path.join("/", "data", "indexes")
-
-# Create necessary directories
-os.makedirs(LOG_DIR, exist_ok=True)
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(os.path.join(LOG_DIR, "app.log"), mode="a")
-    ]
-)
-logger = logging.getLogger(__name__)
+# Import app configurations
+from app.core.config import settings
+from app.core.logging import logger
+from app.api import router as api_router
 
 # Create the FastAPI app
 app = FastAPI(
-    title="Document Processing API",
-    description="API for processing and querying documents using LlamaIndex and Qdrant",
-    version="1.0.0"
+    title=settings.API_TITLE,
+    description=settings.API_DESCRIPTION,
+    version=settings.API_VERSION
 )
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.CORS_ALLOW_ORIGINS,
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+    allow_methods=settings.CORS_ALLOW_METHODS,
+    allow_headers=settings.CORS_ALLOW_HEADERS,
 )
 
-# Pass the correct documents directory to the router
-app.include_router(api.router)
-# app.include_router(document_routes.router)
+# Set app state variables for directory paths
+app.state.documents_dir = settings.DOCUMENTS_DIR
+app.state.indexes_dir = settings.INDEXES_DIR
 
-# Make the directories available to other modules
-app.state.documents_dir = DOCUMENTS_DIR
-app.state.indexes_dir = INDEXES_DIR
+# Include API router
+app.include_router(api_router)
 
 @app.get("/")
 async def root():
     return {
-        "message": "Document Processing API",
+        "message": settings.API_TITLE,
         "docs": "/docs",
         "status": "operational"
     }
 
 if __name__ == "__main__":
-    # Get configuration from environment variables
-    PORT = int(os.getenv("PORT", "8000"))
-    HOST = os.getenv("HOST", "0.0.0.0")
+    logger.info(f"Starting server on {settings.HOST}:{settings.PORT}")
+    logger.info(f"Documents directory: {settings.DOCUMENTS_DIR}")
+    logger.info(f"Logs directory: {settings.LOG_DIR}")
     
-    logger.info(f"Starting server on {HOST}:{PORT}")
-    logger.info(f"Documents directory: {DOCUMENTS_DIR}")
-    logger.info(f"Logs directory: {LOG_DIR}")
-    
-    uvicorn.run("app.main:app", host=HOST, port=PORT, reload=True)
+    uvicorn.run("app.main:app", host=settings.HOST, port=settings.PORT, reload=True)

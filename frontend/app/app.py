@@ -6,7 +6,7 @@ import json
 
 # Set the specific directory for uploads
 UPLOAD_DIR = "/data/documents"
-API_URL = os.environ.get("LLAMAINDEX_API_URL", "http://localhost:8000") + "/api/"
+API_URL = os.environ.get("LLAMAINDEX_BASE_URL", "http://localhost:8000") + "/api"
 
 # Check if directory exists and create it if it doesn't
 if not os.path.exists(UPLOAD_DIR):
@@ -76,6 +76,15 @@ with tab2:
                         file_path = os.path.join(UPLOAD_DIR, file)
                         os.remove(file_path)
                     st.success(f"Removed {len(files_to_remove)} files")
+                    # Process documents after removal
+                    try:
+                        with st.spinner("Processing remaining documents..."):
+                            process_url = API_URL + "/indexes/process"
+                            process_response = requests.post(process_url)
+                            process_response.raise_for_status()
+                            st.success("Documents reindexed successfully!")
+                    except Exception as e:
+                        st.error(f"Error reindexing documents: {str(e)}")
                     st.rerun()
                 else:
                     st.info("No files selected for removal")
@@ -83,7 +92,7 @@ with tab2:
         with col2:
             if st.button("Clear All Files"):
                 try:
-                    url = API_URL + "clear"
+                    url = API_URL + "/documents/clear"
                     response = requests.delete(url)
                     response.raise_for_status()
 
@@ -106,17 +115,32 @@ with tab2:
     )
     
     if uploaded_files and st.button("Upload Files"):
-        saved_files = []
-        for uploaded_file in uploaded_files:
-            # Create file path
-            file_path = os.path.join(UPLOAD_DIR, uploaded_file.name)
-            # Save the file
-            with open(file_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-            saved_files.append(file_path)
-        
-        st.success(f"Successfully uploaded {len(saved_files)} files")
-        st.rerun()
+        with st.spinner("Uploading files..."):
+            saved_files = []
+            for uploaded_file in uploaded_files:
+                # Create file path
+                file_path = os.path.join(UPLOAD_DIR, uploaded_file.name)
+                # Save the file
+                with open(file_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                saved_files.append(file_path)
+            
+            st.success(f"Successfully uploaded {len(saved_files)} files")
+            
+            # Process documents immediately after upload
+            try:
+                with st.spinner("Processing uploaded documents..."):
+                    process_url = API_URL + "/indexes/process"
+                    process_response = requests.post(process_url)
+                    process_response.raise_for_status()
+                    
+                    # Show processing results
+                    process_result = process_response.json()
+                    st.success(f"Documents processed successfully! Indexed {process_result.get('document_count', 0)} documents")
+            except Exception as e:
+                st.error(f"Error processing documents: {str(e)}")
+                
+            st.rerun()
 
 with tab1:
     st.header("Generate Document")
@@ -154,7 +178,7 @@ with tab1:
                 ]
             )
             
-            # Step 4: Generate button
+            # Generate button
             generate_button = st.form_submit_button(label="Generate")
             
             # Process the form data when submitted
@@ -162,29 +186,11 @@ with tab1:
                 if not project_name:
                     st.error("Please enter a project name.")
                 else:
-                    # First step: Process/index the documents
-                    with st.spinner("Processing documents..."):
-                        try:
-                            process_url = API_URL + "process"
-                            st.write(f"Processing URL: {process_url}")
-                            process_response = requests.post(process_url)
-                            process_response.raise_for_status()
-                            st.success("Documents processed successfully!")
-                            
-                            # Show processing results
-                            process_result = process_response.json()
-                            st.write(f"Processed {process_result.get('document_count', 0)} documents")
-                            
-                        except requests.exceptions.RequestException as e:
-                            st.error(f"Failed to process documents: {str(e)}")
-                            st.stop()
-                    
-                    # Second step: Generate the document
+                    # Generate the document directly without reprocessing
                     with st.spinner(f"Generating {document_type}..."):
                         try:
                             # Prepare form data for document generation
-                            generate_url = API_URL + "generate-document"
-                            st.write(f"Generation URL: {generate_url}")
+                            generate_url = API_URL + "/documents/generate"
                             
                             generate_data = {
                                 "project_name": project_name,
