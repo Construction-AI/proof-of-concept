@@ -12,22 +12,22 @@ model_exists() {
     return $?
 }
 
-# Pull Qwen2.5 if it doesn't exist
-if model_exists "qwen2.5:14b"; then
-    echo "🟢 QWEN2.5:14B model already exists"
+# Pull query model if it doesn't exist
+if model_exists "$QUERY_MODEL"; then
+    echo "🟢 $QUERY_MODEL model already exists"
 else
-    echo "🔴 Retrieving QWEN2.5:14B model..."
-    ollama pull qwen2.5:14b
-    echo "🟢 QWEN2.5:14B model pulled successfully"
+    echo "🔴 Retrieving $QUERY_MODEL model..."
+    ollama pull $QUERY_MODEL
+    echo "🟢 $QUERY_MODEL model pulled successfully"
 fi
 
-# Pull nomic-embed-text if it doesn't exist
-if model_exists "nomic-embed-text"; then
-    echo "🟢 NOMIC-EMBED-TEXT model already exists"
+# Pull $EMBEDDINGS_MODEL if it doesn't exist
+if model_exists "$EMBEDDINGS_MODEL"; then
+    echo "🟢 $EMBEDDINGS_MODEL model already exists"
 else
-    echo "🔴 Retrieving NOMIC-EMBED-TEXT model..."
-    ollama pull nomic-embed-text
-    echo "🟢 NOMIC-EMBED-TEXT model pulled successfully"
+    echo "🔴 Retrieving $EMBEDDINGS_MODEL model..."
+    ollama pull $EMBEDDINGS_MODEL
+    echo "🟢 $EMBEDDINGS_MODEL model pulled successfully"
 fi
 
 echo "🟢 All models ready!"

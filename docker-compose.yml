@@ -12,8 +12,10 @@ services:
       - uploaded_docs:/data/documents:ro
       - index_data:/data/indexes
     environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - QDRANT_URL=http://qdrant:6333
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
+      - QDRANT_URL=${QDRANT_URL}
+      - QUERY_MODEL=${QUERY_MODEL}
+      - EMBEDDINGS_MODEL=${EMBEDDINGS_MODEL}
     depends_on:
       - qdrant
       - ollama
@@ -55,6 +57,9 @@ services:
       - "11434:11434"
     networks:
       - app-network
+    environment:
+      - QUERY_MODEL=${QUERY_MODEL}
+      - EMBEDDINGS_MODEL=${EMBEDDINGS_MODEL}
 
 volumes:
   uploaded_docs:
