@@ -44,8 +44,13 @@ public class GatewayController {
 			// Forward request
 			ResponseEntity<String> serviceResponse = forwarder.forward(route, request);
 
+			logger.info("Headers: {}", serviceResponse.getHeaders());
+			logger.info("Content-type: {}", serviceResponse.getHeaders().getContentType());
+
 			long duration = System.currentTimeMillis() - startTime;
 			logger.info("Request completed in {}ms", duration);
+
+			logger.info("New URL: {}", route.getPath());
 
 			return serviceResponse;
 		} catch (RouteNotFoundException e) {

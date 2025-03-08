@@ -1,9 +1,19 @@
 [
 	{
-	  "id": "user-service",
-	  "path": "/api/users/**",
-	  "serviceName": "user-service",
+	  "id": "frontend",
+	  "path": "/ui/**",
+	  "serviceName": "frontend-service",
 	  "methods": ["GET", "POST", "PUT", "DELETE"]
+	},
+	{
+		"id": "frontend-static",
+		"path": "/static/**",
+		"serviceName": "frontend-service"
+	},
+	{
+		"id": "frontend-strcore",
+		"path": "/_stcore/**",
+		"serviceName": "frontend-service"
 	},
 	{
 	  "id": "project-service",

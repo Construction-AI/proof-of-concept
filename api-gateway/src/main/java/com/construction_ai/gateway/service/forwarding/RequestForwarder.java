@@ -1,8 +1,11 @@
 package com.construction_ai.gateway.service.forwarding;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.zip.GZIPInputStream;
 
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -21,16 +24,13 @@ import jakarta.servlet.http.HttpServletRequest;
 public class RequestForwarder {
 	private final RestTemplate restTemplate;
 	private final ServiceRegistry serviceRegistry;
-	// private final CircuitBreaker circuitBreaker;
 
 	public RequestForwarder(
 		RestTemplate restTemplate,
 		ServiceRegistry serviceRegistry
-		// CircuitBreaker circuitBreaker
 	) {
 		this.restTemplate = restTemplate;
 		this.serviceRegistry = serviceRegistry;
-		// this.circuitBreaker = circuitBreaker;
 	}
 
 	public ResponseEntity<String> forward(RouteDefinition route, HttpServletRequest request) {
@@ -39,22 +39,35 @@ public class RequestForwarder {
 				return ResponseEntity.ok("Welcome to Construction AI API Gateway");
 			}
 	
-
-			ServiceInstance instances = serviceRegistry.getInstance(route.getServiceName());
-	
-			String targetUrl = buildTargetUrl(instances, request);
-
+			ServiceInstance instance = serviceRegistry.getInstance(route.getServiceName());
+			String targetUrl = buildTargetUrl(instance, request);
 			HttpHeaders headers = copyRequestHeaders(request);
 			String body = extractRequestBody(request);
-
 			HttpEntity<String> httpEntity = new HttpEntity<>(body, headers);
+			System.out.println("Forwarding request to: " + targetUrl);
 
-			return restTemplate.exchange(
+			ResponseEntity<byte[]> rawResponse = restTemplate.exchange(
 				targetUrl,
 				HttpMethod.valueOf(request.getMethod()),
 				httpEntity,
-				String.class
+				byte[].class
 			);
+
+			HttpHeaders responseHeaders = new HttpHeaders();
+			responseHeaders.putAll(rawResponse.getHeaders());
+
+			if (isGzipEncoded(responseHeaders)) {
+				try {
+					String decompressedBody = decompressGzip(rawResponse.getBody());
+					responseHeaders.remove("Content-Encoding");
+					return new ResponseEntity<>(decompressedBody, responseHeaders, rawResponse.getStatusCode());
+				} catch (IOException e) {
+					System.err.println("Failed to decompress the response: " + e.getMessage());
+				} 
+			}
+
+			String responseBody = rawResponse.getBody() != null ? new String(rawResponse.getBody(), StandardCharsets.UTF_8): null;
+			return new ResponseEntity<>(responseBody, responseHeaders, rawResponse.getStatusCode());
 		} catch (Exception e) {
 			return ResponseEntity.status(500).body("Internal Server Error");
 		}
@@ -94,4 +107,29 @@ public class RequestForwarder {
 		}
 		return StreamUtils.copyToString(request.getInputStream(), StandardCharsets.UTF_8);
 	}
-}
+
+	private boolean isGzipEncoded(HttpHeaders headers) {
+		String contentEncoding = headers.getFirst("Content-Encoding");
+		return contentEncoding != null && contentEncoding.toLowerCase().contains("gzip");
+	}
+
+	private String decompressGzip(byte[] compressedData) throws IOException {
+		if (compressedData == null) {
+			return null;
+		}
+
+		try (
+			ByteArrayInputStream bis = new ByteArrayInputStream(compressedData);
+			GZIPInputStream gis = new GZIPInputStream(bis);
+			ByteArrayOutputStream bos = new ByteArrayOutputStream())
+		{
+			byte[] buffer = new byte[1024];
+			int len;
+			while ((len = gis.read(buffer)) > 0) {
+				bos.write(buffer, 0, len);
+			}	
+
+			return bos.toString("UTF-8");
+		}		
+	}
+ }

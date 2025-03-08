@@ -1,8 +1,8 @@
 [
 	{
-	  "id": "user-service-instance",
-	  "url": "http://user-service:8081",
-	  "name": "user-service"
+	  "id": "frontend-service-instance",
+	  "url": "http://frontend:8501",
+	  "name": "frontend-service"
 	},
 	{
 	  "id": "project-service-instance",
