@@ -40,6 +40,26 @@ services:
     networks:
       - app-network
 
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./api-gateway:/app
+    depends_on:
+      - llamaindex
+      - frontend
+      - qdrant
+      - ollama
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
+      - QDRANT_URL=${QDRANT_URL}
+      - LLAMAINDEX_BASE_URL=${LLAMAINDEX_BASE_URL}
+    networks:
+      - app-network
+
 
   # Vector database
   qdrant:
@@ -48,7 +68,7 @@ services:
       - "6333:6333"
     networks:
       - app-network
-
+      
   # LLM service
   ollama:
     build:

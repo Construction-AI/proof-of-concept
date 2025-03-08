@@ -1,0 +1,12 @@
+[
+	{
+	  "id": "user-service-instance",
+	  "url": "http://user-service:8081",
+	  "name": "user-service"
+	},
+	{
+	  "id": "project-service-instance",
+	  "url": "http://project-service:8085",
+	  "name": "project-service"
+	}
+  ]
