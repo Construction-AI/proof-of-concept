@@ -6,7 +6,7 @@ router = APIRouter(prefix="/api")
 # Health check endpoint
 @router.get("/health", tags=["health"])
 async def health_check():
-    return {"status": "healthy"}
+    return {"status": "ok"}
 
 # Import and include route modules
 from app.api.routes import documents_router, indexes_router
