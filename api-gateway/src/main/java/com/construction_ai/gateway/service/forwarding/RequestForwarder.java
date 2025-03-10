@@ -7,6 +7,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.zip.GZIPInputStream;
 
+import javax.management.ServiceNotFoundException;
+
+import org.apache.catalina.connector.Request;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -24,6 +29,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public class RequestForwarder {
 	private final RestTemplate restTemplate;
 	private final ServiceRegistry serviceRegistry;
+	private static final Logger logger = LoggerFactory.getLogger(RequestForwarder.class);
 
 	public RequestForwarder(
 		RestTemplate restTemplate,
@@ -38,13 +44,22 @@ public class RequestForwarder {
 			if ("welcome".equals(route.getServiceName())) {
 				return ResponseEntity.ok("Welcome to Construction AI API Gateway");
 			}
+
+			serviceRegistry.printServices();
 	
 			ServiceInstance instance = serviceRegistry.getInstance(route.getServiceName());
+
 			String targetUrl = buildTargetUrl(instance, request);
+
+			logger.info("Target URL: {}", targetUrl);
+			
 			HttpHeaders headers = copyRequestHeaders(request);
 			String body = extractRequestBody(request);
+
+			logger.info("Request Body: {}", body);
+
 			HttpEntity<String> httpEntity = new HttpEntity<>(body, headers);
-			System.out.println("Forwarding request to: " + targetUrl);
+			logger.info("Forwarding request to: {}", targetUrl);
 
 			ResponseEntity<byte[]> rawResponse = restTemplate.exchange(
 				targetUrl,
@@ -68,7 +83,11 @@ public class RequestForwarder {
 
 			String responseBody = rawResponse.getBody() != null ? new String(rawResponse.getBody(), StandardCharsets.UTF_8): null;
 			return new ResponseEntity<>(responseBody, responseHeaders, rawResponse.getStatusCode());
-		} catch (Exception e) {
+		} 
+		catch (ServiceNotFoundException e) {
+			return ResponseEntity.status(404).body("Service Not Found");
+		}
+		catch (Exception e) {
 			return ResponseEntity.status(500).body("Internal Server Error");
 		}
 	}

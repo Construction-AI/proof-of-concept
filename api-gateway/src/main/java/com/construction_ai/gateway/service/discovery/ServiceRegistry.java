@@ -47,4 +47,11 @@ public class ServiceRegistry {
 		}
         return instance;
     }
+
+	public void printServices() {
+		logger.info("Accessible services: ");
+		for (Map.Entry<String, ServiceInstance> entry : serviceInstances.entrySet()) {
+			logger.info("Service Name: {}, Service Instance: {}", entry.getKey(), entry.getValue());
+		}
+	}
 }

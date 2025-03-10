@@ -6,7 +6,7 @@ import json
 
 # Set the specific directory for uploads
 UPLOAD_DIR = "/data/documents"
-API_URL = os.environ.get("LLAMAINDEX_BASE_URL", "http://localhost:8000") + "/api"
+API_URL = os.environ.get("API_GATEWAY_BASE_URL", "http://localhost:8080") + "/api"
 
 # Check if directory exists and create it if it doesn't
 if not os.path.exists(UPLOAD_DIR):

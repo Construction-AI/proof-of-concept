@@ -1,12 +1,7 @@
 [
 	{
-	  "id": "frontend-service-instance",
-	  "url": "http://frontend:8501",
-	  "name": "frontend-service"
-	},
-	{
-	  "id": "project-service-instance",
-	  "url": "http://project-service:8085",
-	  "name": "project-service"
+	  "id": "llamaindex-service",
+	  "url": "http://llamaindex:8000",
+	  "name": "llamaindex-service"
 	}
   ]

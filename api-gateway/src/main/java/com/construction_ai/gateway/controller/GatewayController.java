@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.construction_ai.gateway.exception.RouteNotFoundException;
-import com.construction_ai.gateway.exception.ServiceUnavailableException;
 import com.construction_ai.gateway.model.ApiResponse;
 import com.construction_ai.gateway.model.RouteDefinition;
 import com.construction_ai.gateway.service.forwarding.RequestForwarder;
@@ -44,22 +43,16 @@ public class GatewayController {
 			// Forward request
 			ResponseEntity<String> serviceResponse = forwarder.forward(route, request);
 
-			logger.info("Headers: {}", serviceResponse.getHeaders());
-			logger.info("Content-type: {}", serviceResponse.getHeaders().getContentType());
-
 			long duration = System.currentTimeMillis() - startTime;
 			logger.info("Request completed in {}ms", duration);
 
-			logger.info("New URL: {}", route.getPath());
+			logger.info("Service response: {}", serviceResponse.getBody());
 
 			return serviceResponse;
 		} catch (RouteNotFoundException e) {
 			logger.warn("No route found for {}: {}", request.getRequestURI(), e.getMessage());
 			return ResponseEntity.notFound().build();
 		}
-		// catch (ServiceUnavailableException e) {
-		// 	return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new ApiResponse<>(false, null, e.getMessage(), Instant.now().toString()));
-		// }
 		catch (Exception e) {
 			logger.error("Error processing request", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(false, null, "Internal gateway error", Instant.now().toString()));

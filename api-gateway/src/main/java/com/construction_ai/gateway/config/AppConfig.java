@@ -6,16 +6,21 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 public class AppConfig {
+	@Value("${gateway.connect-timeout-ms}")
+	private int connectTimeout;
+
+	@Value("${gateway.read-timeout-ms}")
+	private int readTimeout;
+
 	@Bean
 	public RestTemplate restTemplate() {
 		SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-		factory.setConnectTimeout(5000);
-		factory.setReadTimeout(30000);
-		// TODO: Change to values from application.properties
-
+		factory.setConnectTimeout(connectTimeout);
+		factory.setReadTimeout(readTimeout);
 		return new RestTemplate(factory);
 	}
 
