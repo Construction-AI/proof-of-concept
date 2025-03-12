@@ -1,35 +1,10 @@
 services:
-  # LlamaIndex service for document processing and RAG
-  llamaindex:
-    build:
-      context: ./llamaindex
-      dockerfile: Dockerfile
-    ports:
-      - "127.0.0.1:8000:8000"
-    volumes:
-      - ../:/workspaces:cached
-      - ./llamaindex:/app
-      - uploaded_docs:/data/documents:ro
-      - index_data:/data/indexes
-    environment:
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
-      - QDRANT_URL=${QDRANT_URL}
-      - QUERY_MODEL=${QUERY_MODEL}
-      - EMBEDDINGS_MODEL=${EMBEDDINGS_MODEL}
-      - OLLAMA_TIMEOUT=${OLLAMA_TIMEOUT}
-    depends_on:
-      - qdrant
-      - ollama
-    networks:
-      - app-network
-
-    # Streamlit web interface
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "8501:8501"
+      - "80:8501"
     volumes:
       - ./frontend:/app
       - uploaded_docs:/data/documents
@@ -61,8 +36,49 @@ services:
     networks:
       - app-network
 
+  monitoring-service:
+    build:
+      context: ./monitoring-service
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:8081:8082"
+    volumes:
+      - ./monitoring-service:/app
+    depends_on:
+      - llamaindex
+      - frontend
+      - qdrant
+      - ollama
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
+      - QDRANT_URL=${QDRANT_URL}
+      - LLAMAINDEX_BASE_URL=${LLAMAINDEX_BASE_URL}
+    networks:
+      - app-network
 
-  # Vector database
+  llamaindex:
+    build:
+      context: ./llamaindex
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ../:/workspaces:cached
+      - ./llamaindex:/app
+      - uploaded_docs:/data/documents:ro
+      - index_data:/data/indexes
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
+      - QDRANT_URL=${QDRANT_URL}
+      - QUERY_MODEL=${QUERY_MODEL}
+      - EMBEDDINGS_MODEL=${EMBEDDINGS_MODEL}
+      - OLLAMA_TIMEOUT=${OLLAMA_TIMEOUT}
+    depends_on:
+      - qdrant
+      - ollama
+    networks:
+      - app-network
+
   qdrant:
     image: qdrant/qdrant
     ports:

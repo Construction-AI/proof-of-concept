@@ -1,12 +1,13 @@
 from fastapi import APIRouter
+from fastapi.responses import PlainTextResponse
 
 # Create main API router
 router = APIRouter(prefix="/api")
 
 # Health check endpoint
-@router.get("/health", tags=["health"])
+@router.get("/health", response_class=PlainTextResponse, tags=["health"])
 async def health_check():
-    return {"status": "ok"}
+    return "ok"
 
 # Import and include route modules
 from app.api.routes import documents_router, indexes_router

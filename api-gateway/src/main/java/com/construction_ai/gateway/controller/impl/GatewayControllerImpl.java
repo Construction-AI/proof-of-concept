@@ -28,6 +28,11 @@ public class GatewayControllerImpl implements GatewayController {
 		this.forwarder = forwarder;
 	}
 
+	@RequestMapping("/health")
+	public ResponseEntity<String> healthCheck() {
+		return ResponseEntity.ok("ok");
+	}
+
 	@RequestMapping("/**")
 	public ResponseEntity<?> handleRequest(HttpServletRequest request) {
 		long startTime = System.currentTimeMillis();
