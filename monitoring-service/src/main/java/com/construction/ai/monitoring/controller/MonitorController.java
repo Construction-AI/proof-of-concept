@@ -1,27 +1,18 @@
 package com.construction.ai.monitoring.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import com.construction.ai.monitoring.models.HealthResponse;
 import com.construction.ai.monitoring.models.ModelsResponse;
-import com.construction.ai.monitoring.service.MonitorService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
-@RestController
-@Tag(name = "Ollama Monitoring API", description = "API endpoints for monitoring Ollama and microservices")
-public class MonitorController {
-	@Autowired
-	private MonitorService monitorService;
-
+public interface MonitorController {
 	@Operation(
 		summary = "Get global models",
 		description = "Retrieves a list models available locally"
@@ -43,9 +34,7 @@ public class MonitorController {
 		}
 	)
 	@GetMapping("/models")
-	public ResponseEntity<ModelsResponse> getModels() {
-		return ResponseEntity.ok(monitorService.getOllamaModels());
-	}
+	public ResponseEntity<ModelsResponse> getModels();
 
 	@Operation(
 		summary = "Check all services health",
@@ -68,7 +57,5 @@ public class MonitorController {
 		}
 	)
 	@GetMapping("/health/services")
-	public ResponseEntity<HealthResponse> checkAllServicesHealth() {
-		return ResponseEntity.ok(monitorService.checkAllServicesHealth());
-	}
+	public ResponseEntity<HealthResponse> checkAllServicesHealth();
 }
