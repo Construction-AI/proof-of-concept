@@ -6,7 +6,60 @@ import json
 
 # Set the specific directory for uploads
 UPLOAD_DIR = "/data/documents"
+
 API_URL = os.environ.get("API_GATEWAY_BASE_URL", "http://localhost:8080") + "/api"
+
+MS_BASE_URL = os.environ.get("MS_BASE_URL", "http://monitoring-service:8082")
+
+HEALTH_URL = MS_BASE_URL + "/health/services"
+
+st.title("Project Document Generator")
+
+# Check service health first - this controls access to the entire application
+try:
+    health_response = requests.get(HEALTH_URL, timeout=5)
+    if health_response.status_code == 200:
+        health_data = health_response.json()
+        
+        # Check if all services are up
+        down_services = [service for service in health_data["services"] if service["status"] != "UP"]
+        all_services_up = len(down_services) == 0
+        
+        # If not all services are up, display error and stop
+        if not all_services_up:
+            st.error("❌ System Unavailable: Required Services Are Down")
+            
+            # Display status of all services
+            st.write("### Current Service Status:")
+            
+            # Create a simple table for service status
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.write("**Service Name**")
+            with col2:
+                st.write("**Status**")
+                
+            for service in health_data["services"]:
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.write(f"{service['serviceName']}")
+                with col2:
+                    if service["status"] == "UP":
+                        st.write("✅ Online")
+                    else:
+                        st.write("❌ Offline")
+            
+            st.warning("The system cannot be used until all services are available.")
+            st.info("Please contact your system administrator or try again later.")
+            
+            # Stop execution - user cannot proceed
+            st.stop()
+except Exception as e:
+    st.error(f"❌ Could not check service health: {str(e)}")
+    st.warning("Cannot verify if the system is available. Please contact your system administrator.")
+    st.stop()
+
+# Only continue if all services are up
 
 # Check if directory exists and create it if it doesn't
 if not os.path.exists(UPLOAD_DIR):
@@ -16,7 +69,8 @@ if not os.path.exists(UPLOAD_DIR):
         st.error(f"Permission denied: Cannot create directory at {UPLOAD_DIR}. Please check permissions.")
         st.stop()
 
-st.title("Project Document Generator")
+# Display confirmation that all services are running
+st.success("✅ All services are operational")
 
 # Check if documents exist in directory
 existing_documents = [f for f in os.listdir(UPLOAD_DIR) if os.path.isfile(os.path.join(UPLOAD_DIR, f))] if os.path.exists(UPLOAD_DIR) else []

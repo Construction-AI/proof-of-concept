@@ -1,13 +1,13 @@
-package com.construction.ai.monitoring.service.controller;
+package com.construction.ai.monitoring.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.construction.ai.monitoring.service.models.HealthResponse;
-import com.construction.ai.monitoring.service.models.ModelsResponse;
-import com.construction.ai.monitoring.service.services.MonitorService;
+import com.construction.ai.monitoring.models.HealthResponse;
+import com.construction.ai.monitoring.models.ModelsResponse;
+import com.construction.ai.monitoring.service.MonitorService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;

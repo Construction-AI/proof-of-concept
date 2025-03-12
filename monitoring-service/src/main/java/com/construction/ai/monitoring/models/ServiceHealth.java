@@ -1,4 +1,4 @@
-package com.construction.ai.monitoring.service.models;
+package com.construction.ai.monitoring.models;
 
 import java.util.Map;
 

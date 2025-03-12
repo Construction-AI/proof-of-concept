@@ -13,4 +13,6 @@ COPY . .
 
 # RUN mkdir -p target/dependency && (cd target/dependency; jar -xf ../*.jar)
 
-CMD [ "sleep", "infinity" ]
+RUN chmod +x entrypoint.sh
+
+CMD [ "bash", "entrypoint.sh" ]

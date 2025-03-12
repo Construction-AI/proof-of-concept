@@ -1,4 +1,4 @@
-package com.construction.ai.monitoring.service.services;
+package com.construction.ai.monitoring.service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -21,11 +21,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import com.construction.ai.monitoring.service.models.HealthResponse;
-import com.construction.ai.monitoring.service.models.ModelInfo;
-import com.construction.ai.monitoring.service.models.ModelsResponse;
-import com.construction.ai.monitoring.service.models.ServiceHealth;
-import com.construction.ai.monitoring.service.models.SingleServiceHealthResponse;
+import com.construction.ai.monitoring.models.HealthResponse;
+import com.construction.ai.monitoring.models.ModelInfo;
+import com.construction.ai.monitoring.models.ModelsResponse;
+import com.construction.ai.monitoring.models.ServiceHealth;
+import com.construction.ai.monitoring.models.SingleServiceHealthResponse;
 
 @Service
 public class MonitorService {
