@@ -1,0 +1,52 @@
+services:
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    networks:
+      - rag-network
+      
+
+  llamaindex-service:
+    build: 
+      context: ./llamaindex-service
+      dockerfile: Dockerfile
+    container_name: llamaindex-service
+    ports:
+      - "8000:8000"
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./documents:/app/documents
+    depends_on:
+      - qdrant
+    networks:
+      - rag-network
+  
+  streamlit-app:
+    build:
+      context: ./streamlit-app
+      dockerfile: Dockerfile
+    container_name: streamlit-app
+    ports:
+      - "8501:8501"
+    environment:
+      - LLAMAINDEX_SERVICE_URL=http://llamaindex-service:8000
+    depends_on:
+      - llamaindex-service
+    networks:
+      - rag-network
+
+networks:
+  rag-network:
+    driver: bridge
+
+volumes:
+  qdrant_storage:
