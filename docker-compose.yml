@@ -1,5 +1,6 @@
-services:
+version: '3.8'
 
+services:
   qdrant:
     image: qdrant/qdrant:latest
     container_name: qdrant
@@ -10,10 +11,9 @@ services:
       - qdrant_storage:/qdrant/storage
     networks:
       - rag-network
-      
 
   llamaindex-service:
-    build: 
+    build:
       context: ./llamaindex-service
       dockerfile: Dockerfile
     container_name: llamaindex-service
@@ -29,7 +29,7 @@ services:
       - qdrant
     networks:
       - rag-network
-  
+
   streamlit-app:
     build:
       context: ./streamlit-app
