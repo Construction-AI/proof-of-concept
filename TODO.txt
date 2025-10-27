@@ -1,1 +1,19 @@
+[DEVELOPMENT]
 1. Enable real check on the existance of an index
+2. Parse according to table of contents
+    > take the full table
+    > split by each part
+    > recursively take each part, embbed and save
+    > ...
+    > label a given part accordingly
+
+[PLANNING]
+1. Pick the first kind of document to be generated based on "Inwentaryzacja"
+2. Take it apart based on the table of contents 
+3. Create a template with placeholders
+4. Iterate over and over trying to generate such document based on data from "Inwentaryzacja" and template documents until satisfied
+
+! Maybe create separate modules for each kind of document ATM - easy templating, prompting, etc.
+
+[PRE-PLANNING]
+1. Create directories with sample data and do a programmatical read on all of them, maintaining a clear divide between projects and splitting logically
