@@ -98,7 +98,7 @@ def load_documents_with_metadata(input_dir: str):
     # Upewnijmy się, że mamy przydatne metadane
     for d in docs:
         d.metadata.setdefault("file_name", Path(d.metadata.get("file_path", d.doc_id)).name)
-        d.metadata.setdefault("page_label", d.metadata.get("page_label", None))
+        d.metadata.setdefault("page_label", d.metadata.get("source", None))
     return docs
 
 def build_project_index(directory_path: str, project_id: str):
