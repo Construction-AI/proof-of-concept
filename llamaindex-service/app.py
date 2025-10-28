@@ -30,6 +30,19 @@ from structured_output import FieldExtraction, FillFieldResponse, FillFieldReque
 from schema_loader import load_schema, flatten_fields, get_field_def
 from fastapi import Query
 
+from llama_index.core.node_parser import SentenceWindowNodeParser
+from llama_index.core.postprocessor import MetadataReplacementPostProcessor
+
+SENTENCE_WINDOW_PARSER = SentenceWindowNodeParser.from_defaults(
+    window_size=3, # 3 sentences around the hit; tune 2-5
+    window_metadata_key="window", # where the passage is stored
+    original_text_metadata_key="orig" # keep original if needed
+)
+
+WINDOW_POST = MetadataReplacementPostProcessor(
+    target_metadata_key="window" # swap node text -> window passage
+)
+
 # LLM (wybór przez env)
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")  # "ollama" lub "openai"
 if LLM_PROVIDER.lower() == "ollama":
@@ -93,7 +106,8 @@ def build_context_snippets(nodes, max_chars_per_snip=600):
 
     parts = []
     for i, sn in enumerate(nodes, start=1):
-        meta = sn.metadata or {}
+        node = sn.node if hasattr(sn, "node") else sn
+        meta = node.metadata or {}
         file_name = meta.get("file_name")
         page_label = meta.get("source")
         parts.append(
@@ -106,9 +120,14 @@ def make_extraction_program():
     parser = PydanticOutputParser(output_cls=FieldExtraction)
     template = (
         "You are an extraction assistant. Use only the Context to answer.\n"
-        "Task: {instruction}\n"
-        "Return strictly a JSON matching the schema: FieldExtraction(value,confidence).\n"
-        "If data is missing or uncertain, set value=null and confidence=0.\n\n"
+        "Task: {instruction}\n\n"
+        "IMPORTANT RULES:\n"
+        "- If the field appears with the SAME value multiple times, return that single value as a string\n"
+        "- If the field appears with DIFFERENT values, return them as a list\n"
+        "- If the field is not found or uncertain, set value=null and confidence=0\n"
+        "- Set confidence between 0.0 (uncertain) and 1.0 (certain)\n"
+        "- Provide brief reasoning for your extraction\n\n"
+        "Return strictly a JSON matching the schema: FieldExtraction(value, confidence, reasoning).\n\n"
         "Context:\n{context}\n"
     )
     program = LLMTextCompletionProgram.from_defaults(
@@ -117,6 +136,7 @@ def make_extraction_program():
         llm=Settings.llm,
     )
     return program
+
 
 @app.post("/fill_field", response_model=FillFieldResponse)
 async def fill_field(req: FillFieldRequest):
@@ -129,44 +149,70 @@ async def fill_field(req: FillFieldRequest):
         if not field_def:
             raise HTTPException(status_code=400, detail=f"Unknown field_id: {req.field_id}")
 
-        # 1) Retrieve and rerank (your fusion retriever already wraps BM25 + vector)
+        # 1) Retrieve and rerank
         fusion = retrievers[pid]
         nodes = fusion.retrieve(req.instruction)
-        # Optional: apply the same reranker again if you want symmetry with /query
-        # reranker = SentenceTransformerRerank(model="cross-encoder/ms-marco-MiniLM-L-6-v2", top_n=min(6, req.top_k))
-        # nodes = reranker.postprocess_nodes(nodes)
 
-        # 2) Build concise, citation-friendly context
-        top_nodes = nodes[: req.top_k]
-        context = build_context_snippets(top_nodes)
+        # apply sentence-window replacement
+        windowed_nodes = WINDOW_POST.postprocess_nodes(nodes, query_str=req.instruction)
 
-        # 3) Run the structured extraction program
+        # 2) Build context
+        top_nodes = windowed_nodes[: req.top_k]
+        context = build_context_snippets(top_nodes, max_chars_per_snip=1500)
+
+        # 3) Run extraction
         program = make_extraction_program()
         result: FieldExtraction = program(
             instruction=req.instruction, context=context
         )
 
-        # 4) Deterministic sources from retrieved nodes
+        # 4) Normalize the value - if it's a list with all same values, pick the first one
+        extracted_value = result.value
+        if isinstance(extracted_value, list):
+            # Remove duplicates while preserving order
+            unique_values = []
+            seen = set()
+            for v in extracted_value:
+                if v not in seen:
+                    unique_values.append(v)
+                    seen.add(v)
+            
+            # If all values are the same (or only one unique), return single value
+            if len(unique_values) == 1:
+                extracted_value = unique_values[0]
+            else:
+                # Multiple different values - you could either:
+                # 1. Return the first one (most common/highest confidence)
+                # 2. Join them (e.g., "C25/30, C8/10")
+                # 3. Keep as list if FillFieldResponse supports it
+                extracted_value = unique_values[0]  # Take the most relevant (first retrieved)
+                print(f"Warning: Multiple different values found for {req.field_id}: {unique_values}")
+
+        # 5) Build sources
         src = []
         for sn in top_nodes:
             meta = sn.node.metadata or {}
+            content = sn.node.get_content() or ""
+            excerpt = content if len(content) <= 2000 else (content[:2000] + "...")
+            
             src.append({
                 "file_name": meta.get("file_name"),
                 "page_label": meta.get("source"),
                 "score": sn.score,
-                "excerpt": (sn.node.get_content()[:300] + "...") if sn.node.get_content() else None
+                "excerpt": excerpt
             })
         
         return FillFieldResponse(
             field_id=req.field_id,
-            value=result.value,
+            value=extracted_value,
             confidence=float(result.confidence or 0.0),
             sources=src
         )
     except Exception as e:
         print(f"Error in /fill_field: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
 
 @app.get("/health")
 async def health_check():
@@ -206,7 +252,7 @@ def build_project_index(directory_path: str, project_id: str):
         raise ValueError("No documents found")
 
     # 2) Tworzenie węzłów (nodes)
-    nodes = NODE_PARSER.get_nodes_from_documents(documents)
+    nodes = SENTENCE_WINDOW_PARSER.get_nodes_from_documents(documents)
     nodes = enrich_nodes_with_headings(nodes)
 
     # 3) Qdrant – osobna kolekcja na projekt
@@ -261,7 +307,7 @@ def build_project_index(directory_path: str, project_id: str):
     # 8) Query engine (może korzystać z LLM; jeśli Settings.llm=None – zwróci głównie źródła)
     query_engine = RetrieverQueryEngine.from_args(
         retriever=fusion,
-        node_postprocessors=[reranker],
+        node_postprocessors=[WINDOW_POST, reranker], # IMPORTANT: window first, the rerank or vice versa; both work
         response_mode="compact",
     )
 
