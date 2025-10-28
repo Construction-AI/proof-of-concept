@@ -22,6 +22,14 @@ from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.retrievers.bm25 import BM25Retriever
 from qdrant_client import QdrantClient, AsyncQdrantClient
 
+from node_enrichment import enrich_nodes_with_headings
+from llama_index.core.program import LLMTextCompletionProgram
+from llama_index.core.output_parsers import PydanticOutputParser
+from structured_output import FieldExtraction, FillFieldResponse, FillFieldRequest
+
+from schema_loader import load_schema, flatten_fields, get_field_def
+from fastapi import Query
+
 # LLM (wybór przez env)
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")  # "ollama" lub "openai"
 if LLM_PROVIDER.lower() == "ollama":
@@ -34,9 +42,8 @@ else:
     Settings.llm = None  # tylko retrieval (bez syntezy)
 
 # Embeddings – wielojęzyczne (PL/EN)
-print("Loading embeddings model...")
-Settings.embed_model = HuggingFaceEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
-print("Embeddings model loaded ✅")
+embed_model=os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+Settings.embed_model = HuggingFaceEmbedding(model_name=embed_model)
 
 # Parser – większe, logiczne chunki
 NODE_PARSER = SentenceSplitter(chunk_size=1000, chunk_overlap=120)
@@ -47,6 +54,7 @@ app = FastAPI()
 indices: Dict[str, VectorStoreIndex] = {}
 query_engines: Dict[str, RetrieverQueryEngine] = {}
 project_nodes: Dict[str, List] = {}  # do BM25 i cytatów
+retrievers: Dict[str, QueryFusionRetriever] = {}
 
 # MODELE REQUEST/RESPONSE
 class QueryRequest(BaseModel):
@@ -79,6 +87,87 @@ def wait_for_qdrant() -> bool:
             time.sleep(retry_delay)
     return False
 
+def build_context_snippets(nodes, max_chars_per_snip=600):
+    def _snip(txt: str, n=max_chars_per_snip):
+        return (txt[:n] + "..." if txt and len(txt) > n else txt)
+
+    parts = []
+    for i, sn in enumerate(nodes, start=1):
+        meta = sn.metadata or {}
+        file_name = meta.get("file_name")
+        page_label = meta.get("source")
+        parts.append(
+            f"[{i}] file={file_name} page={page_label}\n{_snip(sn.node.get_content())}"
+        )
+        
+    return "\n\n---\n\n".join(parts)
+    
+def make_extraction_program():
+    parser = PydanticOutputParser(output_cls=FieldExtraction)
+    template = (
+        "You are an extraction assistant. Use only the Context to answer.\n"
+        "Task: {instruction}\n"
+        "Return strictly a JSON matching the schema: FieldExtraction(value,confidence).\n"
+        "If data is missing or uncertain, set value=null and confidence=0.\n\n"
+        "Context:\n{context}\n"
+    )
+    program = LLMTextCompletionProgram.from_defaults(
+        output_parser=parser,
+        prompt_template_str=template,
+        llm=Settings.llm,
+    )
+    return program
+
+@app.post("/fill_field", response_model=FillFieldResponse)
+async def fill_field(req: FillFieldRequest):
+    pid = req.project_id
+    if not pid in retrievers:
+        raise HTTPException(status_code=400, detail=f"No index for project_id='{pid}'. Create it with /index.")
+    try:
+        # 0) Check if field exists
+        field_def = get_field_def(req.field_id)
+        if not field_def:
+            raise HTTPException(status_code=400, detail=f"Unknown field_id: {req.field_id}")
+
+        # 1) Retrieve and rerank (your fusion retriever already wraps BM25 + vector)
+        fusion = retrievers[pid]
+        nodes = fusion.retrieve(req.instruction)
+        # Optional: apply the same reranker again if you want symmetry with /query
+        # reranker = SentenceTransformerRerank(model="cross-encoder/ms-marco-MiniLM-L-6-v2", top_n=min(6, req.top_k))
+        # nodes = reranker.postprocess_nodes(nodes)
+
+        # 2) Build concise, citation-friendly context
+        top_nodes = nodes[: req.top_k]
+        context = build_context_snippets(top_nodes)
+
+        # 3) Run the structured extraction program
+        program = make_extraction_program()
+        result: FieldExtraction = program(
+            instruction=req.instruction, context=context
+        )
+
+        # 4) Deterministic sources from retrieved nodes
+        src = []
+        for sn in top_nodes:
+            meta = sn.node.metadata or {}
+            src.append({
+                "file_name": meta.get("file_name"),
+                "page_label": meta.get("source"),
+                "score": sn.score,
+                "excerpt": (sn.node.get_content()[:300] + "...") if sn.node.get_content() else None
+            })
+        
+        return FillFieldResponse(
+            field_id=req.field_id,
+            value=result.value,
+            confidence=float(result.confidence or 0.0),
+            sources=src
+        )
+    except Exception as e:
+        print(f"Error in /fill_field: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
@@ -109,6 +198,8 @@ def build_project_index(directory_path: str, project_id: str):
     - BM25 na tych samych węzłach,
     - retriever hybrydowy + reranker + query engine.
     """
+    global fusion
+
     # 1) Ładowanie
     documents = load_documents_with_metadata(directory_path)
     if not documents:
@@ -116,6 +207,7 @@ def build_project_index(directory_path: str, project_id: str):
 
     # 2) Tworzenie węzłów (nodes)
     nodes = NODE_PARSER.get_nodes_from_documents(documents)
+    nodes = enrich_nodes_with_headings(nodes)
 
     # 3) Qdrant – osobna kolekcja na projekt
     qdrant_host = os.getenv("QDRANT_HOST", "qdrant")
@@ -177,6 +269,7 @@ def build_project_index(directory_path: str, project_id: str):
     indices[project_id] = index
     query_engines[project_id] = query_engine
     project_nodes[project_id] = nodes
+    retrievers[project_id] = fusion
 
 @app.post("/index", response_model=StatusResponse)
 async def create_index(request: IndexRequest):
@@ -235,6 +328,20 @@ async def get_status():
         "ready": {pid: True for pid in indices.keys()},
         "llm_provider": LLM_PROVIDER
     }
+
+@app.get("/schema")
+async def get_schema():
+    return load_schema()
+
+@app.get("/fields")
+async def list_fields():
+    return flatten_fields(load_schema())
+
+@app.get("/fields/search")
+async def search_fields(q: str = Query("", min_length=1)):
+    ql = q.lower()
+    reg = flatten_fields(load_schema())
+    return [f for f in reg if ql in f["field_id"].lower() or ql in (f.get("label") or "").lower()][:200]
 
 import sys
 
