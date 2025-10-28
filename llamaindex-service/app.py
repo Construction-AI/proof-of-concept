@@ -22,6 +22,27 @@ from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.retrievers.bm25 import BM25Retriever
 from qdrant_client import QdrantClient, AsyncQdrantClient
 
+from node_enrichment import enrich_nodes_with_headings
+from llama_index.core.program import LLMTextCompletionProgram
+from llama_index.core.output_parsers import PydanticOutputParser
+from structured_output import FieldExtraction, FillFieldResponse, FillFieldRequest
+
+from schema_loader import load_schema, flatten_fields, get_field_def
+from fastapi import Query
+
+from llama_index.core.node_parser import SentenceWindowNodeParser
+from llama_index.core.postprocessor import MetadataReplacementPostProcessor
+
+SENTENCE_WINDOW_PARSER = SentenceWindowNodeParser.from_defaults(
+    window_size=3, # 3 sentences around the hit; tune 2-5
+    window_metadata_key="window", # where the passage is stored
+    original_text_metadata_key="orig" # keep original if needed
+)
+
+WINDOW_POST = MetadataReplacementPostProcessor(
+    target_metadata_key="window" # swap node text -> window passage
+)
+
 # LLM (wybór przez env)
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")  # "ollama" lub "openai"
 if LLM_PROVIDER.lower() == "ollama":
@@ -34,9 +55,8 @@ else:
     Settings.llm = None  # tylko retrieval (bez syntezy)
 
 # Embeddings – wielojęzyczne (PL/EN)
-print("Loading embeddings model...")
-Settings.embed_model = HuggingFaceEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
-print("Embeddings model loaded ✅")
+embed_model=os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+Settings.embed_model = HuggingFaceEmbedding(model_name=embed_model)
 
 # Parser – większe, logiczne chunki
 NODE_PARSER = SentenceSplitter(chunk_size=1000, chunk_overlap=120)
@@ -47,6 +67,7 @@ app = FastAPI()
 indices: Dict[str, VectorStoreIndex] = {}
 query_engines: Dict[str, RetrieverQueryEngine] = {}
 project_nodes: Dict[str, List] = {}  # do BM25 i cytatów
+retrievers: Dict[str, QueryFusionRetriever] = {}
 
 # MODELE REQUEST/RESPONSE
 class QueryRequest(BaseModel):
@@ -79,6 +100,120 @@ def wait_for_qdrant() -> bool:
             time.sleep(retry_delay)
     return False
 
+def build_context_snippets(nodes, max_chars_per_snip=600):
+    def _snip(txt: str, n=max_chars_per_snip):
+        return (txt[:n] + "..." if txt and len(txt) > n else txt)
+
+    parts = []
+    for i, sn in enumerate(nodes, start=1):
+        node = sn.node if hasattr(sn, "node") else sn
+        meta = node.metadata or {}
+        file_name = meta.get("file_name")
+        page_label = meta.get("source")
+        parts.append(
+            f"[{i}] file={file_name} page={page_label}\n{_snip(sn.node.get_content())}"
+        )
+        
+    return "\n\n---\n\n".join(parts)
+    
+def make_extraction_program():
+    parser = PydanticOutputParser(output_cls=FieldExtraction)
+    template = (
+        "You are an extraction assistant. Use only the Context to answer.\n"
+        "Task: {instruction}\n\n"
+        "IMPORTANT RULES:\n"
+        "- If the field appears with the SAME value multiple times, return that single value as a string\n"
+        "- If the field appears with DIFFERENT values, return them as a list\n"
+        "- If the field is not found or uncertain, set value=null and confidence=0\n"
+        "- Set confidence between 0.0 (uncertain) and 1.0 (certain)\n"
+        "- Provide brief reasoning for your extraction\n\n"
+        "Return strictly a JSON matching the schema: FieldExtraction(value, confidence, reasoning).\n\n"
+        "Context:\n{context}\n"
+    )
+    program = LLMTextCompletionProgram.from_defaults(
+        output_parser=parser,
+        prompt_template_str=template,
+        llm=Settings.llm,
+    )
+    return program
+
+
+@app.post("/fill_field", response_model=FillFieldResponse)
+async def fill_field(req: FillFieldRequest):
+    pid = req.project_id
+    if not pid in retrievers:
+        raise HTTPException(status_code=400, detail=f"No index for project_id='{pid}'. Create it with /index.")
+    try:
+        # 0) Check if field exists
+        field_def = get_field_def(req.field_id)
+        if not field_def:
+            raise HTTPException(status_code=400, detail=f"Unknown field_id: {req.field_id}")
+
+        # 1) Retrieve and rerank
+        fusion = retrievers[pid]
+        nodes = fusion.retrieve(req.instruction)
+
+        # apply sentence-window replacement
+        windowed_nodes = WINDOW_POST.postprocess_nodes(nodes, query_str=req.instruction)
+
+        # 2) Build context
+        top_nodes = windowed_nodes[: req.top_k]
+        context = build_context_snippets(top_nodes, max_chars_per_snip=1500)
+
+        # 3) Run extraction
+        program = make_extraction_program()
+        result: FieldExtraction = program(
+            instruction=req.instruction, context=context
+        )
+
+        # 4) Normalize the value - if it's a list with all same values, pick the first one
+        extracted_value = result.value
+        if isinstance(extracted_value, list):
+            # Remove duplicates while preserving order
+            unique_values = []
+            seen = set()
+            for v in extracted_value:
+                if v not in seen:
+                    unique_values.append(v)
+                    seen.add(v)
+            
+            # If all values are the same (or only one unique), return single value
+            if len(unique_values) == 1:
+                extracted_value = unique_values[0]
+            else:
+                # Multiple different values - you could either:
+                # 1. Return the first one (most common/highest confidence)
+                # 2. Join them (e.g., "C25/30, C8/10")
+                # 3. Keep as list if FillFieldResponse supports it
+                extracted_value = unique_values[0]  # Take the most relevant (first retrieved)
+                print(f"Warning: Multiple different values found for {req.field_id}: {unique_values}")
+
+        # 5) Build sources
+        src = []
+        for sn in top_nodes:
+            meta = sn.node.metadata or {}
+            content = sn.node.get_content() or ""
+            excerpt = content if len(content) <= 2000 else (content[:2000] + "...")
+            
+            src.append({
+                "file_name": meta.get("file_name"),
+                "page_label": meta.get("source"),
+                "score": sn.score,
+                "excerpt": excerpt
+            })
+        
+        return FillFieldResponse(
+            field_id=req.field_id,
+            value=extracted_value,
+            confidence=float(result.confidence or 0.0),
+            sources=src
+        )
+    except Exception as e:
+        print(f"Error in /fill_field: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
@@ -109,13 +244,16 @@ def build_project_index(directory_path: str, project_id: str):
     - BM25 na tych samych węzłach,
     - retriever hybrydowy + reranker + query engine.
     """
+    global fusion
+
     # 1) Ładowanie
     documents = load_documents_with_metadata(directory_path)
     if not documents:
         raise ValueError("No documents found")
 
     # 2) Tworzenie węzłów (nodes)
-    nodes = NODE_PARSER.get_nodes_from_documents(documents)
+    nodes = SENTENCE_WINDOW_PARSER.get_nodes_from_documents(documents)
+    nodes = enrich_nodes_with_headings(nodes)
 
     # 3) Qdrant – osobna kolekcja na projekt
     qdrant_host = os.getenv("QDRANT_HOST", "qdrant")
@@ -169,7 +307,7 @@ def build_project_index(directory_path: str, project_id: str):
     # 8) Query engine (może korzystać z LLM; jeśli Settings.llm=None – zwróci głównie źródła)
     query_engine = RetrieverQueryEngine.from_args(
         retriever=fusion,
-        node_postprocessors=[reranker],
+        node_postprocessors=[WINDOW_POST, reranker], # IMPORTANT: window first, the rerank or vice versa; both work
         response_mode="compact",
     )
 
@@ -177,6 +315,7 @@ def build_project_index(directory_path: str, project_id: str):
     indices[project_id] = index
     query_engines[project_id] = query_engine
     project_nodes[project_id] = nodes
+    retrievers[project_id] = fusion
 
 @app.post("/index", response_model=StatusResponse)
 async def create_index(request: IndexRequest):
@@ -235,6 +374,20 @@ async def get_status():
         "ready": {pid: True for pid in indices.keys()},
         "llm_provider": LLM_PROVIDER
     }
+
+@app.get("/schema")
+async def get_schema():
+    return load_schema()
+
+@app.get("/fields")
+async def list_fields():
+    return flatten_fields(load_schema())
+
+@app.get("/fields/search")
+async def search_fields(q: str = Query("", min_length=1)):
+    ql = q.lower()
+    reg = flatten_fields(load_schema())
+    return [f for f in reg if ql in f["field_id"].lower() or ql in (f.get("label") or "").lower()][:200]
 
 import sys
 

@@ -22,8 +22,10 @@ services:
       - QDRANT_PORT=6333
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - LLM_PROVIDER=${LLM_PROVIDER}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL}
     volumes:
       - ./documents:/app/documents
+      - ./schema:/app/schema
       - ./llamaindex-service:/app
     depends_on:
       - qdrant
