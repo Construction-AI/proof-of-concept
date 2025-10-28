@@ -15,9 +15,7 @@ RUN pip install --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
-COPY wait-for-it.sh .
-RUN chmod +x wait-for-it.sh
 
 EXPOSE 8000
 
-CMD [ "python", "app.py" ]
+CMD [ "python", "app/main.py" ]
