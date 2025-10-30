@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.core.retrievers import QueryFusionRetriever
@@ -13,6 +12,9 @@ from llama_index.core.node_parser import SentenceWindowNodeParser
 from llama_index.core.postprocessor import MetadataReplacementPostProcessor
 from app.utils.logging import get_logger
 
+from app.models.models_index import AllCollectionsResponse
+from llama_index.core import Settings
+
 from typing import Dict, List
 
 SENTENCE_WINDOW_PARSER = SentenceWindowNodeParser.from_defaults(window_size=3)
@@ -22,6 +24,22 @@ indices: Dict[str, VectorStoreIndex] = {}
 query_engines: Dict[str, RetrieverQueryEngine] = {}
 project_nodes: Dict[str, List] = {}  # do BM25 i cytatów
 retrievers: Dict[str, QueryFusionRetriever] = {}
+
+def get_existing_project_indexes():
+    qdrant_host = os.getenv("QDRANT_HOST", "qdrant")
+    qdrant_port = int(os.getenv("QDRANT_PORT", 6333))
+    client = QdrantClient(
+        host=qdrant_host,
+        port=qdrant_port,
+        timeout=30,
+    )
+    
+    collections = client.get_collections()
+    print(collections)
+    return AllCollectionsResponse(
+        status="Success",
+        collections=collections
+    )
 
 def build_project_index(directory_path: str, project_id: str):
     logger = get_logger("Index")
@@ -33,7 +51,6 @@ def build_project_index(directory_path: str, project_id: str):
 
     # 2) Tworzenie węzłów (nodes)
     nodes = SENTENCE_WINDOW_PARSER.get_nodes_from_documents(documents)
-    # nodes = enrich_nodes_with_headings(nodes)
 
     # 3) Qdrant – osobna kolekcja na projekt
     qdrant_host = os.getenv("QDRANT_HOST", "qdrant")
@@ -78,7 +95,7 @@ def build_project_index(directory_path: str, project_id: str):
         verbose=False,
     )
 
-    # 7) Reranker (cross-encoder, mały i szybki)
+    # 7) Reranker (cross-encoder, mały i szybki) TODO: Check how this works
     reranker = SentenceTransformerRerank(
         model="cross-encoder/ms-marco-MiniLM-L-6-v2",
         top_n=6
@@ -97,3 +114,5 @@ def build_project_index(directory_path: str, project_id: str):
     project_nodes[project_id] = nodes
     retrievers[project_id] = fusion
     
+
+# def load_project_index(project_id):

@@ -22,7 +22,9 @@ services:
       - QDRANT_PORT=6333
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - LLM_PROVIDER=${LLM_PROVIDER}
-      - EMBEDDING_MODEL=${EMBEDDING_MODEL}
+      - OLLAMA_EMBEDDING_MODEL=${OLLAMA_EMBEDDING_MODEL}
+      - OLLAMA_MODEL=${OLLAMA_MODEL}
+      - OLLAMA_URL=${OLLAMA_URL}
     volumes:
       - ./documents:/app/documents
       - ./schema:/app/schema
@@ -31,20 +33,26 @@ services:
       - qdrant
     networks:
       - rag-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
 
-  # streamlit-app:
+  # ollama:
   #   build:
-  #     context: ./streamlit-app
+  #     context: ./ollama-service
   #     dockerfile: Dockerfile
-  #   container_name: streamlit-app
+  #   volumes:
+  #     - ollama_storage:/root/.ollama
   #   ports:
-  #     - "8501:8501"
-  #   environment:
-  #     - LLAMAINDEX_SERVICE_URL=http://llamaindex-service:8000
-  #   depends_on:
-  #     - llamaindex-service
+  #     - "11434:11434"
   #   networks:
   #     - rag-network
+  #   environment:
+  #     - OLLAMA_EMBEDDING_MODEL=${OLLAMA_EMBEDDING_MODEL}
+  #     - OLLAMA_MODEL=${OLLAMA_MODEL}
 
 networks:
   rag-network:
@@ -52,3 +60,4 @@ networks:
 
 volumes:
   qdrant_storage:
+  ollama_storage:

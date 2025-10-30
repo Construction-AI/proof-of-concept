@@ -1,0 +1,22 @@
+meta {
+  name: Fill a Field
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/fill_field
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+      "project_id": "1",
+      "field_id": "1_dane_ogolne.zespol_projektowy.glowny_projektant",
+      "instruction": "Podaj glownego projektanta",
+      "top_k": 8
+  }
+  
+  
+}

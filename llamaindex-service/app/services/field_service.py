@@ -3,10 +3,13 @@ from llama_index.core.program import LLMTextCompletionProgram
 from llama_index.core.output_parsers import PydanticOutputParser
 from llama_index.core.postprocessor import MetadataReplacementPostProcessor
 
-from app.core.structured_output import FieldExtraction, FillFieldRequest, FillFieldResponse
+from app.core.structured_output import FieldExtraction, FillFieldRequest, FillFieldResponse, FillAllFieldsRequest, FillAllFieldsResponse
 from app.services.index_service import retrievers
 from app.core.schema_loader import get_field_def
 from app.core.llama_settings import Settings
+
+from app.services.schema_service import flatten_fields
+
 
 WINDOW_POST = MetadataReplacementPostProcessor(target_metadata_key="window")
 
@@ -24,6 +27,7 @@ def make_extraction_program():
         "Return strictly a JSON matching the schema: FieldExtraction(value, confidence, reasoning).\n\n"
         "Context:\n{context}\n"
     )
+
     program = LLMTextCompletionProgram.from_defaults(
         output_parser=parser,
         prompt_template_str=template,
@@ -47,7 +51,7 @@ def build_context_snippets(nodes, max_chars_per_snip=600):
         
     return "\n\n---\n\n".join(parts)
 
-def process_field_extraction(req: FillFieldRequest):
+async def process_field_extraction(req: FillFieldRequest):
     pid = req.project_id
     if not pid in retrievers:
         raise HTTPException(status_code=400, detail=f"No index for project_id='{pid}'. Create it with /index.")
@@ -59,7 +63,7 @@ def process_field_extraction(req: FillFieldRequest):
 
         # 1) Retrieve and rerank
         fusion = retrievers[pid]
-        nodes = fusion.retrieve(req.instruction)
+        nodes = await fusion.aretrieve(req.instruction)
 
         # apply sentence-window replacement
         windowed_nodes = WINDOW_POST.postprocess_nodes(nodes, query_str=req.instruction)
@@ -70,7 +74,9 @@ def process_field_extraction(req: FillFieldRequest):
 
         # 3) Run extraction
         program = make_extraction_program()
-        result: FieldExtraction = program(
+
+        import asyncio
+        result: FieldExtraction = await program.acall(
             instruction=req.instruction, context=context
         )
 
@@ -116,6 +122,34 @@ def process_field_extraction(req: FillFieldRequest):
             confidence=float(result.confidence or 0.0),
             sources=src
         )
+        
     except Exception as e:
         print(f"Error in /fill_field: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+async def process_fill_all_fields(req: FillAllFieldsRequest):
+    pid = req.project_id
+    if not pid in retrievers:
+        raise HTTPException(status_code=400, detail=f"No index for project_id='{pid}'. Create it with /index.")
+    
+    flattened_fields = flatten_fields()
+    all_fields = {}
+    for field in flattened_fields:
+        field_id = field.get("field_id")
+        request = FillFieldRequest(
+            project_id=req.project_id,
+            field_id=field_id,
+            instruction=f"Podaj mi {field_id}"
+        )
+        try:
+            response = await process_field_extraction(request)
+            all_fields[field_id] = response.value
+        except Exception as e:
+            print(f"Failed to parse field: '{field_id}'")
+            all_fields[field_id] = "error"
+
+    return FillAllFieldsResponse(
+        fields=all_fields
+    )
+
+

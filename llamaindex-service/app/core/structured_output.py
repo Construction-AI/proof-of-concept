@@ -1,5 +1,5 @@
 from pydantic import Field, BaseModel
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict, Any
 
 class FieldExtraction(BaseModel):
     """Result of extracting a single field value from documents"""
@@ -31,4 +31,10 @@ class FillFieldResponse(BaseModel):
     value: str | None
     confidence: float
     sources: list
+
+class FillAllFieldsRequest(BaseModel):
+    project_id: str
+
+class FillAllFieldsResponse(BaseModel):
+    fields: dict[str, Any]
 

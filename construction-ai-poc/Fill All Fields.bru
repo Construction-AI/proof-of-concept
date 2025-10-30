@@ -1,0 +1,17 @@
+meta {
+  name: Fill All Fields
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/fill_field/all
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "project_id": "1"
+  }
+}
