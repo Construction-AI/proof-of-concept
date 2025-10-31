@@ -44,7 +44,6 @@ def get_field_def(field_id: str):
             if f.get("type") == "object" and isinstance(f.get("value"), dict):
                 for k in f["value"].keys():
                     if field_id == f"{sid}.{f.get('id')}.{k}":
-                        # Return a synthetic def for the subfield (treated as string by default)
                         return {
                             "id": f"{f.get('id')}.{k}",
                             "label": f"{f.get('label')} -> {k}",

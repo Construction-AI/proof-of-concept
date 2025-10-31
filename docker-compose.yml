@@ -25,6 +25,7 @@ services:
       - OLLAMA_EMBEDDING_MODEL=${OLLAMA_EMBEDDING_MODEL}
       - OLLAMA_MODEL=${OLLAMA_MODEL}
       - OLLAMA_URL=${OLLAMA_URL}
+      - EXT_EMBEDDING_MODEL=${EXT_EMBEDDING_MODEL}
     volumes:
       - ./documents:/app/documents
       - ./schema:/app/schema

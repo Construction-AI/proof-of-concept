@@ -28,7 +28,7 @@ class FillFieldRequest(BaseModel):
 
 class FillFieldResponse(BaseModel):
     field_id: str
-    value: str | None
+    value: str | list | None
     confidence: float
     sources: list
 

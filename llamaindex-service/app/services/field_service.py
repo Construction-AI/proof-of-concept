@@ -75,7 +75,6 @@ async def process_field_extraction(req: FillFieldRequest):
         # 3) Run extraction
         program = make_extraction_program()
 
-        import asyncio
         result: FieldExtraction = await program.acall(
             instruction=req.instruction, context=context
         )
@@ -95,12 +94,10 @@ async def process_field_extraction(req: FillFieldRequest):
             if len(unique_values) == 1:
                 extracted_value = unique_values[0]
             else:
-                # Multiple different values - you could either:
-                # 1. Return the first one (most common/highest confidence)
-                # 2. Join them (e.g., "C25/30, C8/10")
-                # 3. Keep as list if FillFieldResponse supports it
-                extracted_value = unique_values[0]  # Take the most relevant (first retrieved)
-                print(f"Warning: Multiple different values found for {req.field_id}: {unique_values}")
+                if field_def.get("type") == "array" or field_def.get("type") == "array_string":
+                    extracted_value = unique_values
+                else:
+                    extracted_value = unique_values[0]
 
         # 5) Build sources
         src = []

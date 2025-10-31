@@ -19,7 +19,7 @@ def get_config():
         embed_model = os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
         query_model = os.getenv("OLLAMA_MODEL", "llama3:8b")
     elif LLM_PROVIDER == "openai":
-        embed_model = os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
+        embed_model = os.getenv("EXT_EMBEDDING_MODEL", "nomic-embed-text")
         query_model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     return ConfigResponse(
         mode=LLM_PROVIDER,
