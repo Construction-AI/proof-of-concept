@@ -13,6 +13,79 @@ from app.services.schema_service import flatten_fields
 
 WINDOW_POST = MetadataReplacementPostProcessor(target_metadata_key="window")
 
+def extract_context_around_value(nodes, extracted_value, context_sentences=3):
+    """
+    Find where the extracted value appears in the nodes and return surrounding context.
+
+    Args:
+        nodes: List of retrieved nodes
+        extracted_value: The value that was extracted
+        context_sentences: Number of sentences to include before and after
+
+    Returns:
+        List of context snippets with metadata
+    """
+
+    def search_for_value(val: str, nodes) -> list:
+        # Convert value to search string
+        search_value = str(val).strip()
+        if not search_value:
+            return []
+        
+        contexts = []
+
+        for sn in nodes:
+            node = sn.node if hasattr(sn, "node") else sn
+            content = node.get_content()
+
+            # Try to find the value in the content (case-insensitive)
+            if search_value.lower() not in content.lower():
+                continue 
+
+            # Split into sentences (simple approach)
+            sentences = re.split("r'(?<=[.!?])\s+", content)
+
+            # Find which sentence(s) contain the value
+            for i, sentence in enumerate(sentences):
+                if search_value.lower() in sentence.lower():
+                    # Get context window
+                    start_idx = max(0, i - context_sentences)
+                    end_idx = min(len(sentences), i + context_sentences + 1)
+
+                    context_window = " ".join(sentences[start_idx:end_idx])
+
+                    meta = node.metadata or {}
+                    contexts.append({
+                        "file_name": meta.get("file_name"),
+                        "page_label": meta.get("source"),
+                        "score": sn.score,
+                        "context": context_window,
+                        "highlighted_sentence": sentence
+                    })
+                    break # Found in this node, move to then next node
+        return contexts
+
+    import re
+    if not extracted_value or extracted_value == "null" or extracted_value == "error":
+        return []
+    
+    all_contexts = []
+    
+    if type(extracted_value) == list:
+        for single_ex_val in extracted_value:
+            found_values = search_for_value(single_ex_val, nodes)
+            if len(found_values) > 0:
+                [all_contexts.append(value) for value in found_values]
+    else:
+        found_values = search_for_value(extracted_value, nodes)
+        [all_contexts.append(value) for value in found_values]
+
+    
+    
+
+    return all_contexts
+
+
 def make_extraction_program():
     parser = PydanticOutputParser(output_cls=FieldExtraction)
     template = (
@@ -99,19 +172,38 @@ async def process_field_extraction(req: FillFieldRequest):
                 else:
                     extracted_value = unique_values[0]
 
+        value_contexts = extract_context_around_value(
+            top_nodes,
+            extracted_value,
+            context_sentences=2
+        )
+
         # 5) Build sources
         src = []
-        for sn in top_nodes:
-            meta = sn.node.metadata or {}
-            content = sn.node.get_content() or ""
-            excerpt = content if len(content) <= 2000 else (content[:2000] + "...")
-            
-            src.append({
-                "file_name": meta.get("file_name"),
-                "page_label": meta.get("source"),
-                "score": sn.score,
-                "excerpt": excerpt
-            })
+        if value_contexts:
+            # Use the smart context extraction
+            for ctx in value_contexts:
+                src.append({
+                    "file_name": ctx["file_name"],
+                    "page_label": ctx["page_label"],
+                    "score": ctx["score"],
+                    "excerpt": ctx["context"], # Context around the value
+                    "highlighted": ctx["highlighted_sentence"]
+
+                })
+        else:
+            # Fallback to original method if value not found
+            for sn in top_nodes:
+                meta = sn.node.metadata or {}
+                content = sn.node.get_content() or ""
+                excerpt = content if len(content) <= 2000 else (content[:2000] + "...")
+                
+                src.append({
+                    "file_name": meta.get("file_name"),
+                    "page_label": meta.get("source"),
+                    "score": sn.score,
+                    "excerpt": excerpt
+                })
         
         return FillFieldResponse(
             field_id=req.field_id,

@@ -19,7 +19,7 @@ def create_app() -> FastAPI:
     # Register routes
     app.include_router(routes_health.router, tags=["System"])
     app.include_router(routes_index.router, prefix="/index", tags=["Indexing"])
-    app.include_router(routes_query.router, prefix="/query", tags=['Query'])
+    app.include_router(routes_query.router, prefix="/chat", tags=['Chat'])
     app.include_router(routes_field_extraction.router, prefix="/fill_field", tags=["Field Extraction"])
     app.include_router(routes_schema.router, prefix="/schema", tags=["Schema"])
     app.include_router(routes_config.router, prefix="/config", tags=["System", "Config"])
