@@ -1,8 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from pathlib import Path
-from app.services.index_service import build_project_index, get_existing_project_indexes
-from app.models.models_index import AllCollectionsResponse
+from app.services.index_service import build_project_index, get_existing_project_indexes, load_project_indices
 
 router = APIRouter()
 
@@ -29,13 +28,21 @@ async def create_index(request: IndexRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router.get("/all", response_model=AllCollectionsResponse)
+@router.get("/all", response_model=list)
 async def get_all_indexes():
     try:
-        indexes = get_existing_project_indexes()
-        return AllCollectionsResponse(
+        indexes = await get_existing_project_indexes()
+        return indexes
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/preload", response_model=StatusResponse)
+async def preload_indices():
+    try:
+        await load_project_indices()
+        return StatusResponse(
             status="Success",
-            collections=indexes
+            message="Indices preloaded"
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

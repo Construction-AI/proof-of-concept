@@ -12,8 +12,7 @@ from llama_index.core.node_parser import SentenceWindowNodeParser
 from llama_index.core.postprocessor import MetadataReplacementPostProcessor
 from app.utils.logging import get_logger
 
-from app.models.models_index import AllCollectionsResponse
-from llama_index.core import Settings
+from llama_index.core import Settings, load_indices_from_storage
 
 from typing import Dict, List
 
@@ -25,7 +24,39 @@ query_engines: Dict[str, RetrieverQueryEngine] = {}
 project_nodes: Dict[str, List] = {}  # do BM25 i cytatów
 retrievers: Dict[str, QueryFusionRetriever] = {}
 
-def get_existing_project_indexes():
+async def get_existing_project_indexes():
+    qdrant_host = os.getenv("QDRANT_HOST", "qdrant")
+    qdrant_port = int(os.getenv("QDRANT_PORT", 6333))
+    client = AsyncQdrantClient(
+        host=qdrant_host,
+        port=qdrant_port,
+        timeout=30,
+    )
+    
+    collections_response = await client.get_collections()
+    collections = collections_response.collections
+    print(f"All collections: {collections}")
+
+    for i in range(len(collections)):
+        coll_name = collections[i].name
+        print(f"Collection name: {coll_name}")
+        coll_data = await client.get_collection(coll_name)
+        print(f"Coll data: {coll_data}")
+
+    return collections
+
+
+async def load_project_indices():
+    print(f"Loading existing project indices...")
+    collections = await get_existing_project_indexes()
+    print(f"Found {len(collections)} indices.")
+    for idx, coll in enumerate(collections):
+        await load_project_index(coll.name)
+        print(f"Processed {str(idx + 1) + '/' + str(len(collections))} indices.")
+        
+    
+
+async def load_project_index(collection_name: str):
     qdrant_host = os.getenv("QDRANT_HOST", "qdrant")
     qdrant_port = int(os.getenv("QDRANT_PORT", 6333))
     client = QdrantClient(
@@ -33,13 +64,40 @@ def get_existing_project_indexes():
         port=qdrant_port,
         timeout=30,
     )
-    
-    collections = client.get_collections()
-    print(collections)
-    return AllCollectionsResponse(
-        status="Success",
-        collections=collections
-    )
+    aclient = AsyncQdrantClient(host=qdrant_host, port=qdrant_port, timeout=30)
+    vector_store = QdrantVectorStore(client=client, aclient=aclient, collection_name=collection_name)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    indices = load_indices_from_storage(storage_context)
+
+    for idx in indices:
+        nodes = idx.docstore.docs.values()
+        bm25 = BM25Retriever.from_defaults(nodes=nodes, similarity_top_k=10)
+        vector_retriever = idx.as_retriever(similarity_top_k=10)
+        fusion = QueryFusionRetriever(
+            retrievers=[vector_retriever, bm25],
+            mode="relative_score",
+            num_queries=1,
+            similarity_top_k=8,
+            verbose=False,
+        )
+
+        reranker = SentenceTransformerRerank(
+            model="cross-encoder/ms-marco-MiniLM-L-6-v2",
+            top_n=6
+        )
+
+        query_engine = RetrieverQueryEngine.from_args(
+            retriever=fusion,
+            node_postprocessors=[WINDOW_POST, reranker],
+            response_mode="compact",
+        )
+
+        # 9) Zapis do rejestrów (TODO: Check if collection_name is the right value to use)
+        indices[collection_name] = idx
+        query_engines[collection_name] = query_engine
+        project_nodes[collection_name] = nodes
+        retrievers[collection_name] = fusion
+
 
 def build_project_index(directory_path: str, project_id: str):
     logger = get_logger("Index")
@@ -65,7 +123,8 @@ def build_project_index(directory_path: str, project_id: str):
     # Nie kasujemy w ciemno – pozwalamy nadpisać przez nowy ingest; jeśli trzeba wyczyścić, zrób to celowo
     try:
         client.get_collection(collection_name)
-        print(f"Collection '{collection_name}' exists – upserting.")
+        print(f"Collection '{collection_name}' exists - deleting.")
+        client.delete_collection(collection_name)
     except Exception:
         print(f"Creating collection '{collection_name}'")
 
@@ -114,5 +173,3 @@ def build_project_index(directory_path: str, project_id: str):
     project_nodes[project_id] = nodes
     retrievers[project_id] = fusion
     
-
-# def load_project_index(project_id):
