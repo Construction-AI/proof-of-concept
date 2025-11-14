@@ -12,7 +12,8 @@ from llama_index.core.node_parser import SentenceWindowNodeParser
 from llama_index.core.postprocessor import MetadataReplacementPostProcessor
 from app.utils.logging import get_logger
 
-from llama_index.core import Settings, load_indices_from_storage
+from llama_index.core import load_indices_from_storage
+from llama_index.readers.qdrant import QdrantReader
 
 from typing import Dict, List
 
@@ -51,12 +52,32 @@ async def load_project_indices():
     collections = await get_existing_project_indexes()
     print(f"Found {len(collections)} indices.")
     for idx, coll in enumerate(collections):
-        await load_project_index(coll.name)
-        print(f"Processed {str(idx + 1) + '/' + str(len(collections))} indices.")
+        try:
+            await rebuild_project_index(coll.name)
+            print(f"Processed {str(idx + 1) + '/' + str(len(collections))} indices.")
+        except Exception as e:
+            print(f"Failed to rebuild index: {e}")
         
     
 
-async def load_project_index(collection_name: str):
+async def rebuild_project_index(collection_name: str):
+    qdrant_host = os.getenv("QDRANT_HOST", "qdrant")
+    qdrant_port = int(os.getenv("QDRANT_PORT", 6333))
+    client = QdrantClient(
+        host=qdrant_host,
+        port=qdrant_port,
+        timeout=30,
+    )
+
+    qdrant_reader = QdrantReader(host=qdrant_host, port=qdrant_port, timeout=30)
+    documents = qdrant_reader.load_data(collection_name=collection_name)
+    if not documents:
+        raise ValueError("No documents found")
+
+    # 2) Tworzenie węzłów (nodes)
+    nodes = SENTENCE_WINDOW_PARSER.get_nodes_from_documents(documents)
+
+    # 3) Qdrant – osobna kolekcja na projekt
     qdrant_host = os.getenv("QDRANT_HOST", "qdrant")
     qdrant_port = int(os.getenv("QDRANT_PORT", 6333))
     client = QdrantClient(
@@ -67,36 +88,33 @@ async def load_project_index(collection_name: str):
     aclient = AsyncQdrantClient(host=qdrant_host, port=qdrant_port, timeout=30)
     vector_store = QdrantVectorStore(client=client, aclient=aclient, collection_name=collection_name)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
-    indices = load_indices_from_storage(storage_context)
-
-    for idx in indices:
-        nodes = idx.docstore.docs.values()
-        bm25 = BM25Retriever.from_defaults(nodes=nodes, similarity_top_k=10)
-        vector_retriever = idx.as_retriever(similarity_top_k=10)
-        fusion = QueryFusionRetriever(
-            retrievers=[vector_retriever, bm25],
-            mode="relative_score",
-            num_queries=1,
-            similarity_top_k=8,
-            verbose=False,
-        )
-
-        reranker = SentenceTransformerRerank(
-            model="cross-encoder/ms-marco-MiniLM-L-6-v2",
-            top_n=6
-        )
-
-        query_engine = RetrieverQueryEngine.from_args(
-            retriever=fusion,
-            node_postprocessors=[WINDOW_POST, reranker],
-            response_mode="compact",
-        )
-
-        # 9) Zapis do rejestrów (TODO: Check if collection_name is the right value to use)
-        indices[collection_name] = idx
-        query_engines[collection_name] = query_engine
-        project_nodes[collection_name] = nodes
-        retrievers[collection_name] = fusion
+    index = VectorStoreIndex(
+        nodes=nodes,
+        storage_context=storage_context,
+        show_progress=True
+    )
+    bm25 = BM25Retriever.from_defaults(nodes=nodes, similarity_top_k=10)
+    vector_retriever = index.as_retriever(similarity_top_k=10)
+    fusion = QueryFusionRetriever(
+        retrievers=[vector_retriever, bm25],
+        mode="relative_score",
+        num_queries=1,
+        similarity_top_k=8,
+        verbose=False,
+    )
+    reranker = SentenceTransformerRerank(
+        model="cross-encoder/ms-marco-MiniLM-L-6-v2",
+        top_n=6
+    )
+    query_engine = RetrieverQueryEngine.from_args(
+        retriever=fusion,
+        node_postprocessors=[WINDOW_POST, reranker],
+        response_mode="compact",
+    )
+    indices[collection_name] = index
+    query_engines[collection_name] = query_engine
+    project_nodes[collection_name] = nodes
+    retrievers[collection_name] = fusion
 
 
 def build_project_index(directory_path: str, project_id: str):
