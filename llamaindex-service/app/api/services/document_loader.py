@@ -15,10 +15,13 @@ from llama_index.core import SimpleDirectoryReader
 from llama_index.core.node_parser import SentenceWindowNodeParser
 from llama_index.core.postprocessor import MetadataReplacementPostProcessor
 
+from app.core.project_engine import ProjectEngine
+
 SENTENCE_WINDOW_PARSER = SentenceWindowNodeParser.from_defaults(window_size=3)
 WINDOW_POST = MetadataReplacementPostProcessor(target_metadata_key="window")
 
-PROJECT_ENGINES = {}
+
+PROJECT_ENGINES: dict[str, ProjectEngine] = {}
 
 from app.core.logger import get_logger
 
@@ -47,7 +50,7 @@ def index_documents(directory_path: str):
 
     index.storage_context.persist()
 
-async def build_project_index(directory_path: str, project_id: str):
+async def build_project_index(directory_path: str, project_id: str) -> ProjectEngine:
     documents = load_documents_with_metadata(directory_path)
 
     if not documents:
@@ -104,14 +107,11 @@ async def build_project_index(directory_path: str, project_id: str):
         response_mode="compact"
     )
 
-    return {
-        "index": index,
-        "nodes": nodes,
-        "retriever": fusion,
-        "query_engine": query_engine
-    }
+    return ProjectEngine(
+        index=index, nodes=nodes, retriever=fusion, query_engine=query_engine
+    )
 
-def load_project_index(project_id: str):
+def load_project_index(project_id: str) -> ProjectEngine:
     aclient = get_qdrant_aclient()
     client = get_qdrant_client()
 
@@ -125,7 +125,6 @@ def load_project_index(project_id: str):
 
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-    # Odtwarzamy index TYMCZASOWO (syntetycznie) – bez embedowania!
     index = VectorStoreIndex.from_vector_store(
         vector_store=vector_store,
         storage_context=storage_context,
@@ -169,12 +168,13 @@ def load_project_index(project_id: str):
         response_mode="compact",
     )
 
-    return {
-        "index": index,
-        "retriever": fusion,
-        "query_engine": query_engine
-    }
+    return ProjectEngine(
+        index=index,
+        nodes=None,
+        retriever=fusion,
+        query_engine=query_engine
 
+    )
 
 async def list_projects_in_qdrant():
     aclient = get_qdrant_aclient()

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from app.services.document_loader import build_project_index as bpi
+from app.api.services.document_loader import build_project_index as bpi
 
 router = APIRouter()
 

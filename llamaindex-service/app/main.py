@@ -1,9 +1,10 @@
 from fastapi import FastAPI
-from app.routes import (
+from app.api.routes import (
     routes_document_loader,
-    routes_query
+    routes_query,
+    routes_filling
 )
-from app.services.document_loader import startup_load_all_projects
+from app.api.services.document_loader import startup_load_all_projects
 from contextlib import asynccontextmanager
 
 @asynccontextmanager
@@ -29,6 +30,7 @@ def create_app() -> FastAPI:
 
     app.include_router(routes_document_loader.router, prefix="/index", tags=["Documents loader"])
     app.include_router(routes_query.router, prefix="/query", tags=["Query Engine"])
+    app.include_router(routes_filling.router, prefix="/filling", tags=["Filling Engine"])
 
     # import os
     # LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")
