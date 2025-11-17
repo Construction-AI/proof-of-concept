@@ -132,15 +132,31 @@ def load_project_index(project_id: str):
         show_progress=False
     )
 
-    # Tworzymy retrievery – tak samo jak w build()
+    nodes = list(index.docstore.docs.values())
+    bm25 = None
+    if nodes:
+        bm25 = BM25Retriever.from_defaults(
+            nodes=nodes,
+            similarity_top_k=10
+        )
+
     vector_retriever = index.as_retriever(similarity_top_k=10)
 
-    fusion = QueryFusionRetriever(
-        retrievers=[vector_retriever],
-        mode="relative_score",
-        num_queries=1,
-        similarity_top_k=8,
-    )
+    fusion = None
+    if bm25:
+        fusion = QueryFusionRetriever(
+            retrievers=[vector_retriever, bm25],
+            mode="relative_score",
+            num_queries=1,
+            similarity_top_k=8,
+        )
+    else:
+        fusion = QueryFusionRetriever(
+            retrievers=[vector_retriever],
+            mode="relative_score",
+            num_queries=1,
+            similarity_top_k=8,
+        )
 
     reranker = SentenceTransformerRerank(
         model="cross-encoder/ms-marco-MiniLM-L-6-v2",
@@ -149,7 +165,7 @@ def load_project_index(project_id: str):
 
     query_engine = RetrieverQueryEngine.from_args(
         retriever=fusion,
-        node_postprocessors=[reranker],
+        node_postprocessors=[WINDOW_POST, reranker],
         response_mode="compact",
     )
 
