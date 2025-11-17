@@ -11,7 +11,7 @@ class QueryRequest(BaseModel):
     question: str
     project_id: str
 
-@router.get("", response_model=QueryResponse)
+@router.post("", response_model=QueryResponse)
 def query(req: QueryRequest):
     try:
         res = query_project(project_id=req.project_id, question=req.question)
