@@ -1,40 +1,46 @@
 from fastapi import FastAPI
-from app.api import (
-    routes_health,
-    routes_index,
+from app.api.routes import (
+    routes_document_loader,
     routes_query,
-    routes_field_extraction,
-    routes_schema,
-    routes_config
+    routes_filling
 )
-from app.utils.logging import get_logger
+from app.api.services.document_loader import startup_load_all_projects
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: code before yield
+    await startup_load_all_projects()
+    
+    yield
+    
+    # Shutdown: code after yield (if you need cleanup)
+    # Add any cleanup code here if needed
+    pass
 
 def create_app() -> FastAPI:
     app = FastAPI(
         title="LlamaIndex Service", 
         description="Document ingestion, indexing and querying API using LlamaIndex and Qdrant.",
-        version="1.0.0"
+        version="1.0.0",
+        lifespan=lifespan
         )
 
     # Register routes
-    app.include_router(routes_health.router, tags=["System"])
-    app.include_router(routes_index.router, prefix="/index", tags=["Indexing"])
-    app.include_router(routes_query.router, prefix="/chat", tags=['Chat'])
-    app.include_router(routes_field_extraction.router, prefix="/fill_field", tags=["Field Extraction"])
-    app.include_router(routes_schema.router, prefix="/schema", tags=["Schema"])
-    app.include_router(routes_config.router, prefix="/config", tags=["System", "Config"])
 
-    import os
-    LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")
-    logger = get_logger("Setup")
-    logger.info("[Setup] Running in %s mode!", 'local' if LLM_PROVIDER == 'ollama' else 'online')
+    app.include_router(routes_document_loader.router, prefix="/index", tags=["Documents loader"])
+    app.include_router(routes_query.router, prefix="/query", tags=["Query Engine"])
+    app.include_router(routes_filling.router, prefix="/filling", tags=["Filling Engine"])
+
+    # import os
+    # LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")
+    # logger = get_logger("Setup")
+    # logger.info("[Setup] Running in %s mode!", 'local' if LLM_PROVIDER == 'ollama' else 'online')
 
     return app
 
 app = create_app()
 
 if __name__ == "__main__":
-    import asyncio
-    print("DEBUG LOOP:", asyncio.get_running_loop())
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
