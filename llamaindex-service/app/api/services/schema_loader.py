@@ -38,8 +38,8 @@ def flatten_fields(schema: dict):
                     })
     return reg
 
-def get_field_def(field_id: str):
-    schema = load_schema()
+def get_field_def(type_name: str, field_id: str):
+    schema = load_schema(type_name)
     for sec in schema.get("sections", []):
         sid = sec.get("id")
         for f in sec.get("fields", []):
