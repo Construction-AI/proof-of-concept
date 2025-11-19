@@ -88,7 +88,6 @@ def make_extraction_program():
     return program
 
 async def process_field_extraction(project_id: str, field_id: str, schema_type_name: str):
-    INSTRUCTION = f"Podaj '{field_id}'" # TODO: Move arbitrarily somewhere else
     TOP_K = 6
     logger = get_logger("Field Extraction")
 
@@ -100,6 +99,7 @@ async def process_field_extraction(project_id: str, field_id: str, schema_type_n
         if not field_def:
             raise HTTPException(status_code=400, detail=f"Unknown field_id: '{field_id}'")
         
+        INSTRUCTION = f"Podaj '{field_id}'. Dodatkowe dane: {field_def.get('label')}" # TODO: Move arbitrarily somewhere else
         project_engine = PROJECT_ENGINES[project_id]
         nodes = await project_engine.retriever.aretrieve(INSTRUCTION)
 
