@@ -1,10 +1,12 @@
 from enum import Enum
+from typing import Tuple
 
 BASE_PATH = "/app/schema"
 
 class SchemaType(Enum):
-    BIOZ: str = ("bioz", BASE_PATH + "/bioz.json")
-    OPIS_TECHNICZNY: str = ("opis techniczny", BASE_PATH + "/opis_techniczny_konstrukcja.json")
+    BIOZ: Tuple[str, str] = ("bioz", BASE_PATH + "/bioz.json")
+    OPIS_TECHNICZNY: Tuple[str, str] = ("opis techniczny", BASE_PATH + "/opis_techniczny_konstrukcja.json")
+    BAZA_PROJEKTOWA: Tuple[str, str] = ("baza projektowa", BASE_PATH + "/baza_projektowa.json")
 
     def get_key(self) -> str:
         return self.value[0]
