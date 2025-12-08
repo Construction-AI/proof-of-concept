@@ -7,7 +7,7 @@ router = APIRouter()
 def route_upload_file(req: FileUploadRequest):
     try:
         file_manager = get_file_manager()
-        file_manager.upload_file(req.bucket_name, req.file_path, None)
+        file_manager.upload_file(req.bucket_name, req.file_path, req.destination_file)
         return "Success"
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

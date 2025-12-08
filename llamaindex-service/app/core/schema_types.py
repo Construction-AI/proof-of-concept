@@ -4,9 +4,9 @@ from typing import Tuple
 BASE_PATH = "/app/schema"
 
 class SchemaType(Enum):
-    BIOZ: Tuple[str, str] = ("bioz", BASE_PATH + "/bioz.json")
-    OPIS_TECHNICZNY: Tuple[str, str] = ("opis techniczny", BASE_PATH + "/opis_techniczny_konstrukcja.json")
-    BAZA_PROJEKTOWA: Tuple[str, str] = ("baza projektowa", BASE_PATH + "/baza_projektowa.json")
+    BIOZ: Tuple[str, str] = ("bioz", BASE_PATH + "/bioz_generation_schema_full.json")
+    OPIS_TECHNICZNY: Tuple[str, str] = ("opis techniczny", BASE_PATH + "/extraction_schema_konstrukcja_full.json")
+    BAZA_PROJEKTOWA: Tuple[str, str] = ("baza projektowa", BASE_PATH + "/project_info_extraction_schema.json")
 
     def get_key(self) -> str:
         return self.value[0]
