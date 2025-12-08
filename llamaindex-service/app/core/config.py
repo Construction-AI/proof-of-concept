@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     # -- Paths --
     TEMP_UPLOAD_DIR: str = "/tmp/uploads"
 
+    # -- MinIO --
+    MINIO_URL: str = os.getenv("MINIO_URL")
+    MINIO_ENDPOINT: str = os.getenv("MINIO_ENDPOINT")
+    MINIO_ACCESS_KEY: str = os.getenv("MINIO_ROOT_USER")
+    MINIO_SECRET_KEY: str = os.getenv("MINIO_ROOT_PASSWORD")
+
     class Config:
         env_file = ".env"
 
