@@ -1,0 +1,160 @@
+[
+  {
+    "group_id": "01_metryka",
+    "group_name": "Podstawowe Dane Inwestycji",
+    "fields": [
+      {
+        "key": "nazwa_obiektu",
+        "type": "string",
+        "required": true,
+        "prompt": "Znajdź pełną nazwę projektowanego obiektu budowlanego. Szukaj w tytule projektu lub opisie technicznym."
+      },
+      {
+        "key": "kategoria_obiektu",
+        "type": "string",
+        "required": false,
+        "prompt": "Określ kategorię obiektu (np. budynek mieszkalny wielorodzinny, hala magazynowa, biurowiec, obiekt inżynieryjny). Jeśli nie podano wprost, wywnioskuj z funkcji."
+      }
+    ]
+  },
+  {
+    "group_id": "02_geometria",
+    "group_name": "Geometria i Gabaryty",
+    "fields": [
+      {
+        "key": "liczba_kondygnacji_nadziemnych",
+        "type": "integer",
+        "required": true,
+        "prompt": "Podaj liczbę kondygnacji nadziemnych (parter + piętra)."
+      },
+      {
+        "key": "liczba_kondygnacji_podziemnych",
+        "type": "integer",
+        "required": true,
+        "prompt": "Podaj liczbę kondygnacji podziemnych (garaże podziemne, piwnice). Jeśli brak, wpisz 0."
+      },
+      {
+        "key": "wysokosc_max_m",
+        "type": "float",
+        "required": true,
+        "prompt": "Znajdź maksymalną wysokość budynku w metrach (do attyki lub kalenicy). Jest to kluczowe do doboru żurawia."
+      },
+      {
+        "key": "powierzchnia_zabudowy_m2",
+        "type": "float",
+        "required": false,
+        "prompt": "Znajdź powierzchnię zabudowy obiektu w m2."
+      }
+    ]
+  },
+  {
+    "group_id": "03_geotechnika_i_wykopy",
+    "group_name": "Warunki Gruntowe i Roboty Ziemne",
+    "fields": [
+      {
+        "key": "poziom_posadowienia_max_m",
+        "type": "float",
+        "required": true,
+        "prompt": "Jaka jest maksymalna głębokość posadowienia poniżej poziomu terenu (np. rzędna spodu płyty fundamentowej)? Podaj wartość dodatnią w metrach."
+      },
+      {
+        "key": "wystepowanie_wody_gruntowej",
+        "type": "boolean",
+        "required": true,
+        "prompt": "Czy w dokumentacji geologicznej lub opisie konstrukcji jest informacja o wodzie gruntowej powyżej poziomu posadowienia (w wykopie)?"
+      },
+      {
+        "key": "koniecznosc_obudowy_wykopu",
+        "type": "boolean",
+        "required": true,
+        "prompt": "Czy projekt przewiduje zabezpieczenie wykopu (ścianka szczelna, berlińska, palisada)? Zwróć true jeśli wykop jest głęboki lub w ostrej granicy działki."
+      }
+    ]
+  },
+  {
+    "group_id": "04_konstrukcja_podziemie",
+    "group_name": "Konstrukcja - Część Podziemna / Fundamenty",
+    "fields": [
+      {
+        "key": "typ_fundamentow",
+        "type": "enum",
+        "options": ["bezposrednie_lawy", "bezposrednie_plyta", "posrednie_pale"],
+        "required": true,
+        "prompt": "Określ rodzaj posadowienia. Jeśli występują pale/kolumny, wybierz 'posrednie_pale'. Jeśli płyta - 'bezposrednie_plyta'."
+      },
+      {
+        "key": "technologia_scian_podziemia",
+        "type": "string",
+        "required": false,
+        "prompt": "W jakiej technologii projektowane są ściany piwnic/garażu? (np. żelbet monolityczny, ściana szczelinowa, murowane)."
+      }
+    ]
+  },
+  {
+    "group_id": "05_konstrukcja_nadziemie",
+    "group_name": "Konstrukcja - Część Nadziemna",
+    "fields": [
+      {
+        "key": "uklad_konstrukcyjny",
+        "type": "string",
+        "required": true,
+        "prompt": "Opisz układ konstrukcyjny nadziemia (np. słupowo-płytowy, ściany murowane z trzpieniami, szkielet stalowy)."
+      },
+      {
+        "key": "technologia_stropow",
+        "type": "string",
+        "required": true,
+        "prompt": "Jaki jest typ stropów? (np. monolityczne wylewane na mokro, Filigran, prefabrykowane HC, drewniane)."
+      },
+      {
+        "key": "elementy_prefabrykowane_ciezkie",
+        "type": "boolean",
+        "required": true,
+        "prompt": "Czy w konstrukcji występują ciężkie elementy prefabrykowane (biegi schodowe, płyty stropowe, belki, słupy), które wymagają montażu żurawiem?"
+      }
+    ]
+  },
+  {
+    "group_id": "06_dach",
+    "group_name": "Konstrukcja Dachu",
+    "fields": [
+      {
+        "key": "typ_dachu",
+        "type": "enum",
+        "options": ["plaski", "spadzisty"],
+        "required": true,
+        "prompt": "Czy dach jest płaski (stropodach) czy spadzisty (więźba)? Ma to kluczowe znaczenie dla zabezpieczeń przed upadkiem."
+      },
+      {
+        "key": "konstrukcja_nosna_dachu",
+        "type": "string",
+        "required": false,
+        "prompt": "Z czego wykonana jest konstrukcja dachu? (np. płyta żelbetowa, wiązary drewniane, kratownica stalowa)."
+      }
+    ]
+  },
+  {
+    "group_id": "07_roboty_specjalne",
+    "group_name": "Wykrywanie Ryzyk Specyficznych (BIOZ)",
+    "fields": [
+      {
+        "key": "roboty_na_wysokosci",
+        "type": "boolean",
+        "required": true,
+        "prompt": "Czy wystąpią roboty na wysokości powyżej 5m wymagające rusztowań lub podnośników (np. elewacja, montaż okien, montaż konstrukcji stalowej)?"
+      },
+      {
+        "key": "roboty_niebezpieczne_chemicznie",
+        "type": "boolean",
+        "required": true,
+        "prompt": "Czy w opisie występują materiały wymagające szczególnej ostrożności? (np. azbest przy rozbiórce, żywice epoksydowe, spawanie w zamkniętych pomieszczeniach)."
+      },
+      {
+        "key": "roboty_w_poblizu_linii_energetycznych",
+        "type": "boolean",
+        "required": false,
+        "prompt": "Czy w opisie zagospodarowania terenu wspomniano o istniejących liniach energetycznych (napowietrznych lub kablowych) kolidujących z budową?"
+      }
+    ]
+  }
+]

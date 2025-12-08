@@ -17,6 +17,6 @@ def query_rag(question: str) -> str:
 
     return query_engine.query(question).response
 
-def query_project(project_id: str, question: str):
+async def query_project(project_id: str, question: str):
     engine = PROJECT_ENGINES[project_id].query_engine
-    return engine.query(question)
+    return await engine.aquery(question)
