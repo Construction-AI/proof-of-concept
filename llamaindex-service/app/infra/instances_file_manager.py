@@ -12,6 +12,10 @@ class FileUploadRequest(BaseModel):
     bucket_name: str
     destination_file: Optional[str]
 
+class FileDeleteRequest(BaseModel):
+    bucket_name: str
+    target_file: str
+
 class FileManager():
     def __init__(self, url: str, access_key: str, secret_key: str):
         self.url = url
@@ -54,6 +58,17 @@ class FileManager():
         )
 
         self.logger.info(f"{source_file} successfully uploaded as object {destination_file} to bucket {bucket_name}")
+
+    def delete_file(self, bucket_name: str, target_file: str):
+        try:
+            object = self.client.get_object(bucket_name=bucket_name, object_name=target_file)
+            if not object:
+                raise ValueError("File does not exist")
+            self.client.remove_object(bucket_name=bucket_name, object_name=target_file)
+            self.logger.info(f"The file {target_file} has been removed from bucket {bucket_name}")
+        except Exception as e:
+            raise e
+
 
 
 @lru_cache()

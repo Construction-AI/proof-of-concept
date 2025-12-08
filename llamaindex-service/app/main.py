@@ -4,7 +4,8 @@ from app.api.routes import (
     routes_query,
     routes_filling,
     routes_project_extractor,
-    routes_file_manager
+    routes_file_manager,
+    routes_health
 )
 from app.api.services.document_loader import startup_load_all_projects
 from contextlib import asynccontextmanager
@@ -34,6 +35,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_filling.router, prefix="/filling", tags=["Filling Engine"])
     app.include_router(routes_project_extractor.router, prefix="/project_extractor", tags=["Project Extractor"])
     app.include_router(routes_file_manager.router, prefix="/file_manager", tags=["File Manager"])
+    app.include_router(routes_health.router, prefix="/health", tags=["Health Check"])
 
     return app
 
