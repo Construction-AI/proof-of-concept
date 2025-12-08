@@ -3,6 +3,7 @@ from typing import List
 from app.api.services.schema_loader import load_schema
 from app.core.schema_types import SchemaType
 from app.api.services.rag_engine import query_project
+from app.core.logger import get_logger
 
 class GroupField(BaseModel):
     key: str
@@ -29,9 +30,9 @@ def count_fields_to_fill(schema: dict) -> int:
 
     return fields_count
 
-async def extract_project_info(project_id: str):
-    schema = load_schema(SchemaType.BAZA_PROJEKTOWA.get_key())
-    fields_count = count_fields_to_fill(schema)
+async def extract_project_info(project_id: str, schema_type: SchemaType):
+    logger = get_logger("Extract Project Info")
+    schema = load_schema(schema_type.get_key())
     groups_count = count_groups(schema)
     groups = []
     for g_idx, gr in enumerate(schema):
@@ -40,6 +41,7 @@ async def extract_project_info(project_id: str):
             group_name = gr["group_name"],
             fields = []
         )
+        fields_count = len(gr["fields"])
         for f_idx, fd in enumerate(gr["fields"]):
             field_value = await query_project(project_id=project_id, question=fd["prompt"])
             field = GroupField(
@@ -50,7 +52,8 @@ async def extract_project_info(project_id: str):
                 value = field_value.response
             )
             group.fields.append(field)
-            print(f"Filled {f_idx + 1} / {fields_count} fields.")
-        print(f"Filled {g_idx + 1} / {groups_count} groups.")
+            logger.info(f"Filled {f_idx + 1} / {fields_count} fields of group {g_idx + 1}.")
+        logger.info(f"Filled {g_idx + 1} / {groups_count} groups.")
         groups.append(group)
+
     return groups
