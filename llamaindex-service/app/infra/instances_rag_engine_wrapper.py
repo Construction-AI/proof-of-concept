@@ -72,6 +72,7 @@ class RagEngineWrapper:
                 storage_context=self.llamaindex_storage_context
             )
             index.storage_context.persist()
+            
 
         # async def build_project_index(self, local_file: File):
         #     documents = self.load_documents(local_file=local_file)
