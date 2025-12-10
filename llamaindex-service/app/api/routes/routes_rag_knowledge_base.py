@@ -27,4 +27,17 @@ async def route_upload_document(req: KnowledgeBaseRequest.AddDocument):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-# @router.get("/query")
+@router.post("/query")
+async def route_query_knowledgebase(req: KnowledgeBaseRequest.Query):
+    try:
+        knowledge_base = get_rag_knowledge_base()
+        response = await knowledge_base.query(question=req.question, company_id=req.company_id, project_id=req.project_id)
+        
+        return Response(
+            status_code=200,
+            content=response.response
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        

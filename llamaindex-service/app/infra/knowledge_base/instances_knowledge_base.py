@@ -45,7 +45,7 @@ class RagKnowledgeBase:
         )
         
         docs = reader.load_data()
-        for d in docs:            
+        for d in docs:
             d.metadata.setdefault("page_label", d.metadata.get("source", None))
             d.metadata.setdefault("company_id", file.company_id)
             d.metadata.setdefault("project_id", file.project_id)
@@ -53,6 +53,7 @@ class RagKnowledgeBase:
             d.metadata.setdefault("document_type", file.document_type)
             d.metadata.setdefault("file_name", file.file_name)
             d.metadata.setdefault("file_id", file.file_id)
+            d.metadata.setdefault("doc_id", file.file_id)
         return docs
     
     async def __check_nodes_exist(self, file: KBFile) -> bool:
@@ -70,8 +71,8 @@ class RagKnowledgeBase:
     
     async def __create_default_collection(self):
         await self.async_client.create_collection(
-            collection_name=self.base_settings.QDRANT_COLLECTION,
-            vectors_config={"size": self.base_settings.EMBEDDING_DIMENSION, "distance": "Cosine"}
+                collection_name=self.base_settings.QDRANT_COLLECTION,
+                vectors_config={"size": self.base_settings.EMBEDDING_DIMENSION, "distance": "Cosine"}
             )
             
     async def add_document(self, file: KBFile):
@@ -91,7 +92,7 @@ class RagKnowledgeBase:
         await self.index.ainsert_nodes(nodes)
         self.logger.info(f"Document {file.file_id} has been added to the knowledge base. Nodes count: {len(nodes)}.")
         
-    def query(self, question: str, company_id: str, project_id: str, k: int = 5):
+    async def query(self, question: str, company_id: str, project_id: str, k: int = 5):
         filters = MetadataFilters(
             filters=[
                 ExactMatchFilter(key="company_id", value=company_id),
@@ -104,8 +105,26 @@ class RagKnowledgeBase:
             similarity_top_k=k
         )
         
-        response = query_engine.query(question)
+        response = await query_engine.aquery(question)
         return response
+    
+    async def delete_document(self, company_id: str, project_id: str, document_category: str, document_type: str, file_name: str):
+        file_id = self.__construct_file_id(company_id, project_id, document_category, document_type, file_name)
+        await self.index.adelete_ref_doc(ref_doc_id=file_id)
+        self.logger.info(f"Deleted nodes with `file_id`: {file_id}.")
+        
+    async def upsert_document(self, file: KBFile):
+        await self.delete_document(
+            company_id=file.company_id,
+            project_id=file.project_id,
+            document_category=file.document_category,
+            document_type=file.document_type,
+            file_name=file.file_name
+       )
+        await self.add_document(file=file)
+        
+    def __construct_file_id(self, company_id: str, project_id: str, document_category: str, document_type: str, file_name: str) -> str:
+        return f"{company_id}/{project_id}/{document_category}/{document_type}/{file_name}"
         
     
 @lru_cache()

@@ -11,3 +11,8 @@ class KnowledgeBaseRequest(ABC):
         document_category: str
         document_type: str
         local_path: str
+        
+    class Query(BaseModel):
+        company_id: str
+        project_id: str
+        question: str
