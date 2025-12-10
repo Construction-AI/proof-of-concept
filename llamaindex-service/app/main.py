@@ -35,7 +35,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_query.router, prefix="/query", tags=["Query Engine"])
     app.include_router(routes_filling.router, prefix="/filling", tags=["Filling Engine"])
     app.include_router(routes_project_extractor.router, prefix="/project_extractor", tags=["Project Extractor"])
-    app.include_router(routes_file_storage_wrapper.router, prefix="/file_manager", tags=["File Manager"])
+    app.include_router(routes_file_storage_wrapper.router, prefix="/file_storage", tags=["File Storage"])
     app.include_router(routes_health.router, prefix="/health", tags=["Health Check"])
     app.include_router(routes_vector_store_manager.router, prefix="/vector_store_manager", tags=["Vector Store Manager"])
 
