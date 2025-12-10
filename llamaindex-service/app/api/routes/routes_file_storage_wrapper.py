@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.infra.instances_file_manager import get_file_manager, FileUploadRequest, FileDeleteRequest
+from app.infra.instances_file_storage_wrapper import get_file_manager, FileUploadRequest, FileDeleteRequest, FileStorageWrapper
 
 router = APIRouter()
 
@@ -7,7 +7,13 @@ router = APIRouter()
 def route_upload_file(req: FileUploadRequest):
     try:
         file_manager = get_file_manager()
-        file_manager.upload_file(req.bucket_name, req.file_path, req.destination_file)
+        target_file = FileStorageWrapper.File(
+            company_id=req.company_id,
+            project_id=req.project_id,
+            document_category=req.document_category,
+            local_path=req.local_file_path
+        )
+        file_manager.create_file(target_file=target_file)
         return "Success"
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
