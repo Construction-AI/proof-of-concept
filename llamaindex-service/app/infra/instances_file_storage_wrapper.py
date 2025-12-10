@@ -7,8 +7,17 @@ from app.core.logger import get_logger
 from pydantic import BaseModel
 import io
 from minio.helpers import ObjectWriteResult
+from minio.error import S3Error
+import tempfile
+import shutil
 
 class FileUploadRequest(BaseModel):
+    local_file_path: str
+    company_id: str
+    project_id: str
+    document_category: str
+
+class FileUpdateRequest(BaseModel):
     local_file_path: str
     company_id: str
     project_id: str
@@ -32,7 +41,7 @@ class FileStorageWrapper():
         self.logger = get_logger(self.__class__.__name__)
 
     class File():
-        def __init__(self, company_id: str, project_id: str, document_category: str, local_path: Optional[str] = None, data_as_bytes: Optional[bytes] = None, document_type: str = "raw"):
+        def __init__(self, company_id: str, project_id: str, document_category: str, local_path: Optional[str] = None, data_as_bytes: Optional[bytes] = None, document_type: str = "raw", read_file_name: str = None):
             """
             Initializes the file entity with identifiers for company, project, document category, and document type.
 
@@ -50,7 +59,13 @@ class FileStorageWrapper():
             assert not (local_path and data_as_bytes), "Cannot use local_path and data_as_bytes simultaneously."
             self.local_path = local_path
             self.data_as_bytes = data_as_bytes
-            self.file_name = Path(local_path).name if local_path else None
+            
+            if local_path:
+                self.file_name = Path(local_path).name
+            elif read_file_name:
+                self.file_name = read_file_name
+            else:
+                self.file_name = None
 
         @property
         def bucket_name(self) -> str:
@@ -68,15 +83,28 @@ class FileStorageWrapper():
         def is_file(self) -> bool:
             return not self.data_as_bytes
         
+    def check_object_exists(self, target_file: File) -> bool:
+        try:
+            current = self.client.get_object(bucket_name=target_file.bucket_name, object_name=target_file.remote_file_path)
+            return current.url is not None
+        except Exception as e:
+            if isinstance(e, S3Error) and e.code == 'NoSuchKey':
+                return False
+            raise e
+        
 
     ########
     # CRUD #
     ########
     def create_file(self, target_file: File) -> str:
+        assert (target_file.local_path or target_file.data_as_bytes), "Either local_path or data_as_bytes are required."
         if not self.client.bucket_exists(bucket_name=target_file.bucket_name):
             self.logger.warning(f"Bucket not found: {target_file.bucket_name}. Creating...")
             self.client.make_bucket(bucket_name=target_file.bucket_name)
         
+        if self.check_object_exists(target_file=target_file):
+            raise Exception(f"Cannot create object. '{target_file.remote_file_path}' already exists. Did you mean to use upsert?")
+
         result: ObjectWriteResult = None
         if target_file.is_file:
             result = self.client.fput_object(
@@ -97,18 +125,28 @@ class FileStorageWrapper():
         return result.object_name
     
     def read_file(self, target_file: File) -> str:
+        result = None
         try:
+            assert target_file.file_name, "No file name specified."
+            if not self.check_object_exists(target_file=target_file):
+                raise f"Object {target_file.remote_file_path} was not found."
             response = self.client.get_object(bucket_name=target_file.bucket_name, object_name=target_file.remote_file_path)
-            print(response)
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                shutil.copyfileobj(io.BytesIO(response.data), tmp_file)
+                tmp_file_path = tmp_file.name
+            self.logger.info(f"File downloaded to temporary location: {tmp_file_path}")
+            result = tmp_file_path
         finally:
             response.close()
             response.release_conn()
-        return "ok"
+        return result
 
-    def update_file(self, old_file: File, source_file: str, new_file: File):
+    def upsert_file(self, old_file: File, new_file: File):
+        self.logger.info(f"Upserting file {new_file.remote_file_path}...")
         self.delete_file(target_file=old_file)
-        self.create_file(source_file=source_file, destination_file=new_file)
-
+        file_url = self.create_file(target_file=new_file)
+        self.logger.info(f"Upsert of file {new_file.remote_file_path} successful.")
+        return file_url
 
     def delete_file(self, target_file: File):
         try:
