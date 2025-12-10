@@ -158,7 +158,7 @@ class FileStorageWrapper():
 
 
 @lru_cache()
-def get_file_manager() -> FileStorageWrapper:
+def get_file_storage_wrapper() -> FileStorageWrapper:
     settings = get_settings()
     file_manager = FileStorageWrapper(
         url=settings.MINIO_ENDPOINT,

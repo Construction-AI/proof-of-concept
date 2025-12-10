@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.infra.instances_file_storage_wrapper import get_file_manager, FileUploadRequest, FileDeleteRequest, FileStorageWrapper
+from app.infra.instances_file_storage_wrapper import get_file_storage_wrapper, FileUploadRequest, FileDeleteRequest, FileStorageWrapper
 from fastapi.responses import FileResponse, Response
 from fastapi import status
 
@@ -10,7 +10,7 @@ router = APIRouter()
 @router.post("/upload")
 def route_upload_file(req: FileUploadRequest):
     try:
-        file_manager = get_file_manager()
+        file_manager = get_file_storage_wrapper()
         target_file = FileStorageWrapper.File(
             company_id=req.company_id,
             project_id=req.project_id,
@@ -27,7 +27,7 @@ def route_upload_file(req: FileUploadRequest):
 @router.post("/upsert")
 def route_upsert_file(req: FileUploadRequest):
     try:
-        file_manager = get_file_manager()
+        file_manager = get_file_storage_wrapper()
 
         # We can use the same for both old and new file, since the file location is the same (and file name)
         target_file = FileStorageWrapper.File(
@@ -51,7 +51,7 @@ def route_upsert_file(req: FileUploadRequest):
 @router.post("/delete")
 def route_delete_file(req: FileDeleteRequest):
     try:
-        file_manager = get_file_manager()
+        file_manager = get_file_storage_wrapper()
         file_manager.delete_file(bucket_name=req.bucket_name, target_file=req.target_file)
         return Response(
             status_code=status.HTTP_200_OK
@@ -62,7 +62,7 @@ def route_delete_file(req: FileDeleteRequest):
 @router.get("/read/{company_id}/{project_id}/{document_category}/{document_type}/{file_name}")
 def route_read_file(company_id: str, project_id: str, document_category: str, document_type: str, file_name: str):
     try:
-        file_manager = get_file_manager()
+        file_manager = get_file_storage_wrapper()
         target_file = FileStorageWrapper.File(
             company_id=company_id,
             project_id=project_id,

@@ -6,7 +6,8 @@ from app.api.routes import (
     routes_filling,
     routes_project_extractor,
     routes_health,
-    routes_vector_store_manager
+    routes_vector_store_manager,
+    routes_rag_engine_wrapper
 )
 from app.api.services.document_loader import startup_load_all_projects
 from contextlib import asynccontextmanager
@@ -37,7 +38,8 @@ def create_app() -> FastAPI:
     app.include_router(routes_project_extractor.router, prefix="/project_extractor", tags=["Project Extractor"])
     app.include_router(routes_file_storage_wrapper.router, prefix="/file_storage", tags=["File Storage"])
     app.include_router(routes_health.router, prefix="/health", tags=["Health Check"])
-    app.include_router(routes_vector_store_manager.router, prefix="/vector_store_manager", tags=["Vector Store Manager"])
+    app.include_router(routes_vector_store_manager.router, prefix="/vector_store", tags=["Vector Store Manager"])
+    app.include_router(routes_rag_engine_wrapper.router, prefix="/rag_engine", tags=["Rag Engine Wrapper"])
 
     return app
 
