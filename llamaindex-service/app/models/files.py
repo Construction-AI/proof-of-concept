@@ -15,7 +15,7 @@ class File(ABC):
 
 class LocalFile(File):
         def __init__(self, company_id: str, project_id: str, document_category: str, document_type: str, local_path: str):
-            File.__init__(company_id, project_id, document_category, document_type)
+            File.__init__(self, company_id, project_id, document_category, document_type)
             self.local_path = local_path
             
         @property
@@ -43,7 +43,7 @@ class KBFile(LocalFile):
 
 class FSFile(File):
         def __init__(self, company_id: str, project_id: str, document_category: str, document_type: str, remote_file_path: str):
-            File.__init__(company_id, project_id, document_category, document_type)
+            File.__init__(self, company_id, project_id, document_category, document_type)
             self.remote_file_path = remote_file_path
              
         @property

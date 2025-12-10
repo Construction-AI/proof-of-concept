@@ -1,0 +1,113 @@
+from functools import lru_cache
+
+from app.infra.instances_qdrant import get_qdrant_aclient, get_qdrant_client
+from app.core.config import get_settings
+from llama_index.vector_stores.qdrant import QdrantVectorStore
+from llama_index.core.storage import StorageContext
+from llama_index.core import VectorStoreIndex, Document
+from llama_index.core.readers import SimpleDirectoryReader
+from llama_index.readers.file import PyMuPDFReader
+from llama_index.core.vector_stores import MetadataFilters, ExactMatchFilter
+
+from app.models.files import KBFile
+
+from llama_index.core.node_parser import SentenceWindowNodeParser
+from llama_index.core.postprocessor import MetadataReplacementPostProcessor
+
+from app.core.logger import get_logger
+
+SENTENCE_WINDOW_PARSER = SentenceWindowNodeParser.from_defaults(window_size=3)
+WINDOW_POST = MetadataReplacementPostProcessor(target_metadata_key="window")
+
+class RagKnowledgeBase:
+    def __init__(self):
+        self.async_client = get_qdrant_aclient()
+        self.client = get_qdrant_client()
+        self.base_settings = get_settings()
+        self.vector_store = QdrantVectorStore(
+            collection_name=self.base_settings.QDRANT_COLLECTION,
+            client=self.client,
+            aclient=self.async_client
+        )
+        self.storage_context = StorageContext.from_defaults(vector_store=self.vector_store)
+        
+        self.index = VectorStoreIndex.from_vector_store(
+            vector_store=self.vector_store
+        )
+        
+        self.logger = get_logger("KnowledgeBase")
+        
+    def __load_documents(self, file: KBFile) -> list[Document]:
+        reader = SimpleDirectoryReader(
+            input_files=[file.local_path],
+            filename_as_id=False,
+            file_extractor={".pdf": PyMuPDFReader()}
+        )
+        
+        docs = reader.load_data()
+        for d in docs:            
+            d.metadata.setdefault("page_label", d.metadata.get("source", None))
+            d.metadata.setdefault("company_id", file.company_id)
+            d.metadata.setdefault("project_id", file.project_id)
+            d.metadata.setdefault("document_category", file.document_category)
+            d.metadata.setdefault("document_type", file.document_type)
+            d.metadata.setdefault("file_name", file.file_name)
+            d.metadata.setdefault("file_id", file.file_id)
+        return docs
+    
+    async def __check_nodes_exist(self, file: KBFile) -> bool:
+        filters = MetadataFilters(
+            filters=[
+                ExactMatchFilter(key="file_id", value=file.file_id)
+            ]
+        )
+        
+        nodes = await self.index.vector_store.aget_nodes(filters=filters)
+        return len(nodes) > 0
+
+    async def __check_default_collection_exists(self) -> bool:
+        return await self.async_client.collection_exists(collection_name=self.base_settings.QDRANT_COLLECTION)
+    
+    async def __create_default_collection(self):
+        await self.async_client.create_collection(
+            collection_name=self.base_settings.QDRANT_COLLECTION,
+            vectors_config={"size": self.base_settings.EMBEDDING_DIMENSION, "distance": "Cosine"}
+            )
+            
+    async def add_document(self, file: KBFile):
+        if not (await self.__check_default_collection_exists()):
+            self.logger.info(f"Default collection `{self.base_settings.QDRANT_COLLECTION}` does not exist. Creating...")
+            await self.__create_default_collection()
+            self.logger.info(f"Default collection created.")
+            
+        if await self.__check_nodes_exist(file=file):
+            raise Exception("Nodes already exist for given `file_id`. Did you mean to use `upsert_document`?")
+        
+        docs = self.__load_documents(file=file)
+        if not docs:
+            raise ValueError(f"No docs extracted from file: {file.local_path}")
+        
+        nodes = await SENTENCE_WINDOW_PARSER.aget_nodes_from_documents(documents=docs)
+        await self.index.ainsert_nodes(nodes)
+        self.logger.info(f"Document {file.file_id} has been added to the knowledge base. Nodes count: {len(nodes)}.")
+        
+    def query(self, question: str, company_id: str, project_id: str, k: int = 5):
+        filters = MetadataFilters(
+            filters=[
+                ExactMatchFilter(key="company_id", value=company_id),
+                ExactMatchFilter(key="project_id", value=project_id)
+            ]
+        )
+        
+        query_engine = self.index.as_query_engine(
+            filters=filters,
+            similarity_top_k=k
+        )
+        
+        response = query_engine.query(question)
+        return response
+        
+    
+@lru_cache()
+def get_rag_knowledge_base() -> RagKnowledgeBase:
+    return RagKnowledgeBase()
