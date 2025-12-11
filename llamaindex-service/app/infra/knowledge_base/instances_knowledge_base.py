@@ -8,6 +8,7 @@ from llama_index.core import VectorStoreIndex, Document
 from llama_index.core.readers import SimpleDirectoryReader
 from llama_index.readers.file import PyMuPDFReader
 from llama_index.core.vector_stores import MetadataFilters, ExactMatchFilter
+from llama_index.core.schema import BaseNode
 
 from app.models.files import KBFile
 
@@ -15,6 +16,7 @@ from llama_index.core.node_parser import SentenceWindowNodeParser
 from llama_index.core.postprocessor import MetadataReplacementPostProcessor
 
 from app.core.logger import get_logger
+from typing import Optional
 
 SENTENCE_WINDOW_PARSER = SentenceWindowNodeParser.from_defaults(window_size=3)
 WINDOW_POST = MetadataReplacementPostProcessor(target_metadata_key="window")
@@ -55,15 +57,39 @@ class RagKnowledgeBase:
             d.metadata.setdefault("file_id", file.file_id)
             d.metadata.setdefault("doc_id", file.file_id)
         return docs
-    
-    async def __check_nodes_exist(self, file: KBFile) -> bool:
-        filters = MetadataFilters(
-            filters=[
-                ExactMatchFilter(key="file_id", value=file.file_id)
-            ]
-        )
         
+    async def __get_nodes_for_document(self, company_id: str, project_id: str, document_category: str, document_type: str, file_name: Optional[str] = None) -> list[BaseNode]:
+        if file_name:
+            filters = MetadataFilters(
+                filters=[
+                    ExactMatchFilter(key="company_id", value=company_id),
+                    ExactMatchFilter(key="project_id", value=project_id),
+                    ExactMatchFilter(key="document_category", value=document_category),
+                    ExactMatchFilter(key="document_type", value=document_type),
+                    ExactMatchFilter(key="file_name", value=file_name)
+                ]
+            )
+        else:
+            filters = MetadataFilters(
+                filters=[
+                    ExactMatchFilter(key="company_id", value=company_id),
+                    ExactMatchFilter(key="project_id", value=project_id),
+                    ExactMatchFilter(key="document_category", value=document_category),
+                    ExactMatchFilter(key="document_type", value=document_type),
+                ]
+            )
+            
         nodes = await self.index.vector_store.aget_nodes(filters=filters)
+        return nodes
+    
+    async def __check_nodes_exist(self, file: KBFile) -> bool:        
+        nodes = await self.__get_nodes_for_document(
+                                                    company_id=file.company_id,
+                                                    project_id=file.project_id,
+                                                    document_category=file.document_category,
+                                                    document_type=file.document_type,
+                                                    file_name=file.file_name
+                                                    )
         return len(nodes) > 0
 
     async def __check_default_collection_exists(self) -> bool:
@@ -92,7 +118,7 @@ class RagKnowledgeBase:
         await self.index.ainsert_nodes(nodes)
         self.logger.info(f"Document {file.file_id} has been added to the knowledge base. Nodes count: {len(nodes)}.")
         
-    async def query(self, question: str, company_id: str, project_id: str, k: int = 5):
+    async def query(self, question: str, company_id: str, project_id: str, document_type: Optional[str] = None, document_category: Optional[str] = None, file_name: Optional[str] = None, k: int = 5):
         filters = MetadataFilters(
             filters=[
                 ExactMatchFilter(key="company_id", value=company_id),
@@ -100,6 +126,13 @@ class RagKnowledgeBase:
             ]
         )
         
+        if document_type:
+            filters.filters.append(ExactMatchFilter(key="document_type", value=document_type))
+        if document_category:
+            filters.filters.append(ExactMatchFilter(key="document_category", value=document_category))
+        if file_name:
+            filters.filters.append(ExactMatchFilter(key="file_name", value=file_name))
+
         query_engine = self.index.as_query_engine(
             filters=filters,
             similarity_top_k=k
@@ -108,10 +141,25 @@ class RagKnowledgeBase:
         response = await query_engine.aquery(question)
         return response
     
-    async def delete_document(self, company_id: str, project_id: str, document_category: str, document_type: str, file_name: str):
-        file_id = self.__construct_file_id(company_id, project_id, document_category, document_type, file_name)
-        await self.index.adelete_ref_doc(ref_doc_id=file_id)
-        self.logger.info(f"Deleted nodes with `file_id`: {file_id}.")
+    async def delete_document(self, company_id: str, project_id: str, document_category: str, document_type: str):
+        nodes = await self.__get_nodes_for_document(
+            company_id=company_id,
+            project_id=project_id,
+            document_category=document_category,
+            document_type=document_type
+        )
+        if len(nodes) == 0:
+            self.logger.info("No nodes matching given parameters were found. Nothing to delete.")
+            return
+        node_ids = [node.node_id for node in nodes]
+        await self.index.vector_store.adelete_nodes(node_ids=node_ids)
+        file_path = self.__construct_file_id_from_data(
+            company_id,
+            project_id,
+            document_category,
+            document_type
+        )
+        self.logger.info(f"Deleted nodes with path: {file_path}.")
         
     async def upsert_document(self, file: KBFile):
         await self.delete_document(
@@ -119,13 +167,14 @@ class RagKnowledgeBase:
             project_id=file.project_id,
             document_category=file.document_category,
             document_type=file.document_type,
-            file_name=file.file_name
        )
         await self.add_document(file=file)
         
-    def __construct_file_id(self, company_id: str, project_id: str, document_category: str, document_type: str, file_name: str) -> str:
-        return f"{company_id}/{project_id}/{document_category}/{document_type}/{file_name}"
-        
+    def __construct_file_id_from_data(self, company_id: str, project_id: str, document_category: str, document_type: str, file_name: Optional[str] = None) -> str:
+        if file_name:
+            return f"{company_id}/{project_id}/{document_category}/{document_type}/{file_name}"
+        return f"{company_id}/{project_id}/{document_category}/{document_type}/*"
+            
     
 @lru_cache()
 def get_rag_knowledge_base() -> RagKnowledgeBase:
