@@ -38,6 +38,142 @@ class RagKnowledgeBase:
         )
         
         self.logger = get_logger("KnowledgeBase")
+            
+    async def add_document(self, file: KBFile):
+        """
+        Asynchronously adds a document to the knowledge base.
+        This method checks if the default collection exists and creates it if necessary.
+        It then verifies that nodes for the given file do not already exist to prevent duplicates.
+        The document is loaded and parsed into nodes, which are then inserted into the index.
+        Args:
+            file (KBFile): The file object containing document data to be added.
+        Raises:
+            Exception: If nodes already exist for the given file ID.
+            ValueError: If no documents are extracted from the provided file.
+        Returns:
+            None
+        Note:
+            Use `upsert_document` if you intend to update an existing document.
+        """
+        # Adds a new document to the knowledge base after performing necessary checks.
+        if not (await self.__check_default_collection_exists()):
+            self.logger.info(f"Default collection `{self.base_settings.QDRANT_COLLECTION}` does not exist. Creating...")
+            await self.__create_default_collection()
+            self.logger.info(f"Default collection created.")
+            
+        if await self.__check_nodes_exist(file=file):
+            raise Exception("Nodes already exist for given `file_id`. Did you mean to use `upsert_document`?")
+        
+        docs = self.__load_documents(file=file)
+        if not docs:
+            raise ValueError(f"No docs extracted from file: {file.local_path}")
+        
+        nodes = await SENTENCE_WINDOW_PARSER.aget_nodes_from_documents(documents=docs)
+        await self.index.ainsert_nodes(nodes)
+        self.logger.info(f"Document {file.file_id} has been added to the knowledge base. Nodes count: {len(nodes)}.")
+        
+    async def query(self, question: str, company_id: str, project_id: str, document_type: Optional[str] = None, document_category: Optional[str] = None, file_name: Optional[str] = None, k: int = 5):
+        """
+        Asynchronously queries the knowledge base for relevant information based on the provided question and metadata filters.
+        Args:
+            question (str): The question to query against the knowledge base.
+            company_id (str): The company identifier to filter documents.
+            project_id (str): The project identifier to filter documents.
+            document_type (Optional[str], optional): The type of document to filter (default is None).
+            document_category (Optional[str], optional): The category of document to filter (default is None).
+            file_name (Optional[str], optional): The file name to filter (default is None).
+            k (int, optional): The number of top similar results to retrieve (default is 5).
+        Returns:
+            Any: The response from the query engine containing relevant information.
+        Note:
+            This method constructs metadata filters based on the provided arguments and queries the index asynchronously.
+        """
+        # Query the knowledge base with metadata filters and return the response
+        filters = MetadataFilters(
+            filters=[
+                ExactMatchFilter(key="company_id", value=company_id),
+                ExactMatchFilter(key="project_id", value=project_id)
+            ]
+        )
+        
+        if document_type:
+            filters.filters.append(ExactMatchFilter(key="document_type", value=document_type))
+        if document_category:
+            filters.filters.append(ExactMatchFilter(key="document_category", value=document_category))
+        if file_name:
+            filters.filters.append(ExactMatchFilter(key="file_name", value=file_name))
+
+        query_engine = self.index.as_query_engine(
+            filters=filters,
+            similarity_top_k=k
+        )
+        
+        response = await query_engine.aquery(question)
+        return response
+    
+    async def delete_document(self, company_id: str, project_id: str, document_category: str, document_type: str):
+        # Deletes all nodes and associated data for a specific document in the knowledge base.
+        """
+        Delete all nodes and associated data for a specific document identified by company, project, category, and type.
+
+        This method retrieves all nodes matching the provided parameters and deletes them from the vector store.
+        If no matching nodes are found, it logs an informational message and returns without performing any deletion.
+        After deletion, it logs the file path of the deleted nodes.
+
+        Args:
+            company_id (str): The ID of the company.
+            project_id (str): The ID of the project.
+            document_category (str): The category of the document.
+            document_type (str): The type of the document.
+
+        Returns:
+            None
+        """
+        nodes = await self.__get_nodes_for_document(
+            company_id=company_id,
+            project_id=project_id,
+            document_category=document_category,
+            document_type=document_type
+        )
+        if len(nodes) == 0:
+            self.logger.info("No nodes matching given parameters were found. Nothing to delete.")
+            return
+        node_ids = [node.node_id for node in nodes]
+        await self.index.vector_store.adelete_nodes(node_ids=node_ids)
+        file_path = self.__construct_file_id_from_data(
+            company_id,
+            project_id,
+            document_category,
+            document_type
+        )
+        self.logger.info(f"Deleted nodes with path: {file_path}.")
+        
+    async def upsert_document(self, file: KBFile):
+        """
+        Upserts a document in the knowledge base.
+
+        This method first deletes any existing document matching the provided file's
+        company ID, project ID, document category, and document type. It then adds
+        the new document to the knowledge base.
+
+        Args:
+            file (KBFile): The document file to upsert, containing metadata such as
+                company_id, project_id, document_category, and document_type.
+
+        Returns:
+            None
+
+        Note:
+            This operation is asynchronous.
+        """
+        # Deletes existing document and adds the new one to ensure up-to-date content.
+        await self.delete_document(
+            company_id=file.company_id,
+            project_id=file.project_id,
+            document_category=file.document_category,
+            document_type=file.document_type,
+       )
+        await self.add_document(file=file)
         
     def __load_documents(self, file: KBFile) -> list[Document]:
         reader = SimpleDirectoryReader(
@@ -100,75 +236,6 @@ class RagKnowledgeBase:
                 collection_name=self.base_settings.QDRANT_COLLECTION,
                 vectors_config={"size": self.base_settings.EMBEDDING_DIMENSION, "distance": "Cosine"}
             )
-            
-    async def add_document(self, file: KBFile):
-        if not (await self.__check_default_collection_exists()):
-            self.logger.info(f"Default collection `{self.base_settings.QDRANT_COLLECTION}` does not exist. Creating...")
-            await self.__create_default_collection()
-            self.logger.info(f"Default collection created.")
-            
-        if await self.__check_nodes_exist(file=file):
-            raise Exception("Nodes already exist for given `file_id`. Did you mean to use `upsert_document`?")
-        
-        docs = self.__load_documents(file=file)
-        if not docs:
-            raise ValueError(f"No docs extracted from file: {file.local_path}")
-        
-        nodes = await SENTENCE_WINDOW_PARSER.aget_nodes_from_documents(documents=docs)
-        await self.index.ainsert_nodes(nodes)
-        self.logger.info(f"Document {file.file_id} has been added to the knowledge base. Nodes count: {len(nodes)}.")
-        
-    async def query(self, question: str, company_id: str, project_id: str, document_type: Optional[str] = None, document_category: Optional[str] = None, file_name: Optional[str] = None, k: int = 5):
-        filters = MetadataFilters(
-            filters=[
-                ExactMatchFilter(key="company_id", value=company_id),
-                ExactMatchFilter(key="project_id", value=project_id)
-            ]
-        )
-        
-        if document_type:
-            filters.filters.append(ExactMatchFilter(key="document_type", value=document_type))
-        if document_category:
-            filters.filters.append(ExactMatchFilter(key="document_category", value=document_category))
-        if file_name:
-            filters.filters.append(ExactMatchFilter(key="file_name", value=file_name))
-
-        query_engine = self.index.as_query_engine(
-            filters=filters,
-            similarity_top_k=k
-        )
-        
-        response = await query_engine.aquery(question)
-        return response
-    
-    async def delete_document(self, company_id: str, project_id: str, document_category: str, document_type: str):
-        nodes = await self.__get_nodes_for_document(
-            company_id=company_id,
-            project_id=project_id,
-            document_category=document_category,
-            document_type=document_type
-        )
-        if len(nodes) == 0:
-            self.logger.info("No nodes matching given parameters were found. Nothing to delete.")
-            return
-        node_ids = [node.node_id for node in nodes]
-        await self.index.vector_store.adelete_nodes(node_ids=node_ids)
-        file_path = self.__construct_file_id_from_data(
-            company_id,
-            project_id,
-            document_category,
-            document_type
-        )
-        self.logger.info(f"Deleted nodes with path: {file_path}.")
-        
-    async def upsert_document(self, file: KBFile):
-        await self.delete_document(
-            company_id=file.company_id,
-            project_id=file.project_id,
-            document_category=file.document_category,
-            document_type=file.document_type,
-       )
-        await self.add_document(file=file)
         
     def __construct_file_id_from_data(self, company_id: str, project_id: str, document_category: str, document_type: str, file_name: Optional[str] = None) -> str:
         if file_name:

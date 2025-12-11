@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from app.infra.instances_file_storage_wrapper import get_file_storage_wrapper
+from app.infra.file_storage.instances_file_storage_wrapper import get_file_storage_wrapper
 from app.infra.instances_llamaindex import get_llamaindex_contexts
 
 from llama_index.core.schema import Document

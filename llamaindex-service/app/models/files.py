@@ -1,5 +1,6 @@
 from pathlib import Path
 from abc import ABC, abstractmethod
+from typing import Optional
 
 class File(ABC):
     def __init__(self, company_id: str, project_id: str, document_category: str, document_type: str):
@@ -12,15 +13,27 @@ class File(ABC):
     @abstractmethod
     def file_id(self) -> str:
         pass
+    
+    @property
+    def project(self) -> str:
+        return self.project_id
+            
+    @property
+    def bucket(self) -> str:
+        return self.company_id
 
 class LocalFile(File):
-        def __init__(self, company_id: str, project_id: str, document_category: str, document_type: str, local_path: str):
+        def __init__(self, company_id: str, project_id: str, document_category: str, local_path: str, document_type: Optional[str] = "raw"):
             File.__init__(self, company_id, project_id, document_category, document_type)
             self.local_path = local_path
             
         @property
         def file_name(self) -> str:
             return Path(self.local_path).name
+        
+        @property
+        def remote_file_path(self) -> str:
+            return f"{self.project_id}/{self.document_category}/{self.document_type}/{self.file_name}"
             
         @property
         def file_id(self) -> str:
@@ -42,25 +55,13 @@ class KBFile(LocalFile):
     
 
 class FSFile(File):
-        def __init__(self, company_id: str, project_id: str, document_category: str, document_type: str, remote_file_path: str):
+        def __init__(self, company_id: str, project_id: str, document_category: str, document_type: Optional[str] = None, file_name: Optional[str] = None):
             File.__init__(self, company_id, project_id, document_category, document_type)
-            self.remote_file_path = remote_file_path
-             
-        @property
-        def file_name(self) -> str:
-            return Path(self.remote_file_path).name
-            
-        @property
-        def bucket(self) -> str:
-            return self.company_id
-        
-        @property
-        def project(self) -> str:
-            return self.project_id
-            
+            self.file_name = file_name
+                         
         @property
         def remote_file_path(self) -> str:
-            return f"{self.bucket}/{self.project}/{self.document_category}/{self.document_type}/{self.file_name}"
+            return f"{self.project}/{self.document_category}/{self.document_type}/{self.file_name}"
         
         @property
         def file_id(self) -> str:

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.api.services.project_extractor import extract_project_info
-from app.infra.instances_file_storage_wrapper import get_file_storage_wrapper
+from app.infra.file_storage.instances_file_storage_wrapper import get_file_storage_wrapper
 from app.core.schema_types import SchemaType
 import json
 
