@@ -1,0 +1,85 @@
+from app.models.schema_types import SchemaType
+from app.infra.document_generator.loaders.loader import load_schema
+from app.core.logger import get_logger
+from app.infra.document_generator.models.models import *
+from app.infra.knowledge_base.instances_knowledge_base import get_knowledge_base_wrapper
+import datetime
+
+class DocumentGenerator:
+    def __init__(self):
+        pass
+    
+    class SchemaGenerator:
+        def __init__(self, schema_type: SchemaType):
+            self.schema_type = schema_type
+            self.schema = load_schema(schema_type=schema_type)
+            self.logger = get_logger(self.__class__.__name__)
+            self.knowledge_base_wrapper = get_knowledge_base_wrapper()
+            
+        def __count_groups(self) -> int:
+            return len(self.schema)
+        
+        def __count_total_fields_to_fill(self) -> int:
+            fields_count = 0
+            for gr in self.schema:
+                fields_count += len(gr["fields"])
+            return fields_count
+        
+        async def fill_schema(self, company_id: str, project_id: str) -> SchemaProjectSchema:
+            # TODO: Add check if any nodes containing useful data exist
+            groups_count = self.__count_groups()
+            groups = []
+            for g_idx, gr in enumerate(self.schema):
+                group = SchemaProjectGroup(
+                    group_id = gr["group_id"],
+                    group_name = gr["group_name"],
+                    fields = []
+                )
+                fields_count = len(gr["fields"])
+                for f_idx, fd in enumerate(gr["fields"]):
+                    field_value = await self.knowledge_base_wrapper.query(company_id=company_id, project_id=project_id, question=fd["prompt"])
+                    field = SchemaGroupField(
+                        key = fd["key"],
+                        type = fd["type"],
+                        required = fd["required"],
+                        prompt = fd["prompt"],
+                        value = field_value
+                    )
+                    group.fields.append(field)
+                    self.logger.info(f"Filled {f_idx + 1} / {fields_count} fields of group {g_idx + 1}.")
+                self.logger.info(f"Filled {g_idx + 1} / {groups_count} groups.")
+                groups.append(group)
+            
+            project_schema = SchemaProjectSchema(
+                company_id=company_id,
+                project_id=project_id,
+                schema_type_name=self.schema_type.get_key(),
+                date_created=datetime.datetime.now().isoformat(),
+                groups=groups
+            )
+            return project_schema
+
+        @staticmethod        
+        def save_filled_schema_to_file(filled_schema: SchemaProjectSchema) -> str:
+            import tempfile
+            
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                tmp_file.write(filled_schema.model_dump_json().encode("utf-8"))
+                tmp_file_path = tmp_file.name
+            return tmp_file_path
+        
+    
+    @staticmethod
+    async def fill_schema(schema_type: SchemaType, company_id: str, project_id: str):
+        schema_generator = DocumentGenerator.SchemaGenerator(
+            schema_type=schema_type
+        )
+        
+        return await schema_generator.fill_schema(
+            company_id=company_id,
+            project_id=project_id
+        )
+        
+    @staticmethod
+    def save_filled_schema_to_file(filled_schema: SchemaProjectSchema) -> str:
+        return DocumentGenerator.SchemaGenerator.save_filled_schema_to_file(filled_schema=filled_schema)

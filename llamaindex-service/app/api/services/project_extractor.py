@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List
 from app.api.services.schema_loader import load_schema
-from app.core.schema_types import SchemaType
+from app.models.schema_types import SchemaType
 from app.api.services.rag_engine import query_project
 from app.core.logger import get_logger
 

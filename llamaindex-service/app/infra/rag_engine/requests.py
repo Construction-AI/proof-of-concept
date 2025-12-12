@@ -37,3 +37,8 @@ class RagEngineRequest:
         document_type: Optional[str] = None
         document_category: Optional[str] = None
         file_name: Optional[str] = None
+        
+    class GenerateSchema(BaseModel):
+        company_id: str
+        project_id: str
+        schema_type: str

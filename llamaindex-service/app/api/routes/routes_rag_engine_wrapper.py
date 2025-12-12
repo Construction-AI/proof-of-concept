@@ -103,3 +103,29 @@ async def route_query(req: RagEngineRequest.QueryKnowledgeBase):
         
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+@router.post("/generate_schema")
+async def route_query(req: RagEngineRequest.GenerateSchema):
+    try:
+        from app.infra.document_generator.instances_document_generator import DocumentGenerator
+        from app.models.schema_types import SchemaType
+        
+        filled_schema = await DocumentGenerator.fill_schema(
+            schema_type=SchemaType.get_schema_type_for_type_name(req.schema_type),
+            company_id=req.company_id,
+            project_id=req.project_id
+        )
+        
+        tmp_file_path = DocumentGenerator.save_filled_schema_to_file(filled_schema=filled_schema)
+        
+        from pathlib import Path
+        file_name = Path(tmp_file_path).name
+
+        return FileResponse(
+            status_code=200,
+            path=tmp_file_path,
+            filename=file_name
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

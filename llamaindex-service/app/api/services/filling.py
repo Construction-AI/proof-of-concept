@@ -1,4 +1,4 @@
-from app.core.schema_types import SchemaType    
+from app.models.schema_types import SchemaType    
 from app.api.services.schema_loader import get_all_fields_from_schema, get_field_def
 from app.api.services.document_loader import PROJECT_ENGINES, WINDOW_POST
 from app.core.logger import get_logger

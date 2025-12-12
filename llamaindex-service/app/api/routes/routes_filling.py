@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app.api.services.filling import list_fields_in_schema, process_field_extraction, FillFieldRequest, FillFieldResponse
-from app.core.schema_types import SchemaType
+from app.models.schema_types import SchemaType
 
 router = APIRouter()
 

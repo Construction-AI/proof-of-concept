@@ -1,7 +1,7 @@
 import json
 from functools import lru_cache
 import os
-from app.core.schema_types import SchemaType
+from app.models.schema_types import SchemaType
 
 @lru_cache(maxsize=1)
 def load_schema(type_name: str):
