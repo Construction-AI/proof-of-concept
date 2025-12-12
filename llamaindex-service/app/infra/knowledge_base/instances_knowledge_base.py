@@ -10,13 +10,19 @@ from llama_index.readers.file import PyMuPDFReader
 from llama_index.core.vector_stores import MetadataFilters, ExactMatchFilter
 from llama_index.core.schema import BaseNode
 
+from llama_index.core.retrievers import QueryFusionRetriever
+from llama_index.retrievers.bm25 import BM25Retriever
+from llama_index.postprocessor.sbert_rerank import SentenceTransformerRerank
+from llama_index.core.query_engine import RetrieverQueryEngine
+
 from app.models.files import KBFile
 
 from llama_index.core.node_parser import SentenceWindowNodeParser
 from llama_index.core.postprocessor import MetadataReplacementPostProcessor
+from llama_index.core.schema import NodeWithScore
 
 from app.core.logger import get_logger
-from typing import Optional
+from typing import Optional, List
 
 SENTENCE_WINDOW_PARSER = SentenceWindowNodeParser.from_defaults(window_size=3)
 WINDOW_POST = MetadataReplacementPostProcessor(target_metadata_key="window")
@@ -29,15 +35,26 @@ class KnowledgeBaseWrapper:
         self.vector_store = QdrantVectorStore(
             collection_name=self.base_settings.QDRANT_COLLECTION,
             client=self.client,
-            aclient=self.async_client
+            aclient=self.async_client,
         )
         self.storage_context = StorageContext.from_defaults(vector_store=self.vector_store)
         
         self.index = VectorStoreIndex.from_vector_store(
-            vector_store=self.vector_store
+            vector_store=self.vector_store,
         )
-        
+                
+        self.reranker = SentenceTransformerRerank(
+            model="cross-encoder/ms-marco-MiniLM-L-6-v2",
+            top_n=6,
+        )
+                
         self.logger = get_logger("KnowledgeBase")
+        
+    async def __check_create_default_collection(self) -> None:
+        if not (await self.__check_default_collection_exists()):
+            self.logger.info(f"Default collection `{self.base_settings.QDRANT_COLLECTION}` does not exist. Creating...")
+            await self.__create_default_collection()
+            self.logger.info(f"Default collection created.")
             
     async def upload_document(self, file: KBFile):
         """
@@ -56,10 +73,7 @@ class KnowledgeBaseWrapper:
             Use `upsert_document` if you intend to update an existing document.
         """
         # Adds a new document to the knowledge base after performing necessary checks.
-        if not (await self.__check_default_collection_exists()):
-            self.logger.info(f"Default collection `{self.base_settings.QDRANT_COLLECTION}` does not exist. Creating...")
-            await self.__create_default_collection()
-            self.logger.info(f"Default collection created.")
+        await self.__check_create_default_collection()
             
         if await self.check_nodes_exist(file=file):
             raise Exception("Nodes already exist for given `file_id`. Did you mean to use `upsert_document`?")
@@ -88,6 +102,8 @@ class KnowledgeBaseWrapper:
         Note:
             This method constructs metadata filters based on the provided arguments and queries the index asynchronously.
         """
+        await self.__check_create_default_collection()
+        
         # Query the knowledge base with metadata filters and return the response
         filters = MetadataFilters(
             filters=[
@@ -103,11 +119,18 @@ class KnowledgeBaseWrapper:
         if file_name:
             filters.filters.append(ExactMatchFilter(key="file_name", value=file_name))
 
-        query_engine = self.index.as_query_engine(
-            filters=filters,
-            similarity_top_k=k
+        retriever = self.index.as_retriever(
+            similarity_top_k=10,
+            filters=filters
         )
         
+        # 3. Create a FRESH Fusion Retriever
+        query_engine = RetrieverQueryEngine.from_args(
+            retriever=retriever,
+            response_mode="compact",
+            node_postprocessors=[self.reranker]
+        )
+
         response = await query_engine.aquery(question)
         return response.response
     
@@ -129,6 +152,8 @@ class KnowledgeBaseWrapper:
         Returns:
             None
         """
+        await self.__check_create_default_collection()
+        
         nodes = await self.__get_nodes_for_document(
             company_id=company_id,
             project_id=project_id,
@@ -166,12 +191,14 @@ class KnowledgeBaseWrapper:
         Note:
             This operation is asynchronous.
         """
+        await self.__check_create_default_collection()
+        
         # Deletes existing document and adds the new one to ensure up-to-date content.
         await self.delete_document(
             company_id=file.company_id,
             project_id=file.project_id,
             document_category=file.document_category,
-            document_type=file.document_type,
+            document_type=file.document_type
        )
         await self.upload_document(file=file)
         
@@ -194,31 +221,27 @@ class KnowledgeBaseWrapper:
             d.metadata.setdefault("doc_id", file.file_id)
         return docs
         
-    async def __get_nodes_for_document(self, company_id: str, project_id: str, document_category: str, document_type: str, file_name: Optional[str] = None) -> list[BaseNode]:
+    async def __get_nodes_for_document(self, company_id: str, project_id: str, document_category: str, document_type: Optional[str] = None, file_name: Optional[str] = None) -> list[BaseNode]:
+        await self.__check_create_default_collection()
+        
+        filters = MetadataFilters(
+                filters=[
+                    ExactMatchFilter(key="company_id", value=company_id),
+                    ExactMatchFilter(key="project_id", value=project_id),
+                    ExactMatchFilter(key="document_category", value=document_category)
+                ]
+        )
+        
+        if document_type:
+            filters.filters.append(ExactMatchFilter(key="document_type", value=document_type))
         if file_name:
-            filters = MetadataFilters(
-                filters=[
-                    ExactMatchFilter(key="company_id", value=company_id),
-                    ExactMatchFilter(key="project_id", value=project_id),
-                    ExactMatchFilter(key="document_category", value=document_category),
-                    ExactMatchFilter(key="document_type", value=document_type),
-                    ExactMatchFilter(key="file_name", value=file_name)
-                ]
-            )
-        else:
-            filters = MetadataFilters(
-                filters=[
-                    ExactMatchFilter(key="company_id", value=company_id),
-                    ExactMatchFilter(key="project_id", value=project_id),
-                    ExactMatchFilter(key="document_category", value=document_category),
-                    ExactMatchFilter(key="document_type", value=document_type),
-                ]
-            )
+            filters.filters.append(ExactMatchFilter(key="file_name", value=file_name))
             
         nodes = await self.index.vector_store.aget_nodes(filters=filters)
         return nodes
     
-    async def check_nodes_exist(self, file: KBFile) -> bool:        
+    async def check_nodes_exist(self, file: KBFile) -> bool:
+        await self.__check_create_default_collection()
         nodes = await self.__get_nodes_for_document(
                                                     company_id=file.company_id,
                                                     project_id=file.project_id,

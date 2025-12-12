@@ -2,11 +2,9 @@ from fastapi import FastAPI
 from app.api.routes import (
     routes_document_loader,
     routes_file_storage_wrapper,
-    routes_query,
     routes_filling,
     routes_project_extractor,
     routes_health,
-    routes_vector_store_manager,
     routes_rag_engine_wrapper,
     routes_rag_knowledge_base
 )
@@ -34,12 +32,10 @@ def create_app() -> FastAPI:
 
     # Register routes
     app.include_router(routes_document_loader.router, prefix="/index", tags=["Documents loader"])
-    app.include_router(routes_query.router, prefix="/query", tags=["Query Engine"])
     app.include_router(routes_filling.router, prefix="/filling", tags=["Filling Engine"])
     app.include_router(routes_project_extractor.router, prefix="/project_extractor", tags=["Project Extractor"])
     app.include_router(routes_file_storage_wrapper.router, prefix="/file_storage", tags=["File Storage"])
     app.include_router(routes_health.router, prefix="/health", tags=["Health Check"])
-    app.include_router(routes_vector_store_manager.router, prefix="/vector_store", tags=["Vector Store Manager"])
     app.include_router(routes_rag_engine_wrapper.router, prefix="/rag_engine", tags=["Rag Engine Wrapper"])
     app.include_router(routes_rag_knowledge_base.router, prefix="/knowledge_base", tags=["Rag Knowledge Base"])
 
