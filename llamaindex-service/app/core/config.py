@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     QDRANT_COLLECTION: str = "documents"
 
     # -- Embeddings --
-    EMBEDDING_MODEL: str = os.getenv("intfloat/multilingual-e5-large") or "text-embedding-3-large"
-    EMBEDDING_DIMENSION: int = 3072
+    EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL") or "text-embedding-3-large"
+    EMBEDDING_DIMENSION: int = os.getenv("EMBEDDING_DIMENSION") or 1536
 
     # -- LlamaIndex -- 
     CHUNK_SIZE: int = 2048

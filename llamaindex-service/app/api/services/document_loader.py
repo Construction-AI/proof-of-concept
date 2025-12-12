@@ -71,7 +71,7 @@ async def build_project_index(directory_path: str, project_id: str) -> ProjectEn
         aclient=qdrant_aclient,
         collection_name=project_id
     )
-
+    
     storage_context = StorageContext.from_defaults(
         vector_store=vector_store
     )
@@ -104,7 +104,7 @@ async def build_project_index(directory_path: str, project_id: str) -> ProjectEn
     query_engine = RetrieverQueryEngine.from_args(
         retriever=fusion,
         node_postprocessors=[WINDOW_POST, reranker],
-        response_mode="compact"
+        response_mode="compact",
     )
 
     return ProjectEngine(

@@ -14,12 +14,12 @@ def get_llamaindex_contexts():
     embed_model = OpenAIEmbedding(
         model=settings.EMBEDDING_MODEL,
         api_key=settings.OPENAI_API_KEY,
+        dimensions=settings.EMBEDDING_DIMENSION
     )
 
     vector_store = QdrantVectorStore(
         client=qdrant,
         collection_name=settings.QDRANT_COLLECTION,
-        # embed_model=embed_model TODO: Check why (?) needed
     )
 
     storage_context = StorageContext.from_defaults(
