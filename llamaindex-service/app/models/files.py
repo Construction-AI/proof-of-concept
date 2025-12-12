@@ -41,7 +41,7 @@ class LocalFile(File):
                             
 class KBFile(LocalFile):
     def __init__(self, company_id: str, project_id: str, document_category: str, document_type: str, local_path: str, metadata: dict = {}):
-        LocalFile.__init__(self, company_id, project_id, document_category, document_type, local_path)
+        LocalFile.__init__(self, company_id=company_id, project_id=project_id, document_category=document_category, document_type=document_type, local_path=local_path)
         self.metadata = metadata
         self.__set_metadata()
         
@@ -51,7 +51,17 @@ class KBFile(LocalFile):
         self.metadata["document_category"] = self.document_category
         self.metadata["document_type"] = self.document_type
         self.metadata["file_name"] = self.file_name        
-        self.metadata["file_id"] = self.file_id        
+        self.metadata["file_id"] = self.file_id
+        
+    @staticmethod
+    def fromLocalFile(file: LocalFile):
+        return KBFile(
+            company_id=file.company_id,
+            project_id=file.project_id,
+            document_category=file.document_category,
+            document_type=file.document_type,
+            local_path=file.local_path,
+        )
     
 
 class FSFile(File):

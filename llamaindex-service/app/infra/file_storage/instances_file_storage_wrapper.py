@@ -30,7 +30,19 @@ class FileStorageWrapper():
     ########
     # CRUD #
     ########
-    def create_file(self, local_file: LocalFile) -> str:
+    def upload_file(self, local_file: LocalFile) -> str:
+        """
+        Uploads a local file to the specified bucket in the object storage.
+        If the target bucket does not exist, it will be created. If an object with the same
+        remote file path already exists in the bucket, an exception is raised to prevent overwriting.
+        Args:
+            local_file (LocalFile): The local file to be uploaded, including bucket, local path, and remote file path.
+        Returns:
+            str: The path to the file in S3 (object name).
+        Raises:
+            Exception: If the object already exists in the bucket.
+        # This method returns the path to the file in S3.
+        """
         if not self.client.bucket_exists(bucket_name=local_file.bucket):
             self.logger.warning(f"Bucket not found: {local_file.bucket}. Creating...")
             self.client.make_bucket(bucket_name=local_file.bucket)
@@ -68,15 +80,10 @@ class FileStorageWrapper():
     def upsert_file(self, old_file: LocalFile, new_file: LocalFile):
         self.logger.info(f"Upserting file {new_file.remote_file_path}...")
         self.delete_file(target_file=old_file)
-        file_url = self.create_file(local_file=new_file)
+        file_url = self.upload_file(local_file=new_file)
         self.logger.info(f"Upsert of file {new_file.remote_file_path} successful.")
         return file_url
     
-    def __delete_directory(self, target_file: FSFile):
-        objects_to_delete = self.client.list_objects(target_file.bucket, prefix=self.__construct_delete_path(target_file=target_file), recursive=True)
-        for obj in objects_to_delete:
-            self.client.remove_object(target_file.bucket, object_name=obj.object_name)
-
     def delete_file(self, target_file: FSFile):
         try:
             self.__delete_directory(target_file=target_file)
@@ -84,6 +91,11 @@ class FileStorageWrapper():
         except Exception as e:
             self.logger.error(f"Failed to remove object {target_file.remote_file_path}: {str(e)}")
             raise e
+        
+    def __delete_directory(self, target_file: FSFile):
+        objects_to_delete = self.client.list_objects(target_file.bucket, prefix=self.__construct_delete_path(target_file=target_file), recursive=True)
+        for obj in objects_to_delete:
+            self.client.remove_object(target_file.bucket, object_name=obj.object_name)
         
     def __construct_delete_path(self, target_file: FSFile) -> str:
         path = f"{target_file.project}/{target_file.document_category}"

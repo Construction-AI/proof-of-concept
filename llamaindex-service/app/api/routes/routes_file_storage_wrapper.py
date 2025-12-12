@@ -20,7 +20,7 @@ def route_upload_file(req: FileStorageRequest.Upload):
             local_path=req.local_file_path,
             document_type="raw" # TODO: Change this
         )
-        file_url = file_manager.create_file(local_file=target_file)
+        file_url = file_manager.upload_file(local_file=target_file)
         return Response(status_code=status.HTTP_201_CREATED, content=json.dumps({"file_url": file_url}))
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
@@ -79,6 +79,7 @@ def route_read_file(company_id: str, project_id: str, document_category: str, do
         tmp_file_path = file_manager.read_file(target_file=target_file)
         if not tmp_file_path:
             raise f"Failed to read from file: {target_file.remote_file_path}"
-        return FileResponse(path=tmp_file_path, filename=file_name)
+        response = FileResponse(path=tmp_file_path, filename=file_name)
+        return response
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

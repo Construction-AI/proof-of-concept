@@ -21,7 +21,7 @@ from typing import Optional
 SENTENCE_WINDOW_PARSER = SentenceWindowNodeParser.from_defaults(window_size=3)
 WINDOW_POST = MetadataReplacementPostProcessor(target_metadata_key="window")
 
-class RagKnowledgeBase:
+class KnowledgeBaseWrapper:
     def __init__(self):
         self.async_client = get_qdrant_aclient()
         self.client = get_qdrant_client()
@@ -39,7 +39,7 @@ class RagKnowledgeBase:
         
         self.logger = get_logger("KnowledgeBase")
             
-    async def add_document(self, file: KBFile):
+    async def upload_document(self, file: KBFile):
         """
         Asynchronously adds a document to the knowledge base.
         This method checks if the default collection exists and creates it if necessary.
@@ -61,7 +61,7 @@ class RagKnowledgeBase:
             await self.__create_default_collection()
             self.logger.info(f"Default collection created.")
             
-        if await self.__check_nodes_exist(file=file):
+        if await self.check_nodes_exist(file=file):
             raise Exception("Nodes already exist for given `file_id`. Did you mean to use `upsert_document`?")
         
         docs = self.__load_documents(file=file)
@@ -72,7 +72,7 @@ class RagKnowledgeBase:
         await self.index.ainsert_nodes(nodes)
         self.logger.info(f"Document {file.file_id} has been added to the knowledge base. Nodes count: {len(nodes)}.")
         
-    async def query(self, question: str, company_id: str, project_id: str, document_type: Optional[str] = None, document_category: Optional[str] = None, file_name: Optional[str] = None, k: int = 5):
+    async def query(self, question: str, company_id: str, project_id: str, document_type: Optional[str] = None, document_category: Optional[str] = None, file_name: Optional[str] = None, k: int = 5) -> str:
         """
         Asynchronously queries the knowledge base for relevant information based on the provided question and metadata filters.
         Args:
@@ -109,7 +109,7 @@ class RagKnowledgeBase:
         )
         
         response = await query_engine.aquery(question)
-        return response
+        return response.response
     
     async def delete_document(self, company_id: str, project_id: str, document_category: str, document_type: str):
         # Deletes all nodes and associated data for a specific document in the knowledge base.
@@ -173,7 +173,7 @@ class RagKnowledgeBase:
             document_category=file.document_category,
             document_type=file.document_type,
        )
-        await self.add_document(file=file)
+        await self.upload_document(file=file)
         
     def __load_documents(self, file: KBFile) -> list[Document]:
         reader = SimpleDirectoryReader(
@@ -218,7 +218,7 @@ class RagKnowledgeBase:
         nodes = await self.index.vector_store.aget_nodes(filters=filters)
         return nodes
     
-    async def __check_nodes_exist(self, file: KBFile) -> bool:        
+    async def check_nodes_exist(self, file: KBFile) -> bool:        
         nodes = await self.__get_nodes_for_document(
                                                     company_id=file.company_id,
                                                     project_id=file.project_id,
@@ -244,5 +244,5 @@ class RagKnowledgeBase:
             
     
 @lru_cache()
-def get_rag_knowledge_base() -> RagKnowledgeBase:
-    return RagKnowledgeBase()
+def get_knowledge_base_wrapper() -> KnowledgeBaseWrapper:
+    return KnowledgeBaseWrapper()

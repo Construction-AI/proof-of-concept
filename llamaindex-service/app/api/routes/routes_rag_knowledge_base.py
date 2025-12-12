@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import Response
 
 from app.infra.knowledge_base.requests import KnowledgeBaseRequest
-from app.infra.knowledge_base.instances_knowledge_base import RagKnowledgeBase, get_rag_knowledge_base
+from app.infra.knowledge_base.instances_knowledge_base import KnowledgeBaseWrapper, get_knowledge_base_wrapper
 from app.models.files import KBFile
 
 router = APIRouter()
@@ -18,8 +18,8 @@ async def route_upload_document(req: KnowledgeBaseRequest.AddDocument):
             local_path=req.local_path
         )
         
-        knowledge_base = get_rag_knowledge_base()
-        await knowledge_base.add_document(file=file)
+        knowledge_base = get_knowledge_base_wrapper()
+        await knowledge_base.upload_document(file=file)
         return Response(
             status_code=status.HTTP_201_CREATED,
         )
@@ -30,7 +30,7 @@ async def route_upload_document(req: KnowledgeBaseRequest.AddDocument):
 @router.post("/query")
 async def route_query(req: KnowledgeBaseRequest.Query):
     try:
-        knowledge_base = get_rag_knowledge_base()
+        knowledge_base = get_knowledge_base_wrapper()
         response = await knowledge_base.query(question=req.question, company_id=req.company_id, 
                                               project_id=req.project_id, document_type=req.document_type, 
                                               document_category=req.document_category, file_name=req.file_name
@@ -47,7 +47,7 @@ async def route_query(req: KnowledgeBaseRequest.Query):
 @router.post("/delete")
 async def route_delete_document(req: KnowledgeBaseRequest.Delete):
     try:
-        knowledge_base = get_rag_knowledge_base()
+        knowledge_base = get_knowledge_base_wrapper()
         await knowledge_base.delete_document(
             company_id=req.company_id,
             project_id=req.project_id,
@@ -72,7 +72,7 @@ async def route_upsert_document(req: KnowledgeBaseRequest.AddDocument):
             local_path=req.local_path
         )
         
-        knowledge_base = get_rag_knowledge_base()
+        knowledge_base = get_knowledge_base_wrapper()
         await knowledge_base.upsert_document(file=file)
         return Response(
             status_code=status.HTTP_201_CREATED,
