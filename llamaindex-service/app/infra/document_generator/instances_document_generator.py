@@ -27,6 +27,10 @@ class DocumentGenerator:
         
         async def fill_schema(self, company_id: str, project_id: str) -> SchemaProjectSchema:
             # TODO: Add check if any nodes containing useful data exist
+            from pathlib import Path
+            schema_file_name = Path(self.schema_type.get_path()).name
+            self.logger.info(f"Filling schema template {schema_file_name}...")
+            
             groups_count = self.__count_groups()
             groups = []
             for g_idx, gr in enumerate(self.schema):
@@ -83,3 +87,17 @@ class DocumentGenerator:
     @staticmethod
     def save_filled_schema_to_file(filled_schema: SchemaProjectSchema) -> str:
         return DocumentGenerator.SchemaGenerator.save_filled_schema_to_file(filled_schema=filled_schema)
+    
+    @staticmethod
+    async def generate_schema_document(schema_type: SchemaType, company_id: str, project_id: str) -> str:
+        schema_generator = DocumentGenerator.SchemaGenerator(
+            schema_type=schema_type
+        )
+        
+        filled_schema = await schema_generator.fill_schema(
+            company_id=company_id,
+            project_id=project_id
+        )
+        
+        file_path = DocumentGenerator.save_filled_schema_to_file(filled_schema=filled_schema)
+        return file_path

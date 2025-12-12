@@ -23,12 +23,15 @@ class File(ABC):
         return self.company_id
 
 class LocalFile(File):
-        def __init__(self, company_id: str, project_id: str, document_category: str, local_path: str, document_type: Optional[str] = "raw"):
+        def __init__(self, company_id: str, project_id: str, document_category: str, local_path: str, document_type: Optional[str] = "raw", forced_file_name: Optional[str] = None):
             File.__init__(self, company_id, project_id, document_category, document_type)
             self.local_path = local_path
+            self.forced_file_name = forced_file_name
             
         @property
         def file_name(self) -> str:
+            if self.forced_file_name:
+                return self.forced_file_name
             return Path(self.local_path).name
         
         @property
