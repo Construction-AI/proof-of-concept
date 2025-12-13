@@ -2,14 +2,14 @@ from functools import lru_cache
 from app.core.config import get_settings, Settings
 from minio import Minio
 from typing import Optional
-from pathlib import Path
 from app.core.logger import get_logger
-from pydantic import BaseModel
+
 import io
 from minio.helpers import ObjectWriteResult
 from minio.error import S3Error
 import tempfile
 import shutil
+from typing import Tuple
 
 from app.models.files import LocalFile, FSFile
 
@@ -60,10 +60,12 @@ class FileStorageWrapper():
         self.logger.info(f"{local_file.local_path} successfully uploaded as object {local_file.remote_file_path}")
         return result.object_name
     
-    def read_file(self, target_file: FSFile) -> str:
+    def read_file(self, target_file: FSFile) -> Tuple[FSFile, Optional[str]]:
         result = None
         try:
-            assert target_file.file_name, "No file name specified."
+            if not target_file.file_name:
+                self.logger.info("No file name specified, fetching by type...")
+                target_file = self.__fetch_document_from_directory(target_file=target_file)
             if not self.check_object_exists(remote_file=target_file):
                 raise f"Object {target_file.remote_file_path} was not found."
             response = self.client.get_object(bucket_name=target_file.bucket, object_name=target_file.remote_file_path)
@@ -75,7 +77,7 @@ class FileStorageWrapper():
         finally:
             response.close()
             response.release_conn()
-        return result
+        return target_file, result
 
     def upsert_file(self, old_file: LocalFile, new_file: LocalFile):
         self.logger.info(f"Upserting file {new_file.remote_file_path}...")
@@ -87,17 +89,29 @@ class FileStorageWrapper():
     def delete_file(self, target_file: FSFile):
         try:
             self.__delete_directory(target_file=target_file)
-            self.logger.info(f"The files under {self.__construct_delete_path(target_file=target_file)} have been removed.")
+            self.logger.info(f"The files under {self.__construct_file_path(target_file=target_file)} have been removed.")
         except Exception as e:
             self.logger.error(f"Failed to remove object {target_file.remote_file_path}: {str(e)}")
             raise e
         
+    def __fetch_document_from_directory(self, target_file: FSFile) -> FSFile:
+        path = self.__construct_file_path(target_file=target_file)
+        objects_from_dir = self.client.list_objects(target_file.bucket, prefix=path, recursive=True)
+        
+        from pathlib import Path
+        
+        # TODO: Figure this out, why can't I just access the [0] element
+        for obj in objects_from_dir:
+            target_file.file_name = Path(obj.object_name).name
+            return target_file
+        raise ValueError(f"No objects for {path}")
+        
     def __delete_directory(self, target_file: FSFile):
-        objects_to_delete = self.client.list_objects(target_file.bucket, prefix=self.__construct_delete_path(target_file=target_file), recursive=True)
+        objects_to_delete = self.client.list_objects(target_file.bucket, prefix=self.__construct_file_path(target_file=target_file), recursive=True)
         for obj in objects_to_delete:
             self.client.remove_object(target_file.bucket, object_name=obj.object_name)
         
-    def __construct_delete_path(self, target_file: FSFile) -> str:
+    def __construct_file_path(self, target_file: FSFile) -> str:
         path = f"{target_file.project}/{target_file.document_category}"
         if target_file.document_type:
             path += f"/{target_file.document_type}"

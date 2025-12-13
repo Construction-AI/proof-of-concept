@@ -8,7 +8,7 @@ from app.core.logger import get_logger
 
 from llama_index.core.storage import StorageContext
 from app.models.files import FSFile, LocalFile, KBFile
-from typing import Optional
+from typing import Optional, Tuple
 
 from app.models.schema_types import SchemaType
 
@@ -74,9 +74,9 @@ class RagEngineWrapper:
                 
         self.logger.info(f"Document {file.file_id} has been upserted.")
         
-    def read_document(self, file: FSFile) -> str:
-        temp_path = self.file_storage_wrapper.read_file(target_file=file)
-        return temp_path
+    def read_document(self, file: FSFile) -> Tuple[FSFile, str]:
+        target_file, temp_path = self.file_storage_wrapper.read_file(target_file=file)
+        return target_file, temp_path 
     
     async def query(self, question: str, company_id: str, project_id: str, document_type: Optional[str] = None, document_category: Optional[str] = None, file_name: Optional[str] = None, k: int = 5) -> str:
         response = await self.knowledge_base_wrapper.query(
