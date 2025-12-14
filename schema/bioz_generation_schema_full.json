@@ -3,7 +3,12 @@
     "document_type": "Plan Bezpieczeństwa i Ochrony Zdrowia (BIOZ)",
     "version": "2.0_with_prompts",
     "language": "pl",
-    "system_instruction": "Jesteś doświadczonym Kierownikiem Budowy. Twoim zadaniem jest wypełnienie szablonu BIOZ danymi konkretnej inwestycji. Używaj fachowego języka technicznego, bądź precyzyjny i dbaj o zgodność z polskimi przepisami BHP."
+    "system_instruction": "Jesteś doświadczonym Kierownikiem Budowy. Twoim zadaniem jest wypełnienie szablonu BIOZ danymi konkretnej inwestycji. Używaj fachowego języka technicznego, bądź precyzyjny i dbaj o zgodność z polskimi przepisami BHP.",
+    "company_id": null,
+    "project_id": null,
+    "author": null,
+    "date_created": null,
+    "date_modified": null
   },
   "content": {
     "title_page": {
@@ -30,6 +35,37 @@
             "example": "dz. nr 15/4, obręb 0005 Śródmieście"
           }
         }
+      },
+      "investor": {
+        "name": {
+          "value": null,
+          "prompt": "Podaj pełną nazwę inwestora (imię i nazwisko lub nazwa firmy).",
+          "example": "Jan Kowalski lub Developer Sp. z o.o."
+        },
+        "address": {
+          "value": null,
+          "prompt": "Podaj pełny adres zamieszkania lub siedziby inwestora.",
+          "example": "ul. Inwestorska 1, 00-001 Warszawa"
+        }
+      },
+      "contractor": {
+        "name": {
+          "value": null,
+          "prompt": "Podaj nazwę Generalnego Wykonawcy. Jeśli nie został jeszcze wybrany, wpisz 'Do wyłonienia w drodze przetargu'.",
+          "example": "Bud-Max S.A."
+        }
+      },
+      "site_manager": {
+        "name": {
+          "value": null,
+          "prompt": "Podaj imię i nazwisko Kierownika Budowy.",
+          "example": "inż. Adam Nowak"
+        },
+        "qualifications_number": {
+          "value": null,
+          "prompt": "Podaj numer uprawnień budowlanych Kierownika Budowy wraz ze specjalnością.",
+          "example": "MAZ/0123/KB/19"
+        }
       }
     },
     "descriptive_part": {
@@ -42,12 +78,59 @@
         "stages": {
           "value": [],
           "prompt": "Wymień chronologicznie główne etapy robót budowlanych, od przygotowania terenu po prace wykończeniowe.",
-          "example": [
-            "Wytyczenie geodezyjne",
-            "Zdjęcie warstwy humusu",
-            "Wykopy szerokoprzestrzenne",
-            "Fundamenty"
-          ]
+          "example": ["Wytyczenie geodezyjne", "Zdjęcie warstwy humusu", "Wykopy szerokoprzestrzenne", "Fundamenty"]
+        }
+      },
+      "existing_objects": {
+        "items": {
+          "value": [],
+          "prompt": "Wymień obiekty budowlane znajdujące się obecnie na działce, które mogą mieć wpływ na bezpieczeństwo (np. do wyburzenia lub zachowania). Jeśli działka jest pusta, wpisz 'Brak obiektów budowlanych na terenie inwestycji'.",
+          "example": ["Istniejący budynek gospodarczy przeznaczony do rozbiórki", "Studnia głębinowa do zabezpieczenia"]
+        }
+      },
+      "site_hazards": {
+        "power_lines": {
+          "value": null,
+          "prompt": "Opisz lokalizację napowietrznych linii energetycznych względem terenu budowy. Określ napięcie (nN/SN/WN) i odległość od planowanych robót. Jeśli brak, wpisz 'Nie dotyczy'.",
+          "example": "Linia napowietrzna SN przebiega wzdłuż granicy północnej, poza strefą pracy żurawia."
+        },
+        "underground_utilities": {
+          "value": null,
+          "prompt": "Wymień czynne instalacje podziemne (gaz, woda, prąd, teletechnika) na terenie robót ziemnych, które stwarzają ryzyko uszkodzenia.",
+          "example": "Czynny gazociąg średniego ciśnienia przebiegający w poprzek planowanego wjazdu na budowę."
+        },
+        "traffic": {
+          "value": null,
+          "prompt": "Opisz zagrożenia związane z ruchem drogowym w sąsiedztwie placu budowy (np. wyjazd na drogę szybkiego ruchu, brak chodnika).",
+          "example": "Wyjazd z budowy bezpośrednio na drogę powiatową o dużym natężeniu ruchu; ograniczona widoczność."
+        }
+      },
+      "work_hazards": {
+        "value": [],
+        "prompt": "Na podstawie zakresu robót wybierz lub dopisz specyficzne zagrożenia występujące na tej konkretnej budowie. Skup się na pracach szczególnie niebezpiecznych.",
+        "example": [
+          {
+            "type": "Upadek z wysokości",
+            "context": "Montaż więźby dachowej na wysokości 8m"
+          },
+          {
+            "type": "Prace w głębokich wykopach",
+            "context": "Wykopy pod fundamenty o głębokości 2,5m w gruncie piaszczystym"
+          }
+        ]
+      },
+      "preventive_measures": {
+        "excavations": {
+          "prompt": "Określ sposób zabezpieczenia ścian wykopów (np. szalunki, skarpy) adekwatny do kategorii gruntu i głębokości.",
+          "example": "Wykopy o ścianach pionowych w obudowie typu 'box'. Zejścia po drabinach systemowych."
+        },
+        "heights": {
+          "prompt": "Określ środki ochrony zbiorowej i indywidualnej dla prac na wysokościach (dachy, stropy, rusztowania).",
+          "example": "Rusztowania systemowe z siatkami ochronnymi. Pracownicy wyposażeni w szelki bezpieczeństwa z amortyzatorem przy pracach dekarskich."
+        },
+        "machinery": {
+          "prompt": "Opisz zasady współpracy maszyn budowlanych (koparki, dźwigi) z pracownikami pieszymi.",
+          "example": "Wyznaczenie stref niebezpiecznych taśmą ostrzegawczą. Praca żurawia tylko pod nadzorem hakowego."
         }
       }
     }

@@ -142,4 +142,16 @@ async def route_generate_document(req: RagEngineRequest.GenerateDocument):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
         
+@router.post("/generate_docx")
+async def route_generate_docx(req: RagEngineRequest.GenerateDocx):
+    try:
+        rag_engine_wrapper = get_rag_engine_wrapper()
+        generated_file: LocalFile = await rag_engine_wrapper.generate_docx(
+            doc_type=req.document_category,
+            company_id=req.company_id,
+            project_id=req.project_id
+        )
+        return FileResponse(status_code=200, path=generated_file.local_path, filename=generated_file.file_name)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
         

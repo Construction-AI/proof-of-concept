@@ -65,3 +65,13 @@ Content-Type: application/json
   "company_id": "company",
   "project_id": "project"
 }
+
+### Generate Docx
+POST {{baseUrl}}/rag_engine/generate_docx
+Content-Type: application/json
+
+{
+  "document_category": "bioz",
+  "company_id": "company",
+  "project_id": "project"
+}

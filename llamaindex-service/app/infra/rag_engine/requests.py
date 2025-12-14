@@ -49,4 +49,9 @@ class RagEngineRequest:
         document_type: str
         author: str
         
+    class GenerateDocx(BaseModel):
+        company_id: str
+        project_id: str
+        document_category: str
+        
     

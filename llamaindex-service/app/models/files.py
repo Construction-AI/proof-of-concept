@@ -74,7 +74,12 @@ class FSFile(File):
                          
         @property
         def remote_file_path(self) -> str:
-            return f"{self.project}/{self.document_category}/{self.document_type}/{self.file_name}"
+            path = f"{self.project}/{self.document_category}"
+            if self.document_type:
+                path += f"/{self.document_type}"
+            if self.file_name:
+                path += f"/{self.file_name}"
+            return path
         
         @property
         def file_id(self) -> str:

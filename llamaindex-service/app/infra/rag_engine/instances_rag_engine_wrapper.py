@@ -2,15 +2,12 @@ from functools import lru_cache
 
 from app.infra.file_storage.instances_file_storage_wrapper import get_file_storage_wrapper
 from app.infra.knowledge_base.instances_knowledge_base import get_knowledge_base_wrapper
-from app.infra.document_generator.instances_document_generator import DocumentGenerator
 from app.infra.instances_llamaindex import get_llamaindex_contexts
 from app.core.logger import get_logger
 
 from llama_index.core.storage import StorageContext
 from app.models.files import FSFile, LocalFile, KBFile
 from typing import Optional, Tuple
-
-from app.models.schema_types import SchemaType
 
 class RagEngineWrapper:
     def __init__(self):
@@ -81,8 +78,69 @@ class RagEngineWrapper:
             return await document.generate()
         return None
         
-        
-        
+    async def generate_docx(self, doc_type: str, company_id: str, project_id: str) -> LocalFile:
+        from app.models.document import HSEDocument
+        document = None
+        if doc_type in HSEDocument.get_valid_doc_types():
+            file = FSFile(
+                company_id=company_id,
+                project_id=project_id,
+                document_category=HSEDocument.DOC_TYPE,
+                document_type="filled_schema"
+            )
+            target_file, temp_path = self.read_document(file=file)
+            import json
+            from docxtpl import DocxTemplate
+            
+            with open(temp_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                document = HSEDocument.fromFilledSchema(filled_schema=data)
+                clean_json = document.get_clean_json_for_render()
+                clean_json = self.__prepare_data_lists(data=clean_json)
+                template = DocxTemplate(HSEDocument.DOCX_TEMPLATE)
+                template.render(context=clean_json)
+                docx_file_name = "generated_" + HSEDocument.DOC_TYPE + ".docx"
+                docx_path = f"/tmp/{docx_file_name}"
+                template.save(docx_path)
+                saved_file = LocalFile(
+                    company_id=company_id,
+                    project_id=project_id,
+                    document_category=HSEDocument.get_doc_type(),
+                    local_path=docx_path,
+                    document_type="docx"
+                )
+                self.file_storage_wrapper.upsert_file(target_file=saved_file)
+                return saved_file
+                                
+        return None
+    
+    # TODO: Refactor later
+    def __prepare_data_lists(self, data: dict):
+        import json
+        # 1. Fix 'stages' (Split string by newlines into a list)
+        # Path: content.descriptive_part.scope_of_works.stages
+        try:
+            stages_raw = data['content']['descriptive_part']['scope_of_works']['stages']
+            if isinstance(stages_raw, str):
+                # Split by enter, remove empty lines
+                data['content']['descriptive_part']['scope_of_works']['stages'] = [
+                    s.strip() for s in stages_raw.split('\n') if s.strip()
+                ]
+        except KeyError:
+            pass
+
+        # 2. Fix 'work_hazards' (Parse JSON string into a list of dicts)
+        # Path: content.descriptive_part.work_hazards
+        try:
+            hazards_raw = data['content']['descriptive_part']['work_hazards']
+            if isinstance(hazards_raw, str):
+                # It looks like a stringified JSON "[{...}, {...}]", so we load it
+                data['content']['descriptive_part']['work_hazards'] = json.loads(hazards_raw)
+        except (KeyError, json.JSONDecodeError):
+            # Fallback if it fails
+            data['content']['descriptive_part']['work_hazards'] = []
+
+        return data
         
 @lru_cache()
 def get_rag_engine_wrapper():
