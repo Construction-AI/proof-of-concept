@@ -61,7 +61,7 @@ Content-Type: application/json
 
 {
   "author": "Jakub Nenczak",
-  "document_type": "bioz",
+  "document_category": "bioz",
   "company_id": "company",
   "project_id": "project"
 }
@@ -75,3 +75,6 @@ Content-Type: application/json
   "company_id": "company",
   "project_id": "project"
 }
+
+### Match document type
+GET {{baseUrl}}/rag_engine/match_type/opis_konstrukcji

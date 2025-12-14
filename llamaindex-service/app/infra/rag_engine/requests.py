@@ -41,12 +41,12 @@ class RagEngineRequest:
     class GenerateSchema(BaseModel):
         company_id: str
         project_id: str
-        schema_type: str
+        document_category: str
         
     class GenerateDocument(BaseModel):
         company_id: str
         project_id: str
-        document_type: str
+        document_category: str
         author: str
         
     class GenerateDocx(BaseModel):

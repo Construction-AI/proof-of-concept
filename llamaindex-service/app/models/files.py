@@ -1,12 +1,13 @@
 from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import Optional
+from app.core.document_mapper import DocumentMapper
 
 class File(ABC):
     def __init__(self, company_id: str, project_id: str, document_category: str, document_type: str):
         self.company_id = company_id
         self.project_id = project_id
-        self.document_category = document_category
+        self.document_category = DocumentMapper.get_document_type_for_name(name=document_category)
         self.document_type = document_type
         
     @property

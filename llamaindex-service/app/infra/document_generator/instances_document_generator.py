@@ -1,18 +1,20 @@
-from app.models.schema_types import SchemaType
 from app.infra.document_generator.loaders.loader import load_schema
 from app.core.logger import get_logger
 from app.infra.document_generator.models.models import *
 from app.infra.knowledge_base.instances_knowledge_base import get_knowledge_base_wrapper
 import datetime
+from app.core.document_mapper import DocumentMapper
 
 class DocumentGenerator:
     def __init__(self):
         pass
     
     class SchemaGenerator:
-        def __init__(self, schema_type: SchemaType):
-            self.schema_type = schema_type
-            self.schema = load_schema(schema_type=schema_type)
+        def __init__(self, document_category: str):
+            self.document_category = document_category
+            self.schema_path = DocumentMapper.get_path_for_document_schema_by_name(name=document_category)
+            
+            self.schema = self.__load_schema()
             self.logger = get_logger(self.__class__.__name__)
             self.knowledge_base_wrapper = get_knowledge_base_wrapper()
             
@@ -28,7 +30,7 @@ class DocumentGenerator:
         async def fill_schema(self, company_id: str, project_id: str) -> SchemaProjectSchema:
             # TODO: Add check if any nodes containing useful data exist
             from pathlib import Path
-            schema_file_name = Path(self.schema_type.get_path()).name
+            schema_file_name = Path(self.schema_path).name
             self.logger.info(f"Filling schema template {schema_file_name}...")
             
             groups_count = self.__count_groups()
@@ -72,11 +74,17 @@ class DocumentGenerator:
                 tmp_file_path = tmp_file.name
             return tmp_file_path
         
+        def __load_schema(self):
+            path = DocumentMapper.get_path_for_document_schema_by_name(name=self.document_category)
+            import json
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        
     
     @staticmethod
-    async def fill_schema(schema_type: SchemaType, company_id: str, project_id: str):
+    async def fill_schema(document_category: str, company_id: str, project_id: str):
         schema_generator = DocumentGenerator.SchemaGenerator(
-            schema_type=schema_type
+            document_category=document_category
         )
         
         return await schema_generator.fill_schema(
@@ -89,9 +97,9 @@ class DocumentGenerator:
         return DocumentGenerator.SchemaGenerator.save_filled_schema_to_file(filled_schema=filled_schema)
     
     @staticmethod
-    async def generate_schema_document(schema_type: SchemaType, company_id: str, project_id: str) -> str:
+    async def generate_schema_document(document_category: str, company_id: str, project_id: str) -> str:
         schema_generator = DocumentGenerator.SchemaGenerator(
-            schema_type=schema_type
+            document_category=document_category
         )
         
         filled_schema = await schema_generator.fill_schema(

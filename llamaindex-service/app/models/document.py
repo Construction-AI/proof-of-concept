@@ -8,7 +8,8 @@ from app.infra.document_generator.instances_document_generator import DocumentGe
 from app.models.files import LocalFile, FSFile
 
 class Document(ABC):
-    def __init__(self, schema_path: str, version_id: int, date_created: datetime, last_modified: datetime, author: str, company_id: str, project_id: str, filled_schema: dict):
+    def __init__(self, schema_path: str, version_id: int, date_created: datetime, last_modified: datetime, author: str, company_id: str, project_id: str, data: dict):
+        assert schema_path or data, "Either `schema_path` or `data` is required."
         self.schema_path = schema_path
         self.version_id = version_id
         self.date_created = date_created
@@ -16,35 +17,54 @@ class Document(ABC):
         self.author = author
         self.company_id = company_id
         self.project_id = project_id
-        self.filled_schema = filled_schema
+        self.data = data
         
         self.knowledge_base = get_knowledge_base_wrapper()
         self.file_storage = get_file_storage_wrapper()
         self.logger = get_logger(self.__class__.__name__)
+        
+    @property
+    def is_loaded(self) -> bool:
+        return self.data is not None
+    
+    @property
+    def meta(self) -> dict:
+        if not self.is_loaded:
+            raise Exception("You need to use `document.load()` before accessing meta.")
+        return self.data["meta"]
+    
+    @property
+    def is_filled(self) -> bool:
+        return self.meta["date_created"] is not None
     
     def get_path(self) -> str:
         return self.schema_path
     
-    def load(self):
+    def load(self) -> None:
         import json
         with open(self.schema_path, "r", encoding="utf-8") as f:
-            return json.load(f)
+            self.data = json.load(f)
         
-    async def fill(self) -> dict:
-        data = self.load()
-        system_prompt = data["meta"]["system_instruction"]
-        for path, prompt_text, field_obj in self.__extract_prompts(data):
+    async def fill(self) -> None:
+        if not self.is_loaded:
+            raise Exception("Document is not loaded. Use `document.load()` first.")
+        self.__set_metadata(data=self.data)
+        system_prompt = self.meta["system_instruction"]
+        for path, prompt_text, field_obj in self.__extract_prompts(self.data):
             user_prompt = f"""
             Zadanie: {prompt_text}
             Przykładowe odpowiedzi: {field_obj["example"]}
             """
-            field_obj['value'] = await self.knowledge_base.fill_a_field(company_id=self.company_id, project_id=self.project_id, system_prompt=system_prompt, user_prompt=user_prompt)
-        return data
+            field_obj['value'] = await self.knowledge_base.fill_a_field(
+                company_id=self.company_id, project_id=self.project_id,
+                system_prompt=system_prompt, user_prompt=user_prompt
+                )
+        return None
     
     async def generate(self) -> LocalFile:
-        filled_schema = await self.fill()
-        self.__set_metadata(data=filled_schema)
-        file_path = self.__save_filled_schema_to_file(filled_schema=filled_schema)
+        if not self.is_filled:
+            raise Exception("Document is not filled. Use `document.fill()` first.")
+        file_path = self.__save_filled_schema_to_file(filled_schema=self.data)
         file_name = "filled_" + self.get_doc_type() + ".json"
         file = LocalFile(
             company_id=self.company_id,
@@ -74,16 +94,49 @@ class Document(ABC):
             tmp_file_path = tmp_file.name
         return tmp_file_path
     
+    def __extract_prompts(self, data, path=""):
+        if isinstance(data, dict):
+            if "prompt" in data and "value" in data:
+                yield path, data["prompt"], data
+            else:
+                for key, value in data.items():
+                    new_path = f"{path}.{key}" if path else key
+                    yield from self.__extract_prompts(value, new_path)
+        elif isinstance(data, list):
+            for index, item in enumerate(data):
+                new_path = f"{path}[{index}]"
+                yield from self.__extract_prompts(item, new_path)
+    
     def flatten(self) -> list[dict]:
-        if not self.filled_schema:
+        if not self.data:
             raise Exception("Document has no filled schema.")
-        filled_schema = self.filled_schema
+        filled_schema = self.data
         result = []
         for path, prompt_text, field_obj in self.__extract_prompts(filled_schema):
             result.append({
                 "path": path,
                 "value": field_obj["value"]
             })
+        return result
+                        
+    def get_clean_json_for_render(self):
+        if not self.data:
+            raise Exception("No field schema provided for document.")
+        data = {}
+        for path, prompt_text, field_obj in self.__extract_prompts(self.data):
+            data[path] = field_obj["value"]
+        return self.__restore_tree_structure(data=data)
+    
+    def __restore_tree_structure(self, data: dict) -> dict:
+        result = {}
+        for key, value in data.items():
+            parts = key.split('.')
+            d = result
+            for part in parts[:-1]:
+                if part not in d:
+                    d[part] = {}
+                d = d[part]
+            d[parts[-1]] = value
         return result
     
     @staticmethod
@@ -101,45 +154,23 @@ class Document(ABC):
     def get_doc_type() -> str:
         pass
     
-    def __extract_prompts(self, data, path=""):
-        if isinstance(data, dict):
-            if "prompt" in data and "value" in data:
-                yield path, data["prompt"], data
-            else:
-                for key, value in data.items():
-                    new_path = f"{path}.{key}" if path else key
-                    yield from self.__extract_prompts(value, new_path)
-        elif isinstance(data, list):
-            for index, item in enumerate(data):
-                new_path = f"{path}[{index}]"
-                yield from self.__extract_prompts(item, new_path)
-                
-    def get_clean_json_for_render(self):
-        if not self.filled_schema:
-            raise Exception("No field schema provided for document.")
-        data = {}
-        for path, prompt_text, field_obj in self.__extract_prompts(self.filled_schema):
-            data[path] = field_obj["value"]
-        return self.__unflatten_clean_json(data=data)
+    @staticmethod
+    @abstractmethod
+    def get_template_path() -> str:
+        pass
     
-    def __unflatten_clean_json(self, data: dict) -> dict:
-        result = {}
-        for key, value in data.items():
-            parts = key.split('.')
-            d = result
-            for part in parts[:-1]:
-                if part not in d:
-                    d[part] = {}
-                d = d[part]
-            d[parts[-1]] = value
-        return result
+    @staticmethod
+    def create_document(document_category: str, company_id: str, project_id: str, author: Optional[str] = "unknown"):
+        if document_category in HSEDocument.get_valid_doc_types():
+            return HSEDocument(author=author, company_id=company_id, project_id=project_id)
+        raise ValueError(f"Document category not recognized: {document_category}.")
         
     
 class HSEDocument(Document):
     DOC_TYPE = "health_and_safety_plan"
     DOCX_TEMPLATE = "/app/templates/szablon_bioz_paths.docx"
     
-    def __init__(self, author: str, company_id: str, project_id: str, version_id: Optional[int] = 0, date_created: Optional[datetime] = datetime.now(), last_modified: Optional[datetime] = datetime.now(), filled_schema: Optional[dict] = None):
+    def __init__(self, company_id: str, project_id: str, author: Optional[str] = "unknown", version_id: Optional[int] = 0, date_created: Optional[datetime] = datetime.now(), last_modified: Optional[datetime] = datetime.now(), filled_schema: Optional[dict] = None):
         from app.config.const import HSE_SCHEMA_PATH
         Document.__init__(self, HSE_SCHEMA_PATH, version_id, date_created, last_modified, author, company_id, project_id, filled_schema)
 
@@ -152,6 +183,10 @@ class HSEDocument(Document):
         return HSEDocument.DOC_TYPE
     
     @staticmethod
+    def get_template_path() -> str:
+        return HSEDocument.DOCX_TEMPLATE
+    
+    @staticmethod
     def fromFilledSchema(filled_schema: dict):
         meta = filled_schema["meta"]
         return HSEDocument(
@@ -162,3 +197,4 @@ class HSEDocument(Document):
             project_id=meta["project_id"],
             filled_schema=filled_schema
         )
+        

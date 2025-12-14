@@ -1,7 +1,7 @@
 from functools import lru_cache
 
-from app.infra.instances_qdrant import get_qdrant_aclient, get_qdrant_client
-from app.core.config import get_settings
+from app.infra.clients.instances_qdrant import get_qdrant_aclient, get_qdrant_client
+from app.core.settings import get_settings
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.core.storage import StorageContext
 from llama_index.core import VectorStoreIndex, Document
