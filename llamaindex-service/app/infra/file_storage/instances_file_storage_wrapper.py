@@ -79,11 +79,11 @@ class FileStorageWrapper():
             response.release_conn()
         return target_file, result
 
-    def upsert_file(self, old_file: LocalFile, new_file: LocalFile):
-        self.logger.info(f"Upserting file {new_file.remote_file_path}...")
-        self.delete_file(target_file=old_file)
-        file_url = self.upload_file(local_file=new_file)
-        self.logger.info(f"Upsert of file {new_file.remote_file_path} successful.")
+    def upsert_file(self, target_file: LocalFile):
+        self.logger.info(f"Upserting file {target_file.remote_file_path}...")
+        self.delete_file(target_file=target_file)
+        file_url = self.upload_file(local_file=target_file)
+        self.logger.info(f"Upsert of file {target_file.remote_file_path} successful.")
         return file_url
     
     def delete_file(self, target_file: FSFile):

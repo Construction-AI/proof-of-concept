@@ -36,41 +36,13 @@ class RagEngineWrapper:
         else:
             self.logger.info(f"Document {file.file_id} already exists in knowledge base. Skipping...")
         self.logger.info(f"Document {file.file_id} has been uploaded.")
-        
-        # 3. Generate and fill schema file
-        # TODO: Change from hard-coded to real values from request
-        from pathlib import Path
-        schema_type = SchemaType.OPIS_KONSTRUKCJI
-        file_path = await DocumentGenerator.generate_schema_document(schema_type=schema_type, company_id=file.company_id, project_id=file.project_id)
-        if file_path:
-            file_name = "filled" + Path(schema_type.get_path()).name
-            schema_file: LocalFile = file
-            schema_file.document_type = "schema"
-            schema_file.local_path = file_path
-            schema_file.forced_file_name = file_name
-            self.file_storage_wrapper.upload_file(local_file=schema_file)
-            self.logger.info(f"Schema file has been generated and uploaded to FS: {schema_file.remote_file_path}.")
-        
+                
     async def upsert_document(self, file: LocalFile):
         # 1. Upsert to file storage
-        self.file_storage_wrapper.upsert_file(old_file=file, new_file=file)
+        self.file_storage_wrapper.upsert_file(target_file=file)
         
         # 2. Upsert to knowledge base
         await self.knowledge_base_wrapper.upsert_document(file=KBFile.fromLocalFile(file=file))
-        
-        # 3. Generate and fill schema file
-        # TODO: Change from hard-coded to real values from request
-        from pathlib import Path
-        schema_type = SchemaType.OPIS_KONSTRUKCJI
-        file_path = await DocumentGenerator.generate_schema_document(schema_type=schema_type, company_id=file.company_id, project_id=file.project_id)
-        if file_path:
-            file_name = "filled_" + Path(schema_type.get_path()).name
-            schema_file: LocalFile = file
-            schema_file.document_type = "schema"
-            schema_file.local_path = file_path
-            schema_file.forced_file_name = file_name
-            self.file_storage_wrapper.upsert_file(old_file=schema_file, new_file=schema_file)
-            self.logger.info(f"Schema file has been generated and uploaded to FS: {schema_file.remote_file_path}.")
                 
         self.logger.info(f"Document {file.file_id} has been upserted.")
         
@@ -99,6 +71,16 @@ class RagEngineWrapper:
         )
         
         self.logger.info(f"Document {file.file_id} has been deleted.")
+                
+    async def generate_document(self, doc_type: str, author: str, company_id: str, project_id: str) -> LocalFile:
+        from app.models.document import HSEDocument
+        document = None
+        if doc_type in HSEDocument.get_valid_doc_types():
+            document = HSEDocument(author=author, company_id=company_id, project_id=project_id)
+            self.logger.info(f"Identified document as HSEDocument")
+            return await document.generate()
+        return None
+        
         
         
         

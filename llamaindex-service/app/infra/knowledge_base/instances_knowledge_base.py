@@ -134,6 +134,10 @@ class KnowledgeBaseWrapper:
         response = await query_engine.aquery(question)
         return response.response
     
+    async def fill_a_field(self, company_id: str, project_id: str, system_prompt: str, user_prompt: str) -> str:
+        full_prompt = system_prompt + "\n" + user_prompt
+        return await self.query(question=full_prompt, company_id=company_id, project_id=project_id)
+    
     async def delete_document(self, company_id: str, project_id: str, document_category: str, document_type: str):
         # Deletes all nodes and associated data for a specific document in the knowledge base.
         """

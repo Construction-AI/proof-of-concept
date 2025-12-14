@@ -42,3 +42,11 @@ class RagEngineRequest:
         company_id: str
         project_id: str
         schema_type: str
+        
+    class GenerateDocument(BaseModel):
+        company_id: str
+        project_id: str
+        document_type: str
+        author: str
+        
+    

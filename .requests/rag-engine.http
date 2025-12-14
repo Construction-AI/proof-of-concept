@@ -1,0 +1,67 @@
+@baseUrl = http://localhost:8001
+
+### Upload Document
+POST {{baseUrl}}/rag_engine/upload_document
+Content-Type: application/json
+
+{
+  "local_file_path": "/app/documents/proj_1/226.12_PW-Opis konstrukcji.pdf",
+  "company_id": "company",
+  "project_id": "project",
+  "document_category": "opis_konstrukcji"
+}
+
+### Upsert Document
+POST {{baseUrl}}/rag_engine/upsert_document
+Content-Type: application/json
+
+{
+  "local_file_path": "/app/documents/proj_1/226.12_PW-Opis konstrukcji.pdf",
+  "company_id": "company",
+  "project_id": "project",
+  "document_category": "opis_konstrukcji"
+}
+
+### Delete Document
+POST {{baseUrl}}/rag_engine/delete_document
+Content-Type: application/json
+
+{
+  "company_id": "company",
+  "project_id": "project",
+  "document_category": "opis_konstrukcji"
+}
+
+### Read Document
+GET {{baseUrl}}/rag_engine/read_document/company/project/opis_konstrukcji/raw
+
+### Generate Schema
+POST {{baseUrl}}/rag_engine/generate_schema
+Content-Type: application/json
+
+{
+  "company_id": "company",
+  "project_id": "project",
+  "schema_type": "bioz"
+}
+
+### Query
+POST {{baseUrl}}/rag_engine/query
+Content-Type: application/json
+
+{
+  "company_id": "company",
+  "project_id": "project",
+  "question": "Kim jest inwestor?"
+}
+
+### Generate Document
+POST {{baseUrl}}/rag_engine/generate_document
+Content-Type: application/json
+
+{
+  "author": "Jakub Nenczak",
+  "document_type": "bioz",
+  "company_id": "company",
+  "project_id": "project"
+}

@@ -38,8 +38,7 @@ def route_upsert_file(req: FileStorageRequest.Upsert):
             local_path=req.local_file_path
         )
         file_url = file_manager.upsert_file(
-            old_file=target_file,
-            new_file=target_file
+            target_file=target_file
         )
         return Response(status_code=status.HTTP_201_CREATED,
                         content=json.dumps({"file_url": file_url}),
