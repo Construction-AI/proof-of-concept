@@ -2,8 +2,8 @@ from functools import lru_cache
 from llama_index.core import StorageContext, ServiceContext
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai import OpenAI
-from app.core.config import get_settings
-from app.infra.instances_qdrant import get_qdrant_client
+from app.core.settings import get_settings
+from app.infra.clients.instances_qdrant import get_qdrant_client
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 
 @lru_cache()
