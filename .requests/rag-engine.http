@@ -1,4 +1,4 @@
-@baseUrl = http://localhost:8001
+@baseUrl = http://localhost:8000
 
 ### Upload Document
 POST {{baseUrl}}/rag_engine/upload_document

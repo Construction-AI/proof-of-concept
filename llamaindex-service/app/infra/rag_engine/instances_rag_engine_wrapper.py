@@ -69,21 +69,23 @@ class RagEngineWrapper:
         
         self.logger.info(f"Document {file.file_id} has been deleted.")
                 
-    async def generate_document(self, document_category: str, author: str, company_id: str, project_id: str) -> LocalFile:
-        from app.models.document import Document
-        document = Document.create_document(document_category=document_category, author=author, company_id=company_id, project_id=project_id)
+    async def generate_document(self, document_type: str, author: str, company_id: str, project_id: str) -> LocalFile:
+        from app.models.document import SchemaDocument, DocumentType
+        document = SchemaDocument(document_type=DocumentType(type=document_type), author=author, company_id=company_id, project_id=project_id)
         self.logger.info(f"Identified document as {document.__class__.__name__.upper()}")
-        document.load()
         await document.fill()
-        return await document.generate()
+        await document.save()
+        local_file = document.get_local_file()
+        self.file_storage_wrapper.upsert_file(target_file=document.get_local_file())
+        return local_file
         
     async def generate_docx(self, document_category: str, company_id: str, project_id: str) -> LocalFile:
-        from app.models.document import Document
-        document = Document.create_document(document_category=document_category, company_id=company_id, project_id=project_id)
+        from app.models.document import SchemaDocument, DocumentType, DocumentMapper
+        document_type = DocumentType(type=document_category)
         file = FSFile(
             company_id=company_id,
             project_id=project_id,
-            document_category=document.get_doc_type(),
+            document_category=document_type.type,
             document_type="filled_schema"
         )
         target_file, temp_path = self.read_document(file=file)
@@ -92,20 +94,20 @@ class RagEngineWrapper:
         
         with open(temp_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-            document = document.fromFilledSchema(filled_schema=data)
-            clean_json = document.get_clean_json_for_render()
+            document = SchemaDocument.from_data(data=data)
+            clean_json = document.clean_json
             clean_json = self.__prepare_data_lists(data=clean_json)
-            template = DocxTemplate(document.DOCX_TEMPLATE)
+            template = DocxTemplate(DocumentMapper.get_path_for_document_template_by_name(name=document_category))
             template.render(context=clean_json)
-            docx_file_name = "generated_" + document.get_doc_type() + ".docx"
+            docx_file_name = "generated_" + document_category + ".docx"
             docx_path = f"/tmp/{docx_file_name}"
             template.save(docx_path)
             saved_file = LocalFile(
                 company_id=company_id,
                 project_id=project_id,
-                document_category=document.get_doc_type(),
+                document_category=document_category,
                 local_path=docx_path,
-                document_type="docx"
+                document_subtype="docx"
             )
             self.file_storage_wrapper.upsert_file(target_file=saved_file)
             return saved_file

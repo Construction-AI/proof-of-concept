@@ -1,4 +1,3 @@
-from app.infra.document_generator.loaders.loader import load_schema
 from app.core.logger import get_logger
 from app.infra.document_generator.models.models import *
 from app.infra.knowledge_base.instances_knowledge_base import get_knowledge_base_wrapper

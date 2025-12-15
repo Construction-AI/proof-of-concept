@@ -35,7 +35,7 @@ class KnowledgeBaseWrapper:
         self.vector_store = QdrantVectorStore(
             collection_name=self.base_settings.QDRANT_COLLECTION,
             client=self.client,
-            aclient=self.async_client,
+            aclient=self.async_client
         )
         self.storage_context = StorageContext.from_defaults(vector_store=self.vector_store)
         
@@ -48,7 +48,7 @@ class KnowledgeBaseWrapper:
             top_n=6,
         )
                 
-        self.logger = get_logger("KnowledgeBase")
+        self.logger = get_logger(self.__class__.__name__)
         
     async def __check_create_default_collection(self) -> None:
         if not (await self.__check_default_collection_exists()):
