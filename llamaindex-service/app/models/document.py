@@ -7,6 +7,7 @@ from app.infra.file_storage.instances_file_storage_wrapper import get_file_stora
 from app.models.files import LocalFile
 from app.models.document_state import DocumentType
 from app.core.document_mapper import DocumentMapper
+from app.models.field_extraction import FieldExtraction
 
 class SchemaDocument:
     class Meta:
@@ -61,20 +62,29 @@ class SchemaDocument:
             self.data = json.load(f)
             
     async def fill(self) -> None:
-        if not self.is_loaded:
-            raise Exception("Document is not loaded. Use `document.load()` first.")
-        system_prompt = self.meta.system_instruction
-        for path, prompt_text, field_obj in self.__extract_prompts(self.data):
-            user_prompt = f"""
-            Zadanie: {prompt_text}
-            Przykładowe odpowiedzi: {field_obj["example"]}
-            """
-            field_obj['value'] = await self.knowledge_base.fill_a_field(
-                company_id=self.meta.company_id, project_id=self.meta.project_id,
-                system_prompt=system_prompt, user_prompt=user_prompt
+        try:
+            if not self.is_loaded:
+                raise Exception("Document is not loaded. Use `document.load()` first.")
+            system_prompt = self.meta.system_instruction
+            for path, prompt_text, field_obj in self.__extract_prompts(self.data):
+                user_prompt = f"""
+                Zadanie: {prompt_text}
+                Przykładowe odpowiedzi: {field_obj["example"]}
+                """
+                field_extraction: FieldExtraction = await self.knowledge_base.extract_field(
+                    company_id=self.meta.company_id,
+                    project_id=self.meta.project_id,
+                    field_prompt=user_prompt,
+                    field_type=field_obj["type"]
                 )
-        self.__dump_meta_to_data()
-        self.is_filled = True
+                field_obj['value'] = field_extraction.value
+                field_obj['confidence'] = field_extraction.confidence
+                field_obj['reasoning'] = field_extraction.reasoning
+            self.data["meta"] = self.__dump_meta()
+            self.is_filled = True
+        except Exception as e:
+            self.logger.error(str(e))
+            raise e
         
     @property
     def is_saved(self) -> bool:
@@ -105,7 +115,7 @@ class SchemaDocument:
         return file
     
     @property
-    def clean_json(self) -> None:
+    def clean_json(self) -> dict:
         if not self.is_filled:
             raise Exception()
         
@@ -114,6 +124,7 @@ class SchemaDocument:
         data = {}
         for path, prompt_text, field_obj in self.__extract_prompts(self.data):
             data[path] = field_obj["value"]
+        data["meta"] = self.__dump_meta()
         return self.__restore_tree_structure(data=data)
     
     # Factories
@@ -131,8 +142,8 @@ class SchemaDocument:
         )
     
     # Utils
-    def __dump_meta_to_data(self) -> None:
-        self.data["meta"] = {
+    def __dump_meta(self) -> dict:
+        return {
             "document_type": self.meta.document_type.type,
             "company_id": self.meta.company_id,
             "project_id": self.meta.project_id,

@@ -314,7 +314,10 @@ class KnowledgeBaseWrapper:
     
     async def __retrieve_context_for_field(self, company_id: str, project_id: str, instruction: str) -> str:
         query_engine = await self.__build_query_engine(company_id=company_id, project_id=project_id)
-        nodes = await query_engine.aretrieve(instruction)
+        from llama_index.core.schema import QueryBundle
+        
+        query = QueryBundle(query_str=instruction)
+        nodes = await query_engine.aretrieve(query_bundle=query)
         windowed_nodes = WINDOW_POST.postprocess_nodes(nodes, query_str=instruction)
         top_nodes = windowed_nodes[:KnowledgeBaseWrapper.TOP_K]
         context = self.__build_context_snippets(top_nodes, max_chars_per_snip=1500)
@@ -325,16 +328,16 @@ class KnowledgeBaseWrapper:
         from llama_index.core.settings import Settings
         parser = PydanticOutputParser(output_cls=FieldExtraction)
         template = (
-            "You are an extraction assistant. Use only the Context to answer.\n"
-            "Task: {instruction}\n\n"
-            "IMPORTANT RULES:\n"
-            "- If the field appears with the SAME value multiple times, return that single value as a string\n"
-            "- If the field appears with DIFFERENT values, return them as a list\n"
-            "- If the field is not found or uncertain, set value=null and confidence=0\n"
-            "- Set confidence between 0.0 (uncertain) and 1.0 (certain)\n"
-            "- Provide brief reasoning for your extraction\n\n"
-            "Return strictly a JSON matching the schema: FieldExtraction(value, confidence, reasoning).\n\n"
-            "Context:\n{context}\n"
+            "Jesteś asystentem do ekstrakcji danych. Używaj wyłącznie Kontekstu do odpowiedzi.\n"
+            "Zadanie: {instruction}\n\n"
+            "WAŻNE ZASADY:\n"
+            "- Jeśli pole pojawia się z TĄ SAMĄ wartością wielokrotnie, zwróć tę pojedynczą wartość jako string\n"
+            "- Jeśli pole pojawia się z RÓŻNYMI wartościami, zwróć je jako listę\n"
+            "- Jeśli pole nie zostało znalezione lub masz wątpliwości, ustaw value=null i confidence=0\n"
+            "- Ustaw confidence w zakresie od 0.0 (niepewne) do 1.0 (pewne)\n"
+            "- Podaj krótkie uzasadnienie swojej ekstrakcji\n\n"
+            "Zwróć ściśle JSON zgodny ze schematem: FieldExtraction(value, confidence, reasoning).\n\n"
+            "Kontekst:\n{context}\n"
         )
 
         program = LLMTextCompletionProgram.from_defaults(
@@ -345,13 +348,15 @@ class KnowledgeBaseWrapper:
 
         return program
     
-    async def extract_field(self, company_id: str, project_id: str, field_prompt, field_type) -> FieldExtraction:
+    async def extract_field(self, company_id: str, project_id: str, field_prompt: str, field_type: str) -> FieldExtraction:
+        if field_type == "array":
+            print(field_type)
         context = await self.__retrieve_context_for_field(
             company_id=company_id,
             project_id=project_id,
             instruction=field_prompt
         )
-        program: LLMTextCompletionProgram = await self.__make_extraction_program()
+        program: LLMTextCompletionProgram = self.__make_extraction_program()
         result: FieldExtraction = await program.acall(
             instruction=field_prompt, context=context
         )
