@@ -96,7 +96,6 @@ class RagEngineWrapper:
             data = json.load(f)
             document = SchemaDocument.from_data(data=data)
             clean_json = document.clean_json
-            clean_json = self.__prepare_data_lists(data=clean_json)
             template = DocxTemplate(DocumentMapper.get_path_for_document_template_by_name(name=document_category))
             template.render(context=clean_json)
             docx_file_name = "generated_" + document_category + ".docx"
@@ -114,33 +113,6 @@ class RagEngineWrapper:
                                 
         return None
     
-    # TODO: Refactor later
-    def __prepare_data_lists(self, data: dict):
-        import json
-        # 1. Fix 'stages' (Split string by newlines into a list)
-        # Path: content.descriptive_part.scope_of_works.stages
-        try:
-            stages_raw = data['content']['descriptive_part']['scope_of_works']['stages']
-            if isinstance(stages_raw, str):
-                # Split by enter, remove empty lines
-                data['content']['descriptive_part']['scope_of_works']['stages'] = [
-                    s.strip() for s in stages_raw.split('\n') if s.strip()
-                ]
-        except KeyError:
-            pass
-
-        # 2. Fix 'work_hazards' (Parse JSON string into a list of dicts)
-        # Path: content.descriptive_part.work_hazards
-        try:
-            hazards_raw = data['content']['descriptive_part']['work_hazards']
-            if isinstance(hazards_raw, str):
-                # It looks like a stringified JSON "[{...}, {...}]", so we load it
-                data['content']['descriptive_part']['work_hazards'] = json.loads(hazards_raw)
-        except (KeyError, json.JSONDecodeError):
-            # Fallback if it fails
-            data['content']['descriptive_part']['work_hazards'] = []
-
-        return data
         
 @lru_cache()
 def get_rag_engine_wrapper():
