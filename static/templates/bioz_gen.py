@@ -73,10 +73,6 @@ def create_tight_bioz_template():
     p_sig.add_run('Opracował:').font.size = Pt(10)
     
     doc.add_paragraph('_' * 40).alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_auth = doc.add_paragraph('{{ meta.author }}')
-    p_auth.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_auth.runs[0].font.size = Pt(10)
-
     doc.add_page_break()
 
     # --- 4. TREŚĆ DOKUMENTU ---
@@ -131,7 +127,6 @@ def create_tight_bioz_template():
     
     def add_infra_row(label, path):
         row = table_infra.add_row().cells
-        # W tabelach też warto zerować odstępy akapitów wewnątrz komórek
         remove_spacing(row[0].paragraphs[0])
         remove_spacing(row[1].paragraphs[0])
         row[0].text = label
@@ -150,7 +145,6 @@ def create_tight_bioz_template():
     remove_spacing(p_h_start)
 
     p_h_item = doc.add_paragraph('{{ hazard }}', style='List Bullet')
-    # Dla stylu List Bullet też musimy wymusić brak odstępu po, jeśli styl bazowy go ma
     p_h_item.paragraph_format.space_after = Pt(2) 
     
     p_h_end = doc.add_paragraph('{% endfor %}')
@@ -170,6 +164,30 @@ def create_tight_bioz_template():
     remove_spacing(p_endif)
 
     # (Analogicznie dla reszty bloków if/endif...)
+    
+    # --- 5. STRONA Z DEBUG INFORMACJAMI ---
+    doc.add_page_break()
+    doc.add_heading('INFORMACJE DEBUG / GENERACJI', level=1)
+    debug_table = doc.add_table(rows=0, cols=2)
+    debug_table.autofit = False
+    debug_table.columns[0].width = Cm(6)
+    debug_table.columns[1].width = Cm(10)
+
+    def add_debug_row(label, value):
+        row = debug_table.add_row()
+        remove_spacing(row.cells[0].paragraphs[0])
+        remove_spacing(row.cells[1].paragraphs[0])
+        row.cells[0].paragraphs[0].add_run(label).bold = True
+        row.cells[1].paragraphs[0].add_run(value)
+        
+    add_debug_row("Typ dokumentu: ", "{{ meta.document_type }}")
+    add_debug_row("ID Firmy: ", "{{ meta.company_id }}")
+    add_debug_row("ID Projektu: ", "{{ meta.project_id }}")
+    add_debug_row("Autor: ", "{{ meta.author }}")
+    add_debug_row("System Prompt: ", "{{ meta.system_instruction }}.")
+    add_debug_row("Wersja: ", "{{ meta.version }}")
+    add_debug_row("Język: ", "{{ meta.language }}")
+    add_debug_row("Data utworzenia", "{{ meta.date_created }}")
 
     filename = 'health_and_safety_plan.docx'
     doc.save(filename)
