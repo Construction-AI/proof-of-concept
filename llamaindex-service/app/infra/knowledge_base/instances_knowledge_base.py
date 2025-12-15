@@ -10,8 +10,6 @@ from llama_index.readers.file import PyMuPDFReader
 from llama_index.core.vector_stores import MetadataFilters, ExactMatchFilter
 from llama_index.core.schema import BaseNode
 
-from llama_index.core.retrievers import QueryFusionRetriever
-from llama_index.retrievers.bm25 import BM25Retriever
 from llama_index.postprocessor.sbert_rerank import SentenceTransformerRerank
 from llama_index.core.query_engine import RetrieverQueryEngine
 
@@ -19,15 +17,18 @@ from app.models.files import KBFile
 
 from llama_index.core.node_parser import SentenceWindowNodeParser
 from llama_index.core.postprocessor import MetadataReplacementPostProcessor
-from llama_index.core.schema import NodeWithScore
+from app.models.field_extraction import FieldExtraction
+from llama_index.core.program import LLMTextCompletionProgram
 
 from app.core.logger import get_logger
-from typing import Optional, List
+from typing import Optional
 
 SENTENCE_WINDOW_PARSER = SentenceWindowNodeParser.from_defaults(window_size=3)
 WINDOW_POST = MetadataReplacementPostProcessor(target_metadata_key="window")
 
 class KnowledgeBaseWrapper:
+    TOP_K = 6
+    
     def __init__(self):
         self.async_client = get_qdrant_aclient()
         self.client = get_qdrant_client()
@@ -102,6 +103,14 @@ class KnowledgeBaseWrapper:
         Note:
             This method constructs metadata filters based on the provided arguments and queries the index asynchronously.
         """
+        query_engine = await self.__build_query_engine(
+            company_id=company_id, project_id=project_id, document_type=document_type, document_category=document_category, file_name=file_name, k=k
+        )
+
+        response = await query_engine.aquery(question)
+        return response.response
+    
+    async def __build_query_engine(self, company_id: str, project_id: str, document_type: Optional[str] = None, document_category: Optional[str] = None, file_name: Optional[str] = None, k: int = 5) -> RetrieverQueryEngine:
         await self.__check_create_default_collection()
         
         # Query the knowledge base with metadata filters and return the response
@@ -125,14 +134,13 @@ class KnowledgeBaseWrapper:
         )
         
         # 3. Create a FRESH Fusion Retriever
+        from llama_index.core.response_synthesizers.type import ResponseMode
         query_engine = RetrieverQueryEngine.from_args(
             retriever=retriever,
-            response_mode="compact",
             node_postprocessors=[self.reranker]
         )
-
-        response = await query_engine.aquery(question)
-        return response.response
+        
+        return query_engine
     
     async def fill_a_field(self, company_id: str, project_id: str, system_prompt: str, user_prompt: str) -> str:
         full_prompt = system_prompt + "\n" + user_prompt
@@ -268,6 +276,95 @@ class KnowledgeBaseWrapper:
         if file_name:
             return f"{company_id}/{project_id}/{document_category}/{document_type}/{file_name}"
         return f"{company_id}/{project_id}/{document_category}/{document_type}/*"
+    
+    def __build_context_snippets(self, nodes, max_chars_per_snip=600) -> str:
+        def _snip(txt: str, n=max_chars_per_snip):
+            return (txt[:n] + "..." if txt and len(txt) > n else txt)
+
+        parts = []
+        for i, sn in enumerate(nodes, start=1):
+            node = sn.node if hasattr(sn, "node") else sn
+            meta = node.metadata or {}
+            file_name = meta.get("file_name")
+            page_label = meta.get("source")
+            parts.append(
+                f"[{i}] file={file_name} page={page_label}\n{_snip(sn.node.get_content())}"
+            )
+            
+        return "\n\n---\n\n".join(parts)
+    
+    def __transform_retrieved_value(self, extracted_value, field_type: str):
+        if isinstance(extracted_value, list):
+            # Remove duplicates
+            unique_values = []
+            seen = set()
+            for v in extracted_value:
+                if v not in seen:
+                    unique_values.append(v)
+                    seen.add(v)
+            
+            if len(unique_values) == 1:
+                extracted_value = unique_values[0]
+            else:
+                if field_type == 'array':
+                    extracted_value = unique_values
+                else:
+                    extracted_value = unique_values[0]
+        return extracted_value
+    
+    async def __retrieve_context_for_field(self, company_id: str, project_id: str, instruction: str) -> str:
+        query_engine = await self.__build_query_engine(company_id=company_id, project_id=project_id)
+        from llama_index.core.schema import QueryBundle
+        
+        query = QueryBundle(query_str=instruction)
+        nodes = await query_engine.aretrieve(query_bundle=query)
+        windowed_nodes = WINDOW_POST.postprocess_nodes(nodes, query_str=instruction)
+        top_nodes = windowed_nodes[:KnowledgeBaseWrapper.TOP_K]
+        context = self.__build_context_snippets(top_nodes, max_chars_per_snip=1500)
+        return context
+    
+    def __make_extraction_program(self):
+        from llama_index.core.output_parsers.pydantic import PydanticOutputParser
+        from llama_index.core.settings import Settings
+        parser = PydanticOutputParser(output_cls=FieldExtraction)
+        template = (
+            "Jesteś asystentem do ekstrakcji danych. Używaj wyłącznie Kontekstu do odpowiedzi.\n"
+            "Zadanie: {instruction}\n\n"
+            "WAŻNE ZASADY:\n"
+            "- Jeśli pole pojawia się z TĄ SAMĄ wartością wielokrotnie, zwróć tę pojedynczą wartość jako string\n"
+            "- Jeśli pole pojawia się z RÓŻNYMI wartościami, zwróć je jako listę\n"
+            "- Jeśli pole nie zostało znalezione lub masz wątpliwości, ustaw value=null i confidence=0\n"
+            "- Ustaw confidence w zakresie od 0.0 (niepewne) do 1.0 (pewne)\n"
+            "- Podaj krótkie uzasadnienie swojej ekstrakcji\n\n"
+            "Zwróć ściśle JSON zgodny ze schematem: FieldExtraction(value, confidence, reasoning).\n\n"
+            "Kontekst:\n{context}\n"
+        )
+
+        program = LLMTextCompletionProgram.from_defaults(
+            output_parser=parser,
+            prompt_template_str=template,
+            llm=Settings.llm
+        )
+
+        return program
+    
+    async def extract_field(self, company_id: str, project_id: str, field_prompt: str, field_type: str) -> FieldExtraction:
+        if field_type == "array":
+            print(field_type)
+        context = await self.__retrieve_context_for_field(
+            company_id=company_id,
+            project_id=project_id,
+            instruction=field_prompt
+        )
+        program: LLMTextCompletionProgram = self.__make_extraction_program()
+        result: FieldExtraction = await program.acall(
+            instruction=field_prompt, context=context
+        )
+        
+        extracted_value = self.__transform_retrieved_value(extracted_value=result.value, field_type=field_type)
+        result.value = extracted_value
+        return result
+        
             
     
 @lru_cache()
