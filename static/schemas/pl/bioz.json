@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "document_type": "Plan bezpieczeństwa i ochrony zdrowia (BIOZ)",
+    "version": "4.0_extended",
+    "language": "pl",
+    "system_instruction": "Jesteś doświadczonym Kierownikiem Budowy. Twoim zadaniem jest wypełnienie szablonu BIOZ. Jeśli w dokumentacji źródłowej brakuje szczegółowych opisów BHP, Twoim obowiązkiem jest WYGENEROWANIE standardowych, bezpiecznych procedur zgodnych z polskim Prawem Budowlanym i Rozporządzeniem ws. BHP, adekwatnych do rodzaju robót.",
+    "company_id": null,
+    "project_id": null,
+    "author": null,
+    "date_created": null,
+    "date_modified": null
+  },
+  "content": [
+    // First page
+    {
+      "standard_block": {
+        "type": "table_of_contents"
+      }
+    },
+    {
+      "section": {
+        "name": "Część Opisowa",
+        "new_page": true, // Default - False
+        "subsection": {
+          "name": "Zakres prac",
+          ""
+        }
+      }
+    }
+  ]
+}

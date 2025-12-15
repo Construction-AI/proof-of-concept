@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "company_id": "company",
+    "project_id": "project_id",
+    "author": "Jakub Nenczak",
+    "version_id": "1.0.0",
+    "date_created": "2025-12-15T22:47:52.947999",
+    "date_modified": "2025-12-15T22:47:52.947999",
+    "document_type": "bioz",
+    "system_instruction": "test"
+  },
+  "sections": [
+    {
+      "new_page": true,
+      "name": "Complex Section",
+      "description": "A section that demonstrates nested structure.",
+      "subsections": [
+        {
+          "name": "Subsection A",
+          "description": "Contains paragraphs and a bullet list.",
+          "subsubsections": [
+            {
+              "name": "SubSub A1",
+              "description": "A mix of paragraph and list elements.",
+              "elements": [
+                {
+                  "text": "This is a paragraph element inside SubSub A1."
+                },
+                {
+                  "elements": [
+                    {
+                      "text": "Bullet item 1"
+                    },
+                    {
+                      "text": "Bullet item 2"
+                    },
+                    {
+                      "text": "Bullet item 3"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "SubSub A2",
+              "description": "A numbered list example.",
+              "elements": [
+                {
+                  "elements": [
+                    {
+                      "text": "Step 1: Prepare materials."
+                    },
+                    {
+                      "text": "Step 2: Verify safety conditions."
+                    },
+                    {
+                      "text": "Step 3: Execute procedure."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Subsection B",
+          "description": "Demonstrates field extraction element.",
+          "subsubsections": [
+            {
+              "name": "SubSub B1",
+              "description": "Field extraction example with a prompt.",
+              "elements": [
+                {
+                  "extracted_value": null,
+                  "prompt": "Extract the main hazard described in the introduction section.",
+                  "type": "string",
+                  "example": "Exposure to high voltage equipment"
+                },
+                {
+                  "text": "Additional context or fallback notes."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "new_page": false,
+      "name": "Minimal",
+      "description": "A minimal section without subsections.",
+      "subsections": []
+    }
+  ]
+}
