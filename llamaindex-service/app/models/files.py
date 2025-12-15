@@ -24,8 +24,8 @@ class File(ABC):
         return self.company_id
 
 class LocalFile(File):
-        def __init__(self, company_id: str, project_id: str, document_category: str, local_path: str, document_type: Optional[str] = "raw", forced_file_name: Optional[str] = None):
-            File.__init__(self, company_id, project_id, document_category, document_type)
+        def __init__(self, company_id: str, project_id: str, document_category: str, local_path: str, document_subtype: Optional[str] = "raw", forced_file_name: Optional[str] = None):
+            File.__init__(self, company_id, project_id, document_category, document_subtype)
             self.local_path = local_path
             self.forced_file_name = forced_file_name
             
@@ -45,7 +45,7 @@ class LocalFile(File):
                             
 class KBFile(LocalFile):
     def __init__(self, company_id: str, project_id: str, document_category: str, document_type: str, local_path: str, metadata: dict = {}):
-        LocalFile.__init__(self, company_id=company_id, project_id=project_id, document_category=document_category, document_type=document_type, local_path=local_path)
+        LocalFile.__init__(self, company_id=company_id, project_id=project_id, document_category=document_category, document_subtype=document_type, local_path=local_path)
         self.metadata = metadata
         self.__set_metadata()
         

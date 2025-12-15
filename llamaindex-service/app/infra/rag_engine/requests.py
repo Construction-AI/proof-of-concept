@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Literal
 
 class RagEngineRequest:
     class UploadDocument(BaseModel):
@@ -46,8 +46,8 @@ class RagEngineRequest:
     class GenerateDocument(BaseModel):
         company_id: str
         project_id: str
-        document_category: str
         author: str
+        document_category: str
         
     class GenerateDocx(BaseModel):
         company_id: str
