@@ -134,9 +134,9 @@ class KnowledgeBaseWrapper:
         )
         
         # 3. Create a FRESH Fusion Retriever
+        from llama_index.core.response_synthesizers.type import ResponseMode
         query_engine = RetrieverQueryEngine.from_args(
             retriever=retriever,
-            response_mode="compact",
             node_postprocessors=[self.reranker]
         )
         
