@@ -30,25 +30,26 @@ def run_test():
 
     # 2) Section with subsections and subsubsections
     complex_section = SchemaSection(
-        name="Complex Section",
-        description="A section that demonstrates nested structure.",
+        heading=SchemaParagraph(text="Complex Section"),
+        description=SchemaParagraph(text="A section that demonstrates nested structure."),
         new_page=True,
         subsections=[],
     )
 
     # Subsection A
     subsection_a = SchemaSubsection(
-        name="Subsection A",
-        description="Contains paragraphs and a bullet list.",
+        heading=SchemaParagraph(text="Subsection A"),
+        description=SchemaParagraph(text="Contains paragraphs and a bullet list."),
         subsubsections=[],
     )
 
     subsub_a1 = SchemaSubSubsection(
-        name="SubSub A1",
-        description="A mix of paragraph and list elements.",
+        heading=SchemaParagraph(text="SubSub A1"),
+        description=SchemaParagraph(text="A mix of paragraph and list elements."),
         elements=[
             SchemaParagraph(text="This is a paragraph element inside SubSub A1."),
             SchemaBulletList(
+                heading=SchemaParagraph(text="Tralala"),
                 elements=[
                     SchemaParagraph(text="Bullet item 1"),
                     SchemaParagraph(text="Bullet item 2"),
@@ -59,10 +60,11 @@ def run_test():
     )
 
     subsub_a2 = SchemaSubSubsection(
-        name="SubSub A2",
-        description="A numbered list example.",
+        heading=SchemaParagraph(text="SubSub A2"),
+        description=SchemaParagraph(text="A numbered list example."),
         elements=[
             SchemaNumberedList(
+                heading=SchemaParagraph(text="Tralala"),
                 elements=[
                     SchemaParagraph(text="Step 1: Prepare materials."),
                     SchemaParagraph(text="Step 2: Verify safety conditions."),
@@ -76,19 +78,29 @@ def run_test():
 
     # Subsection B
     subsection_b = SchemaSubsection(
-        name="Subsection B",
-        description="Demonstrates field extraction element.",
+        heading=SchemaParagraph(text="Subsection B"),
+        description=SchemaParagraph(text="Demonstrates field extraction element."),
         subsubsections=[],
     )
 
     subsub_b1 = SchemaSubSubsection(
-        name="SubSub B1",
-        description="Field extraction example with a prompt.",
+        heading=SchemaParagraph(text="SubSub B1"),
+        description=SchemaParagraph(text="Field extraction example with a prompt."),
         elements=[
             SchemaFieldExtractionField(
                 prompt="Extract the main hazard described in the introduction section.",
                 type="string",
                 example="Exposure to high voltage equipment",
+            ),
+            SchemaFieldExtractionField(
+                prompt="Extract all safety measures mentioned in the document.",
+                type="list",
+                example=["Personal protective equipment (PPE)", "Emergency procedures", "First aid kit location"],
+            ),
+            SchemaFieldExtractionField(
+                prompt="Extract the responsible personnel heading and role.",
+                type="string",
+                example="John Smith, Safety Officer",
             ),
             SchemaParagraph(text="Additional context or fallback notes."),
         ],
@@ -101,8 +113,8 @@ def run_test():
 
     # 3) Minimal section with description only
     minimal_section = SchemaSection(
-        name="Minimal",
-        description="A minimal section without subsections.",
+        heading=SchemaParagraph(text="Minimal"),
+        description=SchemaParagraph(text="A minimal section without subsections."),
     )
     generator.sections.append(minimal_section)
     
@@ -111,6 +123,15 @@ def run_test():
         json.dump(generator.serialize(), f, ensure_ascii=False, indent=2)
 
     print("Generated schema to /app/generated_schema.json")
+    
+    # DocxGenerator
+    from app.api.services.docx_generator_service import DocxGeneratorService
+    docx_generator = DocxGeneratorService(
+        schema_generator_service=generator
+    )
+    
+    docx_generator.load_schema()
+    docx_generator.generate()
 
 
 if __name__ == "__main__":

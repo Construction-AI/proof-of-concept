@@ -4,29 +4,44 @@
     "project_id": "project_id",
     "author": "Jakub Nenczak",
     "version_id": "1.0.0",
-    "date_created": "2025-12-15T22:47:52.947999",
-    "date_modified": "2025-12-15T22:47:52.947999",
+    "date_created": "2025-12-15T23:39:57.215621",
+    "date_modified": "2025-12-15T23:39:57.215621",
     "document_type": "bioz",
     "system_instruction": "test"
   },
   "sections": [
     {
       "new_page": true,
-      "name": "Complex Section",
-      "description": "A section that demonstrates nested structure.",
+      "heading": {
+        "text": "Complex Section"
+      },
+      "description": {
+        "text": "A section that demonstrates nested structure."
+      },
       "subsections": [
         {
-          "name": "Subsection A",
-          "description": "Contains paragraphs and a bullet list.",
+          "heading": {
+            "text": "Subsection A"
+          },
+          "description": {
+            "text": "Contains paragraphs and a bullet list."
+          },
           "subsubsections": [
             {
-              "name": "SubSub A1",
-              "description": "A mix of paragraph and list elements.",
+              "heading": {
+                "text": "SubSub A1"
+              },
+              "description": {
+                "text": "A mix of paragraph and list elements."
+              },
               "elements": [
                 {
                   "text": "This is a paragraph element inside SubSub A1."
                 },
                 {
+                  "heading": {
+                    "text": "Tralala"
+                  },
                   "elements": [
                     {
                       "text": "Bullet item 1"
@@ -42,10 +57,17 @@
               ]
             },
             {
-              "name": "SubSub A2",
-              "description": "A numbered list example.",
+              "heading": {
+                "text": "SubSub A2"
+              },
+              "description": {
+                "text": "A numbered list example."
+              },
               "elements": [
                 {
+                  "heading": {
+                    "text": "Tralala"
+                  },
                   "elements": [
                     {
                       "text": "Step 1: Prepare materials."
@@ -63,18 +85,42 @@
           ]
         },
         {
-          "name": "Subsection B",
-          "description": "Demonstrates field extraction element.",
+          "heading": {
+            "text": "Subsection B"
+          },
+          "description": {
+            "text": "Demonstrates field extraction element."
+          },
           "subsubsections": [
             {
-              "name": "SubSub B1",
-              "description": "Field extraction example with a prompt.",
+              "heading": {
+                "text": "SubSub B1"
+              },
+              "description": {
+                "text": "Field extraction example with a prompt."
+              },
               "elements": [
                 {
                   "extracted_value": null,
                   "prompt": "Extract the main hazard described in the introduction section.",
                   "type": "string",
                   "example": "Exposure to high voltage equipment"
+                },
+                {
+                  "extracted_value": null,
+                  "prompt": "Extract all safety measures mentioned in the document.",
+                  "type": "list",
+                  "example": [
+                    "Personal protective equipment (PPE)",
+                    "Emergency procedures",
+                    "First aid kit location"
+                  ]
+                },
+                {
+                  "extracted_value": null,
+                  "prompt": "Extract the responsible personnel heading and role.",
+                  "type": "string",
+                  "example": "John Smith, Safety Officer"
                 },
                 {
                   "text": "Additional context or fallback notes."
@@ -87,8 +133,12 @@
     },
     {
       "new_page": false,
-      "name": "Minimal",
-      "description": "A minimal section without subsections.",
+      "heading": {
+        "text": "Minimal"
+      },
+      "description": {
+        "text": "A minimal section without subsections."
+      },
       "subsections": []
     }
   ]

@@ -25,6 +25,7 @@ class SchemaParagraph(SchemaBaseElement):
     text: str
             
 class SchemaList(SchemaBaseElement):
+    heading: SchemaParagraph
     elements: List[SchemaParagraph]
     
 class SchemaNumberedList(SchemaList):
@@ -34,19 +35,19 @@ class SchemaBulletList(SchemaList):
     pass
 
 class SchemaSubSubsection(BaseModel):
-    name: str
-    description: Optional[str] = None
+    heading: SchemaParagraph
+    description: Optional[SchemaParagraph] = None
     elements: List[Union[SchemaParagraph, SchemaBulletList, SchemaNumberedList, SchemaFieldExtractionField]]
 
 class SchemaSubsection(BaseModel):
-    name: str
-    description: Optional[str] = None
+    heading: SchemaParagraph
+    description: Optional[SchemaParagraph] = None
     subsubsections: List[SchemaSubSubsection]
 
 class SchemaSection(BaseModel):
     new_page: Optional[bool] = False
-    name: str
-    description: Optional[str] = None
+    heading: SchemaParagraph
+    description: Optional[SchemaParagraph] = None
     subsections: List[SchemaSubsection] = []
     
 class SchemaTableOfContents(BaseModel):
