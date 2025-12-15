@@ -294,6 +294,8 @@ class KnowledgeBaseWrapper:
         return "\n\n---\n\n".join(parts)
     
     def __transform_retrieved_value(self, extracted_value, field_type: str):
+        if field_type == "array":
+            print(str(extracted_value))
         if isinstance(extracted_value, list):
             # Remove duplicates
             unique_values = []

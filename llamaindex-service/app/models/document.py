@@ -123,7 +123,10 @@ class SchemaDocument:
             raise Exception("No field schema provided for document.")
         data = {}
         for path, prompt_text, field_obj in self.__extract_prompts(self.data):
-            data[path] = field_obj["value"]
+            value = field_obj["value"]
+            if isinstance(value, str) and field_obj["type"] == "array":
+                value = [field_obj["value"]]
+            data[path] = value
         data["meta"] = self.__dump_meta()
         return self.__restore_tree_structure(data=data)
     
