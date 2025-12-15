@@ -16,27 +16,27 @@
         "name": {
           "value": null,
           "type": "string",
-          "prompt": "Podaj pełną, oficjalną nazwę zamierzenia budowlanego zgodnie z decyzją o pozwoleniu na budowę.",
-          "example": "Budowa budynku mieszkalnego wielorodzinnego z garażem podziemnym"
+          "prompt": "Znajdź pełną, oficjalną nazwę inwestycji. Szukaj w 'tabelce rysunkowej' projektu lub na stronie tytułowej Opisu Technicznego pod hasłami: 'Nazwa zamierzenia', 'Nazwa obiektu', 'Przedmiot inwestycji'. Przepisz nazwę dokładnie.",
+          "example": "Budowa budynku mieszkalnego wielorodzinnego z garażem podziemnym oraz instalacjami wewnętrznymi"
         },
         "address": {
           "street": {
             "value": null,
             "type": "string",
-            "prompt": "Podaj nazwę ulicy i numer posesji. Jeśli brak numeru, podaj opis lokalizacji.",
-            "example": "ul. Budowlana 15"
+            "prompt": "Podaj ulicę i numer posesji terenu budowy. Jeśli inwestycja nie ma jeszcze nadanego numeru, poszukaj opisu lokalizacji (np. 'przy ul. X', 'rejon ulicy Y'). Szukaj w sekcji 'Lokalizacja' lub 'Adres inwestycji'.",
+            "example": "ul. Budowlana 15 (lub: dz. przy ul. Polnej)"
           },
           "zip_city": {
             "value": null,
             "type": "string",
-            "prompt": "Podaj kod pocztowy i miejscowość.",
+            "prompt": "Podaj kod pocztowy i miejscowość, w której realizowana jest budowa. Upewnij się, że jest to adres inwestycji, a nie adres biura projektowego czy siedziby inwestora.",
             "example": "00-950 Warszawa"
           },
           "plot_number": {
             "value": null,
             "type": "string",
-            "prompt": "Podaj numer ewidencyjny działki oraz nazwę obrębu ewidencyjnego.",
-            "example": "dz. nr 15/4, obręb 0005 Śródmieście"
+            "prompt": "Wyszukaj numery ewidencyjne działek oraz nazwę obrębu ewidencyjnego. Szukaj fraz: 'nr ew. gr.', 'działka nr', 'obręb'. Jeśli wymieniono wiele działek, wypisz wszystkie objęte zakresem opracowania.",
+            "example": "dz. nr 15/4, 15/6, obręb 0005 Śródmieście"
           }
         }
       },
@@ -44,13 +44,13 @@
         "name": {
           "value": null,
           "type": "string",
-          "prompt": "Podaj pełną nazwę inwestora (imię i nazwisko lub nazwa firmy).",
+          "prompt": "Zidentyfikuj podmiot pełniący funkcję Inwestora (lub Zamawiającego). Informacja ta znajduje się zazwyczaj w górnej części tabeli tytułowej projektu. Nie myl z biurem architektonicznym.",
           "example": "Jan Kowalski lub Developer Sp. z o.o."
         },
         "address": {
           "value": null,
           "type": "string",
-          "prompt": "Podaj pełny adres zamieszkania lub siedziby inwestora.",
+          "prompt": "Podaj adres siedziby lub adres zamieszkania Inwestora (zidentyfikowanego w polu powyżej).",
           "example": "ul. Inwestorska 1, 00-001 Warszawa"
         }
       },
@@ -58,7 +58,7 @@
         "name": {
           "value": null,
           "type": "string",
-          "prompt": "Podaj nazwę Generalnego Wykonawcy. Jeśli nie został jeszcze wybrany, wpisz 'Do wyłonienia w drodze przetargu'.",
+          "prompt": "Szukaj nazwy Generalnego Wykonawcy robót budowlanych. Uwaga: W projektach budowlanych wykonawca często nie jest jeszcze znany. Jeśli nie ma podanej konkretnej firmy budowlanej, wpisz: 'Do wyłonienia w drodze przetargu'.",
           "example": "Bud-Max S.A."
         }
       },
@@ -66,13 +66,13 @@
         "name": {
           "value": null,
           "type": "string",
-          "prompt": "Podaj imię i nazwisko Kierownika Budowy.",
+          "prompt": "Wyszukaj imię i nazwisko osoby wyznaczonej na Kierownika Budowy. UWAGA: Nie myl z 'Głównym Projektantem' ani 'Autorem opracowania'. Jeśli dokument nie zawiera oświadczenia o objęciu funkcji kierownika budowy, pozostaw to pole puste (null).",
           "example": "inż. Adam Nowak"
         },
         "qualifications_number": {
           "value": null,
           "type": "string",
-          "prompt": "Podaj numer uprawnień budowlanych Kierownika Budowy wraz ze specjalnością.",
+          "prompt": "Jeśli zidentyfikowano Kierownika Budowy, podaj numer jego uprawnień budowlanych do kierowania robotami (wraz ze specjalnością, jeśli podano). Nie wpisuj uprawnień projektantów.",
           "example": "MAZ/0123/KB/19"
         }
       }
@@ -98,15 +98,13 @@
         }
       },
       "existing_objects": {
-        "items": {
-          "value": [],
-          "type": "array",
-          "prompt": "Wymień obiekty budowlane znajdujące się obecnie na działce, które mogą mieć wpływ na bezpieczeństwo (np. do wyburzenia lub zachowania). Jeśli działka jest pusta, wpisz 'Brak obiektów budowlanych na terenie inwestycji'.",
-          "example": [
-            "Istniejący budynek gospodarczy przeznaczony do rozbiórki",
-            "Studnia głębinowa do zabezpieczenia"
-          ]
-        }
+        "value": [],
+        "type": "array",
+        "prompt": "Wymień obiekty budowlane znajdujące się obecnie na działce, które mogą mieć wpływ na bezpieczeństwo (np. do wyburzenia lub zachowania). Jeśli działka jest pusta, wpisz 'Brak obiektów budowlanych na terenie inwestycji'.",
+        "example": [
+          "Istniejący budynek gospodarczy przeznaczony do rozbiórki",
+          "Studnia głębinowa do zabezpieczenia"
+        ]
       },
       "site_hazards": {
         "power_lines": {
