@@ -1,7 +1,7 @@
 {
   "meta": {
     "document_type": "health_and_safety_plan",
-    "version": "2.0_with_prompts",
+    "version": "2.1_with_types",
     "language": "pl",
     "system_instruction": "Jesteś doświadczonym Kierownikiem Budowy. Twoim zadaniem jest wypełnienie szablonu BIOZ danymi konkretnej inwestycji. Używaj fachowego języka technicznego, bądź precyzyjny i dbaj o zgodność z polskimi przepisami BHP.",
     "company_id": null,
@@ -15,55 +15,64 @@
       "object_info": {
         "name": {
           "value": null,
-          "prompt": "Podaj pełną, oficjalną nazwę zamierzenia budowlanego zgodnie z decyzją o pozwoleniu na budowę.",
-          "example": "Budowa budynku mieszkalnego wielorodzinnego z garażem podziemnym"
+          "type": "string",
+          "prompt": "Znajdź pełną, oficjalną nazwę inwestycji. Szukaj w 'tabelce rysunkowej' projektu lub na stronie tytułowej Opisu Technicznego pod hasłami: 'Nazwa zamierzenia', 'Nazwa obiektu', 'Przedmiot inwestycji'. Przepisz nazwę dokładnie.",
+          "example": "Budowa budynku mieszkalnego wielorodzinnego z garażem podziemnym oraz instalacjami wewnętrznymi"
         },
         "address": {
           "street": {
             "value": null,
-            "prompt": "Podaj nazwę ulicy i numer posesji. Jeśli brak numeru, podaj opis lokalizacji.",
-            "example": "ul. Budowlana 15"
+            "type": "string",
+            "prompt": "Podaj ulicę i numer posesji terenu budowy. Jeśli inwestycja nie ma jeszcze nadanego numeru, poszukaj opisu lokalizacji (np. 'przy ul. X', 'rejon ulicy Y'). Szukaj w sekcji 'Lokalizacja' lub 'Adres inwestycji'.",
+            "example": "ul. Budowlana 15 (lub: dz. przy ul. Polnej)"
           },
           "zip_city": {
             "value": null,
-            "prompt": "Podaj kod pocztowy i miejscowość.",
+            "type": "string",
+            "prompt": "Podaj kod pocztowy i miejscowość, w której realizowana jest budowa. Upewnij się, że jest to adres inwestycji, a nie adres biura projektowego czy siedziby inwestora.",
             "example": "00-950 Warszawa"
           },
           "plot_number": {
             "value": null,
-            "prompt": "Podaj numer ewidencyjny działki oraz nazwę obrębu ewidencyjnego.",
-            "example": "dz. nr 15/4, obręb 0005 Śródmieście"
+            "type": "string",
+            "prompt": "Wyszukaj numery ewidencyjne działek oraz nazwę obrębu ewidencyjnego. Szukaj fraz: 'nr ew. gr.', 'działka nr', 'obręb'. Jeśli wymieniono wiele działek, wypisz wszystkie objęte zakresem opracowania.",
+            "example": "dz. nr 15/4, 15/6, obręb 0005 Śródmieście"
           }
         }
       },
       "investor": {
         "name": {
           "value": null,
-          "prompt": "Podaj pełną nazwę inwestora (imię i nazwisko lub nazwa firmy).",
+          "type": "string",
+          "prompt": "Zidentyfikuj podmiot pełniący funkcję Inwestora (lub Zamawiającego). Informacja ta znajduje się zazwyczaj w górnej części tabeli tytułowej projektu. Nie myl z biurem architektonicznym.",
           "example": "Jan Kowalski lub Developer Sp. z o.o."
         },
         "address": {
           "value": null,
-          "prompt": "Podaj pełny adres zamieszkania lub siedziby inwestora.",
+          "type": "string",
+          "prompt": "Podaj adres siedziby lub adres zamieszkania Inwestora (zidentyfikowanego w polu powyżej).",
           "example": "ul. Inwestorska 1, 00-001 Warszawa"
         }
       },
       "contractor": {
         "name": {
           "value": null,
-          "prompt": "Podaj nazwę Generalnego Wykonawcy. Jeśli nie został jeszcze wybrany, wpisz 'Do wyłonienia w drodze przetargu'.",
+          "type": "string",
+          "prompt": "Szukaj nazwy Generalnego Wykonawcy robót budowlanych. Uwaga: W projektach budowlanych wykonawca często nie jest jeszcze znany. Jeśli nie ma podanej konkretnej firmy budowlanej, wpisz: 'Do wyłonienia w drodze przetargu'.",
           "example": "Bud-Max S.A."
         }
       },
       "site_manager": {
         "name": {
           "value": null,
-          "prompt": "Podaj imię i nazwisko Kierownika Budowy.",
+          "type": "string",
+          "prompt": "Wyszukaj imię i nazwisko osoby wyznaczonej na Kierownika Budowy. UWAGA: Nie myl z 'Głównym Projektantem' ani 'Autorem opracowania'. Jeśli dokument nie zawiera oświadczenia o objęciu funkcji kierownika budowy, pozostaw to pole puste (null).",
           "example": "inż. Adam Nowak"
         },
         "qualifications_number": {
           "value": null,
-          "prompt": "Podaj numer uprawnień budowlanych Kierownika Budowy wraz ze specjalnością.",
+          "type": "string",
+          "prompt": "Jeśli zidentyfikowano Kierownika Budowy, podaj numer jego uprawnień budowlanych do kierowania robotami (wraz ze specjalnością, jeśli podano). Nie wpisuj uprawnień projektantów.",
           "example": "MAZ/0123/KB/19"
         }
       }
@@ -72,65 +81,81 @@
       "scope_of_works": {
         "description": {
           "value": null,
-          "prompt": "Opisz zwięźle przedmiot inwestycji, określając rodzaj konstrukcji, technologię wykonania, liczbę kondygnacji oraz główne parametry (powierzchnia/kubatura).",
-          "example": "Budynek w technologii tradycyjnej murowanej z pustaków ceramicznych, ze stropami żelbetowymi, dwukondygnacyjny, niepodpiwniczony."
+          "type": "string",
+          "prompt": "Stwórz zwięzłą charakterystykę obiektu. Określ: 1) Technologię wznoszenia (np. murowana, żelbetowa monolityczna, prefabrykowana), 2) Rodzaj konstrukcji (np. szkieletowa, ściany nośne), 3) Liczbę kondygnacji (nadziemnych/podziemnych) oraz 4) Charakterystyczne parametry (powierzchnia zabudowy, kubatura - jeśli są podane).",
+          "example": "Budynek biurowy w konstrukcji szkieletowej żelbetowej, 5 kondygnacji nadziemnych, z garażem podziemnym. Powierzchnia zabudowy: 450 m2."
         },
         "stages": {
-          "value": [],
-          "prompt": "Wymień chronologicznie główne etapy robót budowlanych, od przygotowania terenu po prace wykończeniowe.",
-          "example": ["Wytyczenie geodezyjne", "Zdjęcie warstwy humusu", "Wykopy szerokoprzestrzenne", "Fundamenty"]
+          "value": null,
+          "type": "array",
+          "prompt": "Wymień chronologicznie główne etapy robót budowlanych. Szukaj rozdziału 'Kolejność wykonywania robót' lub wywnioskuj kolejność na podstawie opisu konstrukcji (od robót ziemnych, przez fundamenty, stan surowy, dach, po wykończeniówkę). Zwróć uwagę na specyficzne etapy jak np. 'wzmocnienie gruntu' czy 'montaż dźwigarów'.",
+          "example": [
+            "Roboty przygotowawcze i ziemne",
+            "Wykonanie fundamentów płytowych",
+            "Wznoszenie ścian i słupów żelbetowych",
+            "Montaż konstrukcji dachu",
+            "Prace wykończeniowe i elewacyjne"
+          ]
         }
       },
       "existing_objects": {
-        "items": {
-          "value": [],
-          "prompt": "Wymień obiekty budowlane znajdujące się obecnie na działce, które mogą mieć wpływ na bezpieczeństwo (np. do wyburzenia lub zachowania). Jeśli działka jest pusta, wpisz 'Brak obiektów budowlanych na terenie inwestycji'.",
-          "example": ["Istniejący budynek gospodarczy przeznaczony do rozbiórki", "Studnia głębinowa do zabezpieczenia"]
-        }
+        "value": null,
+        "type": "array",
+        "prompt": "Przeanalizuj opis 'Zagospodarowania Terenu' (PZT) pod kątem obiektów istniejących. Wymień obiekty przeznaczone do rozbiórki lub zabezpieczenia. Szukaj fraz: 'do wyburzenia', 'do rozbiórki', 'kolizje z istniejącą zabudową'. Jeśli teren jest niezabudowany, wpisz wyraźnie: 'Brak obiektów budowlanych na terenie inwestycji'.",
+        "example": [
+          "Istniejący garaż blaszany przeznaczony do rozbiórki",
+          "Zabytkowa kapliczka wymagająca zabezpieczenia"
+        ]
       },
       "site_hazards": {
         "power_lines": {
           "value": null,
-          "prompt": "Opisz lokalizację napowietrznych linii energetycznych względem terenu budowy. Określ napięcie (nN/SN/WN) i odległość od planowanych robót. Jeśli brak, wpisz 'Nie dotyczy'.",
-          "example": "Linia napowietrzna SN przebiega wzdłuż granicy północnej, poza strefą pracy żurawia."
+          "type": "string",
+          "prompt": "Sprawdź w opisie PZT lub branży elektrycznej, czy na działce lub w jej bezpośrednim sąsiedztwie występują napowietrzne linie energetyczne (nN, SN, WN). Jest to kluczowe dla pracy żurawi. Jeśli występują, podaj ich napięcie i lokalizację. Jeśli nie ma, wpisz 'Nie dotyczy'.",
+          "example": "Linia napowietrzna SN 15kV przebiega wzdłuż wschodniej granicy działki, w zasięgu pracy żurawia."
         },
         "underground_utilities": {
           "value": null,
-          "prompt": "Wymień czynne instalacje podziemne (gaz, woda, prąd, teletechnika) na terenie robót ziemnych, które stwarzają ryzyko uszkodzenia.",
-          "example": "Czynny gazociąg średniego ciśnienia przebiegający w poprzek planowanego wjazdu na budowę."
+          "type": "string",
+          "prompt": "Wyszukaj informacje o 'uzbrojeniu terenu' i 'kolizjach'. Wymień czynne sieci podziemne (gaz, prąd, woda, teletechnika), które znajdują się w strefie planowanych robót ziemnych i mogą zostać uszkodzone. Jeśli sieci nie ma lub są nieczynne, zaznacz to.",
+          "example": "Przez środek wykopu przebiega czynny kabel energetyczny nN (do przełożenia) oraz gazociąg (do zabezpieczenia rurą ochronną)."
         },
         "traffic": {
           "value": null,
-          "prompt": "Opisz zagrożenia związane z ruchem drogowym w sąsiedztwie placu budowy (np. wyjazd na drogę szybkiego ruchu, brak chodnika).",
-          "example": "Wyjazd z budowy bezpośrednio na drogę powiatową o dużym natężeniu ruchu; ograniczona widoczność."
+          "type": "string",
+          "prompt": "Zidentyfikuj zagrożenia związane z komunikacją i sąsiedztwem dróg publicznych. Szukaj w opisie 'Organizacji Placu Budowy'. Czy wyjazd jest bezpośrednio na ruchliwą ulicę? Czy chodnik przylega do granicy robót?",
+          "example": "Wjazd na budowę bezpośrednio z drogi wojewódzkiej o dużym natężeniu ruchu. Konieczność zajęcia chodnika dla pieszych."
         }
       },
       "work_hazards": {
-        "value": [],
-        "prompt": "Na podstawie zakresu robót wybierz lub dopisz specyficzne zagrożenia występujące na tej konkretnej budowie. Skup się na pracach szczególnie niebezpiecznych.",
+        "value": null,
+        "type": "array",
+        "prompt": "Na podstawie zidentyfikowanego zakresu robót (wykopy, praca na dachu, dźwigi) stwórz listę robót szczególnie niebezpiecznych. Uwzględnij: ryzyko upadku z wysokości (>2m), ryzyko przysypania ziemią (wykopy >1m), pracę żurawi, prace spawalnicze, prace z chemią budowlaną. Wymień tylko te, które faktycznie wystąpią.",
         "example": [
-          {
-            "type": "Upadek z wysokości",
-            "context": "Montaż więźby dachowej na wysokości 8m"
-          },
-          {
-            "type": "Prace w głębokich wykopach",
-            "context": "Wykopy pod fundamenty o głębokości 2,5m w gruncie piaszczystym"
-          }
+          "Prace na wysokości (montaż dachu)",
+          "Prace w wykopach o ścianach pionowych",
+          "Transport pionowy materiałów ciężkich (żuraw)",
+          "Prace spawalnicze"
         ]
       },
       "preventive_measures": {
         "excavations": {
-          "prompt": "Określ sposób zabezpieczenia ścian wykopów (np. szalunki, skarpy) adekwatny do kategorii gruntu i głębokości.",
-          "example": "Wykopy o ścianach pionowych w obudowie typu 'box'. Zejścia po drabinach systemowych."
+          "value": null,
+          "type": "string",
+          "prompt": "Znajdź wytyczne dotyczące 'Robót ziemnych'. Jak projektant nakazuje zabezpieczyć wykopy? Szukaj słów: 'skarpowanie', 'szalowanie', 'obudowa typu box', 'ścianka szczelna'. Dostosuj opis do głębokości fundamentów.",
+          "example": "Wykopy szerokoprzestrzenne ze skarpami o nachyleniu 1:1. Wykopy wąskoprzestrzenne w obudowie systemowej."
         },
         "heights": {
-          "prompt": "Określ środki ochrony zbiorowej i indywidualnej dla prac na wysokościach (dachy, stropy, rusztowania).",
-          "example": "Rusztowania systemowe z siatkami ochronnymi. Pracownicy wyposażeni w szelki bezpieczeństwa z amortyzatorem przy pracach dekarskich."
+          "value": null,
+          "type": "string",
+          "prompt": "Znajdź wytyczne BHP dotyczące prac na wysokości (stropy, dachy). Jakie środki ochrony zbiorowej przewidziano? Szukaj: 'balustrady ochronne', 'siatki asekuracyjne', 'rusztowania systemowe', 'szelki bezpieczeństwa'.",
+          "example": "Krawędzie stropów zabezpieczone balustradami (deska krawężnikowa 15cm + poręcz na 1,1m). Dostęp do dachu z rusztowań systemowych."
         },
         "machinery": {
-          "prompt": "Opisz zasady współpracy maszyn budowlanych (koparki, dźwigi) z pracownikami pieszymi.",
-          "example": "Wyznaczenie stref niebezpiecznych taśmą ostrzegawczą. Praca żurawia tylko pod nadzorem hakowego."
+          "value": null,
+          "type": "string",
+          "prompt": "Jeśli przewidziano użycie ciężkiego sprzętu (koparki, żurawie wieżowe), opisz zasady ich bezpiecznej pracy. Szukaj informacji o: 'strefach niebezpiecznych', 'wyznaczaniu dróg transportowych', 'sygnaliście/hakowym'.",
+          "example": "Wyznaczenie strefy pracy żurawia, niedostępnej dla osób postronnych. Praca koparek tylko przy zapewnieniu widoczności operatora."
         }
       }
     }
