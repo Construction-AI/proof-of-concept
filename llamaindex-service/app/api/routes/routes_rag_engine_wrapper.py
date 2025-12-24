@@ -129,3 +129,21 @@ async def route_generate_docx(req: RagEngineRequest.GenerateDocx):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
         
+# TEST
+@router.get("/parse")
+def route_parse_schema():
+    try:
+        from app.core.schema.mapper import SchemaMapper, SchemaDocument
+        import json
+        with open("/app/schemas/v2/test.json", "r") as f:
+            schema_dict = json.load(f)
+            doc: SchemaDocument = SchemaMapper.parse_schema(data=schema_dict)
+            print(str(doc.model_dump_json(ensure_ascii=False)))
+        from app.core.docx.generator import DocxGenerator
+        gen = DocxGenerator()
+        gen.preprocess_schema(schema=doc)
+        gen.generate(schema=doc, output_path="/app/generated_doc.docx")
+        return json.loads(s=doc.model_dump_json(ensure_ascii=False))
+    except Exception as e:
+        raise HTTPException(detail=str(e), status_code=500)
+        

@@ -1,0 +1,187 @@
+{
+  "id": "sample_bioz_schema_v2",
+  "type": "document",
+  "meta": {
+    "document_type": "BIOZ",
+    "language": "pl",
+    "version": "1.0",
+    "industry": "construction"
+  },
+  "children": [
+    {
+      "id": "intro_section",
+      "type": "section",
+      "title": "Wstęp",
+      "children": [
+        {
+          "id": "intro_p1",
+          "type": "paragraph",
+          "source": "static",
+          "content": "Plan bezpieczeństwa i ochrony zdrowia (BIOZ) został opracowany w celu zapewnienia właściwego poziomu bezpieczeństwa podczas realizacji robót budowlanych. Dokument ten stanowi podstawowe źródło informacji dotyczących organizacji prac oraz identyfikacji potencjalnych zagrożeń."
+        },
+        {
+          "id": "intro_p2",
+          "type": "paragraph",
+          "source": "static",
+          "content": "Plan BIOZ uwzględnia specyfikę inwestycji, warunki lokalne oraz obowiązujące przepisy prawa, w szczególności Kodeks pracy oraz akty wykonawcze dotyczące bezpieczeństwa i higieny pracy."
+        },
+        {
+          "id": "intro_p3",
+          "type": "paragraph",
+          "source": "static",
+          "content": "Wszyscy uczestnicy procesu budowlanego zobowiązani są do zapoznania się z treścią niniejszego dokumentu przed przystąpieniem do realizacji robót."
+        }
+      ]
+    },
+    {
+      "id": "site_section",
+      "type": "section",
+      "title": "Opis terenu budowy",
+      "children": [
+        {
+          "id": "site_p1",
+          "type": "paragraph",
+          "source": "static",
+          "content": "Teren budowy znajduje się na obszarze o zróżnicowanej zabudowie. W bezpośrednim sąsiedztwie występują obiekty mieszkalne oraz infrastruktura techniczna, co wymaga zachowania szczególnej ostrożności podczas prowadzenia robót."
+        },
+        {
+          "id": "site_p2",
+          "type": "paragraph",
+          "source": "static",
+          "content": "Dojazd do terenu budowy zapewniony jest drogą publiczną. Organizacja ruchu na czas prowadzenia prac zostanie dostosowana do aktualnych potrzeb oraz uzgodniona z właściwymi organami."
+        },
+        {
+          "id": "site_intro_list",
+          "type": "paragraph",
+          "source": "static",
+          "content": "Podstawowe zasady organizacji terenu budowy obejmują w szczególności:"
+        },
+        {
+          "id": "site_list",
+          "type": "list",
+          "list_type": "bulleted",
+          "children": [
+            {
+              "id": "site_li1",
+              "type": "list_item",
+              "children": [
+                {
+                  "id": "site_li1_p",
+                  "type": "paragraph",
+                  "source": "static",
+                  "content": "Ogrodzenie terenu budowy oraz oznakowanie go tablicami informacyjnymi i ostrzegawczymi."
+                }
+              ]
+            },
+            {
+              "id": "site_li2",
+              "type": "list_item",
+              "children": [
+                {
+                  "id": "site_li2_p",
+                  "type": "paragraph",
+                  "source": "static",
+                  "content": "Wyznaczenie dróg komunikacyjnych dla pieszych i pojazdów budowy."
+                }
+              ]
+            },
+            {
+              "id": "site_li3",
+              "type": "list_item",
+              "children": [
+                {
+                  "id": "site_li3_p",
+                  "type": "paragraph",
+                  "source": "static",
+                  "content": "Zorganizowanie zaplecza socjalnego dla pracowników w wydzielonej części terenu."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "risks_section",
+      "type": "section",
+      "title": "Identyfikacja zagrożeń",
+      "children": [
+        {
+          "id": "risk_p1",
+          "type": "paragraph",
+          "source": "static",
+          "content": "Realizacja robót budowlanych wiąże się z występowaniem zagrożeń dla zdrowia i życia pracowników. Identyfikacja tych zagrożeń stanowi podstawę do wdrożenia odpowiednich środków zapobiegawczych."
+        },
+        {
+          "id": "risk_intro_list",
+          "type": "paragraph",
+          "source": "static",
+          "content": "Do najistotniejszych zagrożeń występujących na terenie budowy należą:"
+        },
+        {
+          "id": "risk_list",
+          "type": "list",
+          "list_type": "numbered",
+          "children": [
+            {
+              "id": "risk_li1",
+              "type": "list_item",
+              "children": [
+                {
+                  "id": "risk_li1_p",
+                  "type": "paragraph",
+                  "source": "static",
+                  "content": "Ryzyko upadku z wysokości podczas prac montażowych oraz prac prowadzonych na rusztowaniach."
+                }
+              ]
+            },
+            {
+              "id": "risk_li2",
+              "type": "list_item",
+              "children": [
+                {
+                  "id": "risk_li2_p",
+                  "type": "paragraph",
+                  "source": "static",
+                  "content": "Możliwość porażenia prądem elektrycznym w trakcie wykonywania prac instalacyjnych."
+                }
+              ]
+            },
+            {
+              "id": "risk_li3",
+              "type": "list_item",
+              "children": [
+                {
+                  "id": "risk_li3_p",
+                  "type": "paragraph",
+                  "source": "static",
+                  "content": "Zagrożenia mechaniczne wynikające z obsługi maszyn i urządzeń budowlanych."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "summary_section",
+      "type": "section",
+      "title": "Postanowienia końcowe",
+      "children": [
+        {
+          "id": "summary_p1",
+          "type": "paragraph",
+          "source": "static",
+          "content": "Niniejszy plan BIOZ obowiązuje przez cały okres realizacji robót budowlanych i podlega aktualizacji w przypadku zmiany warunków prowadzenia prac."
+        },
+        {
+          "id": "summary_p2",
+          "type": "paragraph",
+          "source": "static",
+          "content": "Dokument należy przechowywać na terenie budowy oraz udostępniać wszystkim osobom wykonującym prace."
+        }
+      ]
+    }
+  ],
+  "fields": {}
+}

@@ -89,17 +89,17 @@ def run_test():
         elements=[
             SchemaFieldExtractionField(
                 prompt="Extract the main hazard described in the introduction section.",
-                type="string",
+                data_type="string",
                 example="Exposure to high voltage equipment",
             ),
             SchemaFieldExtractionField(
                 prompt="Extract all safety measures mentioned in the document.",
-                type="list",
+                data_type="list",
                 example=["Personal protective equipment (PPE)", "Emergency procedures", "First aid kit location"],
             ),
             SchemaFieldExtractionField(
                 prompt="Extract the responsible personnel heading and role.",
-                type="string",
+                data_type="string",
                 example="John Smith, Safety Officer",
             ),
             SchemaParagraph(text="Additional context or fallback notes."),
