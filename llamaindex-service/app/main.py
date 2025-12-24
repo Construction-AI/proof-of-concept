@@ -1,11 +1,8 @@
 from fastapi import FastAPI
 from app.api.routes import (
-    routes_file_storage_wrapper,
     routes_health,
-    routes_rag_engine_wrapper,
-    routes_rag_knowledge_base
+    routes_rag_engine_wrapper
 )
-# from app.api.services.document_loader import startup_load_all_projects
 from contextlib import asynccontextmanager
 
 @asynccontextmanager
@@ -28,11 +25,8 @@ def create_app() -> FastAPI:
         )
 
     # Register routes
-    # app.include_router(routes_file_storage_wrapper.router, prefix="/file_storage", tags=["File Storage"])
     app.include_router(routes_health.router, prefix="/health", tags=["Health Check"])
     app.include_router(routes_rag_engine_wrapper.router, prefix="/rag_engine", tags=["Rag Engine Wrapper"])
-    # app.include_router(routes_rag_knowledge_base.router, prefix="/knowledge_base", tags=["Rag Knowledge Base"])
-
     return app
 
 app = create_app()
