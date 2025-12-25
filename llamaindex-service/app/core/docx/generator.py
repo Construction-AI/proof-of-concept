@@ -1,5 +1,6 @@
 from docx import Document
-from docx.shared import Cm
+from docx.shared import Cm, Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from typing import Literal, Dict
 
 from app.models.schema.base_node import SchemaBaseNode
@@ -42,6 +43,38 @@ class DocxGenerator:
         section.left_margin = Cm(3)
         section.right_margin = Cm(2)
 
+        # -------------------------
+        # Base paragraph style
+        # -------------------------
+        normal = self.document.styles["Normal"]
+        normal.font.name = "Times New Roman"
+        normal.font.size = Pt(11)
+
+        p_format = normal.paragraph_format
+        p_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        p_format.first_line_indent = Cm(1.25)
+        p_format.space_after = Pt(6)
+        p_format.space_before = Pt(0)
+        p_format.line_spacing = 1.5
+
+        # -------------------------
+        # Heading styles
+        # -------------------------
+        h1 = self.document.styles["Heading 1"]
+        h1.font.name = "Times New Roman"
+        h1.font.size = Pt(14)
+        h1.font.bold = True
+        h1.paragraph_format.space_before = Pt(24)
+        h1.paragraph_format.space_after = Pt(12)
+
+        h2 = self.document.styles["Heading 2"]
+        h2.font.name = "Times New Roman"
+        h2.font.size = Pt(13)
+        h2.font.bold = True
+        h2.paragraph_format.space_before = Pt(18)
+        h2.paragraph_format.space_after = Pt(10)
+
+
     # -------------------------
     # Dispatcher
     # -------------------------
@@ -53,7 +86,7 @@ class DocxGenerator:
         
     # -------------------------
     # Preprocessors
-    # -------------------------    
+    # -------------------------
     def _preprocess_field(self, fields: Dict[str, SchemaField], node: SchemaBaseNode):
         if not isinstance(node, SchemaParagraph):
             if isinstance(node, (SchemaSection, SchemaSubsection, SchemaList, SchemaListItem)):
@@ -69,8 +102,14 @@ class DocxGenerator:
                 raise ValueError(f"Could not find field for key: {node.field}")
             
             # TODO: Evaluate with AI
-            node.content = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam fringilla orci justo, non porta leo posuere eget."
-            
+            if field.source == 'user':
+                node.content = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam fringilla orci justo, non porta leo posuere eget."
+            else:
+                # TODO: Implement RAG generation
+                # from app.infra.knowledge_base.instances_knowledge_base import get_knowledge_base_wrapper
+                # kbw = get_knowledge_base_wrapper()
+                # node.content = await kbw.query
+                node.content = "AI Generated"
         
         
     # -------------------------
@@ -81,6 +120,7 @@ class DocxGenerator:
         for child in node.children:
             self._render_node(child)
 
+
     def _render_subsection(self, node: SchemaSubsection):
         self.document.add_heading(node.title, level=2)
         for child in node.children:
@@ -90,14 +130,10 @@ class DocxGenerator:
         self.document.add_paragraph(node.text, style="Heading 3")
 
     def _render_paragraph(self, node: SchemaParagraph):
-        text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam fringilla orci justo, non porta leo posuere eget."
-        # if node.source == "static":
-        #     text = node.content or ""
-        # else:
-        #     # by this stage fields MUST be resolved
-        #     raise ValueError("Unresolved field paragraph reached DOCX renderer")
+        text = node.content or ""
+        p = self.document.add_paragraph(text, style="Normal")
+        p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
 
-        self.document.add_paragraph(text, style="Normal")
 
     def _render_list(self, node: SchemaList):
         for child in node.children:
@@ -107,12 +143,20 @@ class DocxGenerator:
         for child in node.children:
             if isinstance(child, SchemaParagraph):
                 style = "List Number" if list_type == "numbered" else "List Bullet"
-                self.document.add_paragraph(
-                    child.content or "",
-                    style=style
-                )
+                p = self.document.add_paragraph(child.content or "", style=style)
+
+                # ---- indentation ----
+                p.paragraph_format.left_indent = Pt(2)
+
+                # ---- spacing ----
+                p.paragraph_format.space_before = Pt(2)
+                p.paragraph_format.space_after = Pt(4)
+
+                # ---- alignment ----
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
             else:
                 self._render_node(child)
+
 
     def _render_table(self, node: SchemaTable):
         # Placeholder: depends on your final table model

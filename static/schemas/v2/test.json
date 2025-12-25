@@ -1,60 +1,60 @@
 {
-  "id": "sample_bioz_schema_v2",
+  "id": "sample_bioz_schema_v2_expanded",
   "type": "document",
   "meta": {
     "document_type": "BIOZ",
     "language": "pl",
-    "version": "1.0",
+    "version": "1.1",
     "industry": "construction"
   },
   "children": [
     {
       "id": "intro_section",
       "type": "section",
-      "title": "Wstęp",
+      "title": "Wstęp i Podstawa Prawna",
       "children": [
         {
           "id": "intro_p1",
           "type": "paragraph",
           "source": "static",
-          "content": "Plan bezpieczeństwa i ochrony zdrowia (BIOZ) został opracowany w celu zapewnienia właściwego poziomu bezpieczeństwa podczas realizacji robót budowlanych. Dokument ten stanowi podstawowe źródło informacji dotyczących organizacji prac oraz identyfikacji potencjalnych zagrożeń."
+          "content": "Plan bezpieczeństwa i ochrony zdrowia (BIOZ) został opracowany w celu zapewnienia właściwego poziomu bezpieczeństwa podczas realizacji robót budowlanych. Dokument ten stanowi podstawowe źródło informacji dotyczących organizacji prac oraz identyfikacji potencjalnych zagrożeń, zgodnie z wymogami Rozporządzenia Ministra Infrastruktury w sprawie informacji dotyczącej bezpieczeństwa i ochrony zdrowia oraz planu bezpieczeństwa i ochrony zdrowia."
         },
         {
           "id": "intro_p2",
           "type": "paragraph",
           "source": "static",
-          "content": "Plan BIOZ uwzględnia specyfikę inwestycji, warunki lokalne oraz obowiązujące przepisy prawa, w szczególności Kodeks pracy oraz akty wykonawcze dotyczące bezpieczeństwa i higieny pracy."
+          "content": "Plan BIOZ uwzględnia specyfikę inwestycji, warunki lokalne oraz obowiązujące przepisy prawa, w szczególności Kodeks pracy oraz akty wykonawcze dotyczące bezpieczeństwa i higieny pracy. Kierownik budowy jest odpowiedzialny za wdrożenie i egzekwowanie postanowień niniejszego planu."
         },
         {
           "id": "intro_p3",
           "type": "paragraph",
           "source": "static",
-          "content": "Wszyscy uczestnicy procesu budowlanego zobowiązani są do zapoznania się z treścią niniejszego dokumentu przed przystąpieniem do realizacji robót."
+          "content": "Wszyscy uczestnicy procesu budowlanego, w tym podwykonawcy i osoby trzecie przebywające legalnie na terenie budowy, zobowiązani są do zapoznania się z treścią niniejszego dokumentu przed przystąpieniem do realizacji robót. Potwierdzenie zapoznania się z planem następuje poprzez złożenie podpisu na liście szkoleniowej."
         }
       ]
     },
     {
       "id": "site_section",
       "type": "section",
-      "title": "Opis terenu budowy",
+      "title": "Szczegółowy Opis Terenu Budowy i Zagospodarowania",
       "children": [
         {
           "id": "site_p1",
           "type": "paragraph",
           "source": "static",
-          "content": "Teren budowy znajduje się na obszarze o zróżnicowanej zabudowie. W bezpośrednim sąsiedztwie występują obiekty mieszkalne oraz infrastruktura techniczna, co wymaga zachowania szczególnej ostrożności podczas prowadzenia robót."
+          "content": "Teren budowy znajduje się na obszarze o zróżnicowanej zabudowie. W bezpośrednim sąsiedztwie występują obiekty mieszkalne oraz infrastruktura techniczna, w tym napowietrzne linie energetyczne oraz podziemne sieci gazowe, co wymaga zachowania szczególnej ostrożności podczas prowadzenia robót ziemnych i dźwigowych."
         },
         {
           "id": "site_p2",
           "type": "paragraph",
           "source": "static",
-          "content": "Dojazd do terenu budowy zapewniony jest drogą publiczną. Organizacja ruchu na czas prowadzenia prac zostanie dostosowana do aktualnych potrzeb oraz uzgodniona z właściwymi organami."
+          "content": "Dojazd do terenu budowy zapewniony jest drogą publiczną o ograniczonej nośności. Organizacja ruchu na czas prowadzenia prac zostanie dostosowana do aktualnych potrzeb oraz uzgodniona z właściwymi organami zarządu dróg. Wyznacza się strefy rozładunku materiałów w sposób nieblokujący przejazdu pojazdów uprzywilejowanych."
         },
         {
           "id": "site_intro_list",
           "type": "paragraph",
           "source": "static",
-          "content": "Podstawowe zasady organizacji terenu budowy obejmują w szczególności:"
+          "content": "Podstawowe zasady organizacji terenu budowy obejmują w szczególności następujące elementy techniczne i logistyczne:"
         },
         {
           "id": "site_list",
@@ -69,7 +69,7 @@
                   "id": "site_li1_p",
                   "type": "paragraph",
                   "source": "static",
-                  "content": "Ogrodzenie terenu budowy oraz oznakowanie go tablicami informacyjnymi i ostrzegawczymi."
+                  "content": "Ogrodzenie terenu budowy o wysokości minimum 1,5m oraz oznakowanie go tablicami informacyjnymi i ostrzegawczymi w miejscach widocznych dla osób postronnych."
                 }
               ]
             },
@@ -81,7 +81,7 @@
                   "id": "site_li2_p",
                   "type": "paragraph",
                   "source": "static",
-                  "content": "Wyznaczenie dróg komunikacyjnych dla pieszych i pojazdów budowy."
+                  "content": "Wyznaczenie i utwardzenie dróg komunikacyjnych dla pieszych i pojazdów budowy, z wyraźnym oddzieleniem ruchu kołowego od pieszego."
                 }
               ]
             },
@@ -93,7 +93,19 @@
                   "id": "site_li3_p",
                   "type": "paragraph",
                   "source": "static",
-                  "content": "Zorganizowanie zaplecza socjalnego dla pracowników w wydzielonej części terenu."
+                  "content": "Zorganizowanie zaplecza socjalnego składającego się z kontenerów biurowych, sanitarnych oraz jadalni, wyposażonych w bieżącą wodę i środki higieny."
+                }
+              ]
+            },
+            {
+              "id": "site_li4",
+              "type": "list_item",
+              "children": [
+                {
+                  "id": "site_li4_p",
+                  "type": "paragraph",
+                  "source": "static",
+                  "content": "Wyznaczenie punktu pierwszej pomocy oraz rozmieszczenie gaśnic proszkowych typu ABC w miejscach o podwyższonym ryzyku pożarowym."
                 }
               ]
             }
@@ -104,19 +116,19 @@
     {
       "id": "risks_section",
       "type": "section",
-      "title": "Identyfikacja zagrożeń",
+      "title": "Szczegółowa Identyfikacja i Ocena Zagrożeń",
       "children": [
         {
           "id": "risk_p1",
           "type": "paragraph",
           "source": "static",
-          "content": "Realizacja robót budowlanych wiąże się z występowaniem zagrożeń dla zdrowia i życia pracowników. Identyfikacja tych zagrożeń stanowi podstawę do wdrożenia odpowiednich środków zapobiegawczych."
+          "content": "Realizacja robót budowlanych wiąże się z występowaniem zagrożeń o charakterze fizycznym, chemicznym i biologicznym. Każdy pracownik przed przystąpieniem do pracy musi przejść instruktaż stanowiskowy dotyczący specyficznych ryzyk dla danego etapu budowy."
         },
         {
           "id": "risk_intro_list",
           "type": "paragraph",
           "source": "static",
-          "content": "Do najistotniejszych zagrożeń występujących na terenie budowy należą:"
+          "content": "Do krytycznych zagrożeń zidentyfikowanych w niniejszym projekcie należą:"
         },
         {
           "id": "risk_list",
@@ -131,7 +143,7 @@
                   "id": "risk_li1_p",
                   "type": "paragraph",
                   "source": "static",
-                  "content": "Ryzyko upadku z wysokości podczas prac montażowych oraz prac prowadzonych na rusztowaniach."
+                  "content": "Upadek z wysokości: Prace na rusztowaniach, krawędziach stropów oraz drabinach. Wymagane jest stosowanie barier ochronnych i szelek bezpieczeństwa."
                 }
               ]
             },
@@ -143,7 +155,7 @@
                   "id": "risk_li2_p",
                   "type": "paragraph",
                   "source": "static",
-                  "content": "Możliwość porażenia prądem elektrycznym w trakcie wykonywania prac instalacyjnych."
+                  "content": "Porażenie prądem: Praca przy rozdzielnicach tymczasowych (RB-tkach) oraz obsługa elektronarzędzi w warunkach wilgotnych."
                 }
               ]
             },
@@ -155,7 +167,19 @@
                   "id": "risk_li3_p",
                   "type": "paragraph",
                   "source": "static",
-                  "content": "Zagrożenia mechaniczne wynikające z obsługi maszyn i urządzeń budowlanych."
+                  "content": "Przysypanie ziemią: Prace w wykopach o głębokości powyżej 1,0 m bez odpowiedniego szalowania lub skarpowania."
+                }
+              ]
+            },
+            {
+              "id": "risk_li4",
+              "type": "list_item",
+              "children": [
+                {
+                  "id": "risk_li4_p",
+                  "type": "paragraph",
+                  "source": "static",
+                  "content": "Urazy mechaniczne: Spowodowane przez ruchome części maszyn, transport pionowy (żurawie) oraz uderzenia przez spadające przedmioty."
                 }
               ]
             }
@@ -164,24 +188,246 @@
       ]
     },
     {
+      "id": "ppe_section",
+      "type": "section",
+      "title": "Środki Ochrony Zbiorowej i Indywidualnej",
+      "children": [
+        {
+          "id": "ppe_p1",
+          "type": "paragraph",
+          "source": "static",
+          "content": "W pierwszej kolejności należy stosować środki ochrony zbiorowej (ŚOZ). Środki ochrony indywidualnej (ŚOI) stosuje się, gdy ŚOZ nie eliminują całkowicie ryzyka."
+        },
+        {
+          "id": "ppe_list",
+          "type": "list",
+          "list_type": "bulleted",
+          "children": [
+            {
+              "id": "ppe_li1",
+              "type": "list_item",
+              "children": [
+                {
+                  "id": "ppe_li1_p",
+                  "type": "paragraph",
+                  "source": "static",
+                  "content": "Obowiązkowe wyposażenie każdego pracownika: kask ochronny, obuwie robocze z podnoskiem stalowym, kamizelka odblaskowa."
+                }
+              ]
+            },
+            {
+              "id": "ppe_li2",
+              "type": "list_item",
+              "children": [
+                {
+                  "id": "ppe_li2_p",
+                  "type": "paragraph",
+                  "source": "static",
+                  "content": "Ochrona słuchu i dróg oddechowych podczas prac pylących (szlifowanie, cięcie betonu) oraz hałaśliwych."
+                }
+              ]
+            },
+            {
+              "id": "ppe_li3",
+              "type": "list_item",
+              "children": [
+                {
+                  "id": "ppe_li3_p",
+                  "type": "paragraph",
+                  "source": "static",
+                  "content": "Systemy asekuracji przy pracach na wysokości, w tym linki bezpieczeństwa montowane do atestowanych punktów kotwiczenia."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "emergency_section",
+      "type": "section",
+      "title": "Procedury Awaryjne i Pierwsza Pomoc",
+      "children": [
+        {
+          "id": "em_p1",
+          "type": "paragraph",
+          "source": "static",
+          "content": "W przypadku wystąpienia wypadku lub awarii, każdy świadek zdarzenia ma obowiązek niezwłocznie przerwać pracę, zabezpieczyć miejsce zdarzenia i powiadomić kierownika budowy."
+        },
+        {
+          "id": "em_p2",
+          "type": "paragraph",
+          "source": "static",
+          "content": "Numery alarmowe są wywieszone w punkcie socjalnym oraz przy głównej bramie wjazdowej. Wszyscy pracownicy muszą znać lokalizację najbliższej apteczki pierwszej pomocy."
+        },
+        {
+          "id": "em_steps",
+          "type": "list",
+          "list_type": "numbered",
+          "children": [
+            {
+              "id": "em_s1",
+              "type": "list_item",
+              "children": [
+                {
+                  "id": "em_s1_p",
+                  "type": "paragraph",
+                  "source": "static",
+                  "content": "Ocenienie bezpieczeństwa własnego i poszkodowanego."
+                }
+              ]
+            },
+            {
+              "id": "em_s2",
+              "type": "list_item",
+              "children": [
+                {
+                  "id": "em_s2_p",
+                  "type": "paragraph",
+                  "source": "static",
+                  "content": "Wezwanie pomocy medycznej (nr 112) i udzielenie pomocy przedlekarskiej."
+                }
+              ]
+            },
+            {
+              "id": "em_s3",
+              "type": "list_item",
+              "children": [
+                {
+                  "id": "em_s3_p",
+                  "type": "paragraph",
+                  "source": "static",
+                  "content": "Wstrzymanie prac w strefie niebezpiecznej do czasu wyjaśnienia przyczyn zdarzenia."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "risks_section",
+      "type": "section",
+      "title": "Szczegółowa Identyfikacja i Ocena Zagrożeń",
+      "children": [
+        {
+          "id": "risk_ai_overview",
+          "type": "paragraph",
+          "source": "field",
+          "field": "general_risk_overview"
+        },
+        {
+          "id": "risk_ai_prevention",
+          "type": "paragraph",
+          "source": "field",
+          "field": "risk_prevention_measures"
+        }
+      ]
+    },
+    {
+      "id": "ppe_section",
+      "type": "section",
+      "title": "Środki Ochrony Zbiorowej i Indywidualnej",
+      "children": [
+        {
+          "id": "ppe_ai_policy",
+          "type": "paragraph",
+          "source": "field",
+          "field": "ppe_policy_details"
+        }
+      ]
+    },
+    {
+      "id": "emergency_section",
+      "type": "section",
+      "title": "Procedury Awaryjne i Pierwsza Pomoc",
+      "children": [
+        {
+          "id": "em_ai_summary",
+          "type": "paragraph",
+          "source": "field",
+          "field": "emergency_response_summary"
+        }
+      ]
+    },
+    {
       "id": "summary_section",
       "type": "section",
-      "title": "Postanowienia końcowe",
+      "title": "Postanowienia Końcowe i Nadzór",
+      "children": [
+        {
+          "id": "summary_ai_supervision",
+          "type": "paragraph",
+          "source": "field",
+          "field": "supervision_and_responsibility"
+        }
+      ]
+    },
+    {
+      "id": "summary_section",
+      "type": "section",
+      "title": "Postanowienia Końcowe i Nadzór",
       "children": [
         {
           "id": "summary_p1",
           "type": "paragraph",
           "source": "static",
-          "content": "Niniejszy plan BIOZ obowiązuje przez cały okres realizacji robót budowlanych i podlega aktualizacji w przypadku zmiany warunków prowadzenia prac."
+          "content": "Niniejszy plan BIOZ obowiązuje przez cały okres realizacji robót budowlanych i podlega aktualizacji w przypadku zmiany technologii robót, warunków atmosferycznych wpływających na bezpieczeństwo lub wystąpienia wypadku na budowie."
         },
         {
           "id": "summary_p2",
           "type": "paragraph",
           "source": "static",
-          "content": "Dokument należy przechowywać na terenie budowy oraz udostępniać wszystkim osobom wykonującym prace."
+          "content": "Dokument należy przechowywać w biurze budowy w segregatorze BHP oraz udostępniać organom kontrolnym (Państwowa Inspekcja Pracy, Nadzór Budowlany) na każde żądanie."
+        },
+        {
+          "id": "summary_p3",
+          "type": "paragraph",
+          "source": "static",
+          "content": "Nieprzestrzeganie postanowień planu przez pracowników może skutkować odsunięciem od pracy lub sankcjami dyscyplinarnymi przewidzianymi w regulaminie pracy."
         }
       ]
     }
   ],
-  "fields": {}
+  "fields": {
+    "project_scope_description": {
+      "data_type": "text",
+      "required": true,
+      "source": "ai",
+      "prompt": "Opisz zakres robót budowlanych na podstawie dokumentacji projektowej i pozwolenia na budowę."
+    },
+    "site_specific_conditions": {
+      "data_type": "text",
+      "required": true,
+      "source": "ai",
+      "prompt": "Opisz specyficzne warunki lokalne terenu budowy, w tym sąsiedztwo, infrastrukturę i ograniczenia."
+    },
+    "general_risk_overview": {
+      "data_type": "text",
+      "required": true,
+      "source": "ai",
+      "prompt": "Zidentyfikuj główne zagrożenia występujące podczas realizacji robót na podstawie dokumentacji i technologii prac."
+    },
+    "risk_prevention_measures": {
+      "data_type": "text",
+      "required": true,
+      "source": "ai",
+      "prompt": "Opisz środki techniczne i organizacyjne zapobiegające zidentyfikowanym zagrożeniom."
+    },
+    "ppe_policy_details": {
+      "data_type": "text",
+      "source": "ai",
+      "prompt": "Określ zasady stosowania środków ochrony indywidualnej w zależności od rodzaju prowadzonych robót."
+    },
+    "emergency_response_summary": {
+      "data_type": "text",
+      "source": "ai",
+      "prompt": "Podsumuj procedury reagowania na wypadki i sytuacje awaryjne na terenie budowy."
+    },
+    "supervision_and_responsibility": {
+      "data_type": "text",
+      "source": "ai",
+      "prompt": "Opisz strukturę nadzoru BHP oraz zakres odpowiedzialności kierownika budowy i koordynatora ds. BHP."
+    }
+  }
 }
