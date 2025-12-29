@@ -45,22 +45,21 @@ async def route_upsert_document(req: RagEngineRequest.UpsertDocument):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     
-@router.get("/read_document/{company_id}/{project_id}/{document_category}/{document_type}/{file_name}")
-def route_read_document(company_id: str, project_id: str, document_category: str, document_type: str, file_name: str):
+@router.get("/read_document/{company_id}/{project_id}/{document_category}/{document_type}")
+def route_read_document(company_id: str, project_id: str, document_category: str, document_type: str):
     try:
         rag_engine_wrapper = get_rag_engine_wrapper()
         file = FSFile(
             company_id=company_id,
             project_id=project_id,
             document_category=document_category,
-            document_type=document_type,
-            file_name=file_name
+            document_type=document_type
         )
         
-        tmp_file_path = rag_engine_wrapper.read_document(file=file)
+        file, tmp_file_path = rag_engine_wrapper.read_document(file=file)
         if not tmp_file_path:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Failed to read from file: {file.remote_file_path}")
-        response = FileResponse(path=tmp_file_path, filename=file_name)
+        response = FileResponse(path=tmp_file_path, filename=file.file_name)
         return response
         
     except Exception as e:
@@ -101,5 +100,31 @@ async def route_query(req: RagEngineRequest.QueryKnowledgeBase):
             content=response
         )
         
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+# @router.post("/generate_document")
+# async def route_generate_document(req: RagEngineRequest.GenerateDocument):
+#     try:
+#         rag_engine_wrapper = get_rag_engine_wrapper()
+#         generated_file: LocalFile = await rag_engine_wrapper.generate_document(document_type=req.document_category, author=req.author, company_id=req.company_id, project_id=req.project_id)
+#         return FileResponse(
+#             status_code=200,
+#             path=generated_file.local_path,
+#             filename=generated_file.file_name
+#         )
+#     except Exception as e:
+#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        
+@router.post("/generate_docx")
+async def route_generate_docx(req: RagEngineRequest.GenerateDocx):
+    try:
+        rag_engine_wrapper = get_rag_engine_wrapper()
+        generated_file: str = await rag_engine_wrapper.generate_docx(
+            bucket=req.bucket,
+            file_url=req.file_url
+        )
+        from pathlib import Path
+        return FileResponse(status_code=200, path=generated_file, filename=Path(generated_file).name)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
