@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "document_type": "health_and_safety_plan",
+    "version": "2.0_with_prompts",
+    "language": "pl",
+    "system_instruction": "Jesteś doświadczonym Kierownikiem Budowy. Twoim zadaniem jest wypełnienie szablonu BIOZ danymi konkretnej inwestycji. Używaj fachowego języka technicznego, bądź precyzyjny i dbaj o zgodność z polskimi przepisami BHP.",
+    "company_id": null,
+    "project_id": null,
+    "author": null,
+    "date_created": null,
+    "date_modified": null
+  },
+  "content": {
+    "title_page": {
+      "object_info": {
+        "name": {
+          "value": null,
+          "prompt": "Podaj pełną, oficjalną nazwę zamierzenia budowlanego zgodnie z decyzją o pozwoleniu na budowę.",
+          "example": "Budowa budynku mieszkalnego wielorodzinnego z garażem podziemnym"
+        },
+        "address": {
+          "street": {
+            "value": null,
+            "prompt": "Podaj nazwę ulicy i numer posesji. Jeśli brak numeru, podaj opis lokalizacji.",
+            "example": "ul. Budowlana 15"
+          },
+          "zip_city": {
+            "value": null,
+            "prompt": "Podaj kod pocztowy i miejscowość.",
+            "example": "00-950 Warszawa"
+          },
+          "plot_number": {
+            "value": null,
+            "prompt": "Podaj numer ewidencyjny działki oraz nazwę obrębu ewidencyjnego.",
+            "example": "dz. nr 15/4, obręb 0005 Śródmieście"
+          }
+        }
+      }
+    }
+  }
+}

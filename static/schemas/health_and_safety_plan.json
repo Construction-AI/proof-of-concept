@@ -1,0 +1,163 @@
+{
+  "meta": {
+    "document_type": "health_and_safety_plan",
+    "version": "3.0_generative",
+    "language": "pl",
+    "system_instruction": "Jesteś doświadczonym Kierownikiem Budowy. Twoim zadaniem jest wypełnienie szablonu BIOZ. Jeśli w dokumentacji źródłowej brakuje szczegółowych opisów BHP, Twoim obowiązkiem jest WYGENEROWANIE standardowych, bezpiecznych procedur zgodnych z polskim Prawem Budowlanym i Rozporządzeniem ws. BHP, adekwatnych do rodzaju robót.",
+    "company_id": null,
+    "project_id": null,
+    "author": null,
+    "date_created": null,
+    "date_modified": null
+  },
+  "content": {
+    "title_page": {
+      "object_info": {
+        "name": {
+          "value": null,
+          "type": "string",
+          "prompt": "Znajdź pełną, oficjalną nazwę inwestycji. Szukaj w 'tabelce rysunkowej' lub Opisie Technicznym. Przepisz dokładnie.",
+          "example": "Budowa budynku mieszkalnego..."
+        },
+        "address": {
+          "street": {
+            "value": null,
+            "type": "string",
+            "prompt": "Podaj ulicę i numer posesji lub opis lokalizacji.",
+            "example": "ul. Budowlana 15"
+          },
+          "zip_city": {
+            "value": null,
+            "type": "string",
+            "prompt": "Podaj kod pocztowy i miejscowość inwestycji.",
+            "example": "00-950 Warszawa"
+          },
+          "plot_number": {
+            "value": null,
+            "type": "string",
+            "prompt": "Wyszukaj numery ewidencyjne działek i obręb.",
+            "example": "dz. nr 15/4, obręb Śródmieście"
+          }
+        }
+      },
+      "investor": {
+        "name": {
+          "value": null,
+          "type": "string",
+          "prompt": "Zidentyfikuj Inwestora.",
+          "example": "Jan Kowalski"
+        },
+        "address": {
+          "value": null,
+          "type": "string",
+          "prompt": "Podaj adres Inwestora.",
+          "example": "ul. Inwestorska 1, Warszawa"
+        }
+      },
+      "contractor": {
+        "name": {
+          "value": null,
+          "type": "string",
+          "prompt": "Podaj Generalnego Wykonawcę. Jeśli brak, wpisz 'Do wyłonienia w drodze przetargu'.",
+          "example": "Bud-Max S.A."
+        }
+      },
+      "site_manager": {
+        "name": {
+          "value": null,
+          "type": "string",
+          "prompt": "Podaj imię i nazwisko Kierownika Budowy (jeśli wskazany).",
+          "example": "inż. Adam Nowak"
+        },
+        "qualifications_number": {
+          "value": null,
+          "type": "string",
+          "prompt": "Podaj numer uprawnień Kierownika Budowy.",
+          "example": "MAZ/0123/KB/19"
+        }
+      }
+    },
+    "descriptive_part": {
+      "scope_of_works": {
+        "description": {
+          "value": null,
+          "type": "string",
+          "prompt": "Stwórz profesjonalny opis przedmiotu inwestycji. Określ technologię, konstrukcję, liczbę kondygnacji i parametry.",
+          "example": "Budynek w technologii tradycyjnej..."
+        },
+        "stages": {
+          "value": null,
+          "type": "array",
+          "prompt": "Wymień chronologicznie etapy robót. Jeśli brak listy w dokumencie, wywnioskuj ją na podstawie technologii (np. Ziemia -> Fundamenty -> Stan Surowy -> Dach -> Wykończenie).",
+          "example": ["Roboty ziemne", "Fundamenty", "Ściany parteru"]
+        }
+      },
+      "existing_objects": {
+        "value": null,
+        "type": "array",
+        "prompt": "Wymień obiekty do wyburzenia lub zachowania. Jeśli działka jest pusta, wpisz 'Brak obiektów budowlanych na terenie inwestycji'.",
+        "example": ["Garaż do rozbiórki"]
+      },
+      "site_hazards": {
+        "power_lines": {
+          "value": null,
+          "type": "string",
+          "prompt": "Sprawdź występowanie linii energetycznych. Jeśli nie ma informacji, wpisz: 'Brak danych w dokumentacji - przed rozpoczęciem pracy żurawi sprawdzić występowanie linii napowietrznych w terenie.'",
+          "example": "Linia SN kolidująca z pracą żurawia."
+        },
+        "underground_utilities": {
+          "value": null,
+          "type": "string",
+          "prompt": "Opisz zagrożenia od sieci podziemnych. Jeśli dokumentacja milczy, wygeneruj ostrzeżenie: 'Istnieje ryzyko wystąpienia niezinwentaryzowanych sieci podziemnych. Roboty ziemne prowadzić pod nadzorem, a w strefach kolizyjnych wykonywać wykopy kontrolne ręcznie.'",
+          "example": "Kabel nN w wykopie."
+        },
+        "traffic": {
+          "value": null,
+          "type": "string",
+          "prompt": "Opisz zagrożenia komunikacyjne. Jeśli brak danych, wpisz: 'Wyjazd z budowy na drogę publiczną. Należy zapewnić oczyszczanie kół pojazdów oraz oznakowanie wyjazdu zgodnie z projektem organizacji ruchu.'",
+          "example": "Wyjazd na ruchliwą ulicę."
+        }
+      },
+      "work_hazards": {
+        "value": null,
+        "type": "array",
+        "prompt": "Wymień roboty szczególnie niebezpieczne (wykopy, praca na wysokości, dźwigi, chemia). Wypisz je, nawet jeśli dokumentacja o nich tylko wspomina pośrednio.",
+        "example": ["Prace na wysokości", "Prace ziemne głębokie"]
+      },
+      "preventive_measures": {
+        "excavations": {
+          "value": null,
+          "type": "array",
+          "prompt": "OPRACUJ listę zasad bezpiecznego wykonywania wykopów. Zwróć wynik jako tablicę (lista punktów). Jeśli projekt nie precyzuje, przyjmij standardy: umacnianie/skarpowanie >1m, składowanie urobku poza klinem odłamu, wygrodzenie balustradami, bezpieczne zejścia.",
+          "example": [
+            "Wykopy o głębokości powyżej 1m wykonywać w obudowie systemowej lub jako szerokoprzestrzenne o nachyleniu skarp 1:1.",
+            "Urobek składować w odległości min. 0.6m od krawędzi wykopu (poza klinem odłamu).",
+            "Krawędzie wykopów wygrodzić balustradami ochronnymi z deską krawężnikową.",
+            "Zapewnić bezpieczne zejścia do wykopu (np. drabiny) rozmieszczone nie rzadziej niż co 20m."
+          ]
+        },
+        "heights": {
+          "value": null,
+          "type": "array",
+          "prompt": "OPRACUJ listę zasad dla prac na wysokości. Zwróć tablicę punktów. Uwzględnij priorytet ochrony zbiorowej (balustrady) nad indywidualną, wymogi dla rusztowań i komunikacji pionowej.",
+          "example": [
+            "Krawędzie stropów i otworów technologicznych zabezpieczyć balustradami ochronnymi (wys. 1.1m, krawężnik 15cm).",
+            "Dostęp do stanowisk pracy na wysokości zapewnić poprzez atestowane rusztowania lub piony komunikacyjne.",
+            "Przy pracach w koszach osobowych stosować szelki bezpieczeństwa przypięte do punktu kotwienia."
+          ]
+        },
+        "machinery": {
+          "value": null,
+          "type": "array",
+          "prompt": "OPRACUJ zasady pracy sprzętu ciężkiego jako listę punktów. Uwzględnij: strefy niebezpieczne, uprawnienia operatorów, współpracę z sygnalistą.",
+          "example": [
+            "Wyznaczyć strefę niebezpieczną pracy żurawia (zasięg wysięgnika + ładunek) i oznakować ją tablicami ostrzegawczymi.",
+            "Sprzęt może być obsługiwany wyłącznie przez operatorów posiadających aktualne uprawnienia UDT.",
+            "W przypadku ograniczonej widoczności operator musi współpracować z sygnalistą.",
+            "Bezwzględny zakaz przebywania osób pod przenoszonym ładunkiem."
+          ]
+        }
+      }
+    }
+  }
+}
