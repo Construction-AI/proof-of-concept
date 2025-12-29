@@ -70,36 +70,21 @@ class RagEngineService:
         self.file_storage_wrapper.upsert_file(target_file=document.get_local_file())
         return local_file
         
-    async def generate_docx(self, document_category: str, company_id: str, project_id: str) -> LocalFile:
-        from app.models.document import SchemaDocument, DocumentType, DocumentMapper
-        document_type = DocumentType(type=document_category)
-        file = FSFile(
-            company_id=company_id,
-            project_id=project_id,
-            document_category=document_type.type,
-            document_type="filled_schema"
-        )
-        target_file, temp_path = self.read_document(file=file)
+    async def generate_docx(self, bucket: str, file_url: str) -> str:
+        from app.models.schema.basic import SchemaDocument
+        from app.core.schema.mapper import SchemaMapper
         import json
-        from docxtpl import DocxTemplate
+        from pathlib import Path
         
-        with open(temp_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            document = SchemaDocument.from_data(data=data)
-            clean_json = document.clean_json
-            template = DocxTemplate(DocumentMapper.get_path_for_document_template_by_name(name=document_category))
-            template.render(context=clean_json)
-            docx_file_name = "generated_" + document_category + ".docx"
-            docx_path = f"/tmp/{docx_file_name}"
-            template.save(docx_path)
-            saved_file = LocalFile(
-                company_id=company_id,
-                project_id=project_id,
-                document_category=document_category,
-                local_path=docx_path,
-                document_subtype="docx"
-            )
-            self.file_storage_wrapper.upsert_file(target_file=saved_file)
-            return saved_file
-        return None
+        file_path = self.file_storage_wrapper.read_file_from_url(bucket=bucket, file_url=file_url)
+        
+        with open(file_path, "r") as f:
+            schema_dict = json.load(f)
+            doc: SchemaDocument = SchemaMapper.parse_schema(data=schema_dict)
+        from app.core.docx.generator import DocxGenerator
+        gen = DocxGenerator()
+        await gen.preprocess_schema(schema=doc)
+        file_name = "/app/generated/generated_" + Path(file_url).name.split(".")[0] + ".docx"
+        gen.generate(schema=doc, output_path=file_name)
+        return file_name
     

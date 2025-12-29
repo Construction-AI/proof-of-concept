@@ -48,6 +48,9 @@ class FileStorageWrapper:
             The temporary file is not deleted automatically. Caller is responsible for cleanup.
         """
         return self.file_storage_service.read_file(target_file=target_file)
+    
+    def read_file_from_url(self, bucket: str, file_url: str) -> str:
+        return self.file_storage_service.read_file_from_url(bucket=bucket, file_url=file_url)
 
     def upsert_file(self, target_file: LocalFile):
         """

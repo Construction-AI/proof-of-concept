@@ -1,5 +1,6 @@
 from app.models.schema.base_node import SchemaBaseNode
 from typing import Literal, Optional, List, Union, Dict
+from app.models.field_extraction import FieldExtraction
 
 SchemaNode = Union[
     "SchemaDocument",
@@ -12,19 +13,40 @@ SchemaNode = Union[
     "SchemaTable",
 ]
 
-class SchemaField(SchemaBaseNode):    
+class SchemaField(SchemaBaseNode):
     type: Literal["field"] = "field"
     
     source: Literal["ai", "user"]
     prompt: Optional[str] = None
     required: Optional[bool] = False
     data_type: Literal["text", "number", "boolean", "date", "list[text]"]
+    
+    # Content to be filled by either `user` or `ai`
+    extraction: Optional[FieldExtraction] = None
+    value: Optional[str] = None
 
 class SchemaDocument(SchemaBaseNode):
     type: Literal["document"] = "document"
     meta: dict
     children: List[SchemaNode]
     fields: Optional[Dict[str, SchemaField]] = {}
+    
+    def _get_meta_attribute(self, attr: str) -> str:
+        if not self.meta or self.meta.get(attr) is None:
+            raise ValueError("Meta or key not present in meta.")
+        return self.meta.get(attr)
+    
+    @property
+    def company_id(self) -> str:
+        return self._get_meta_attribute("company_id")
+    
+    @property
+    def project_id(self) -> str:
+        return self._get_meta_attribute("project_id")
+    
+    @property
+    def document_type(self) -> str:
+        return self._get_meta_attribute("document_type")
 
 class SchemaSection(SchemaBaseNode):
     type: Literal["section"] = "section"
@@ -46,7 +68,7 @@ class SchemaParagraph(SchemaBaseNode):
     type: Literal["paragraph"] = "paragraph"
     source: Literal["static", "field"]
     field: Optional[str] = None
-    content: Optional[str] = None
+    content: Optional[Union[str, FieldExtraction]] = None
 
 class SchemaList(SchemaBaseNode):
     type: Literal["list"] = "list"

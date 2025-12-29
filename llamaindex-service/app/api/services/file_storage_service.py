@@ -78,6 +78,20 @@ class FileStorageService:
             response.close()
             response.release_conn()
         return target_file, result
+    
+    def read_file_from_url(self, bucket: str, file_url: str) -> str:
+        result = None
+        try:
+            response = self.client.get_object(bucket_name=bucket, object_name=file_url)
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                shutil.copyfileobj(io.BytesIO(response.data), tmp_file)
+                tmp_file_path = tmp_file.name
+            self.logger.info(f"File downloaded to temporary location: {tmp_file_path}")
+            result = tmp_file_path
+        finally:
+            response.close()
+            response.release_conn()
+        return result
 
     def upsert_file(self, target_file: LocalFile):
         self.logger.info(f"Upserting file {target_file.remote_file_path}...")

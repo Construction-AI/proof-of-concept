@@ -1,7 +1,9 @@
 from docx import Document
-from docx.shared import Cm, Pt
+from docx.shared import Cm, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from typing import Literal, Dict
+
+from app.infra.knowledge_base.instances_knowledge_base import get_knowledge_base_wrapper
 
 from app.models.schema.base_node import SchemaBaseNode
 from app.models.schema.basic import (
@@ -20,6 +22,7 @@ class DocxGenerator:
     def __init__(self):
         self.document = Document()
         self._configure_page()
+        self.kbw = get_knowledge_base_wrapper()
 
     # -------------------------
     # Public API
@@ -29,7 +32,18 @@ class DocxGenerator:
             self._render_node(child)
         self.document.save(output_path)
         
-    def preprocess_schema(self, schema: SchemaDocument):
+    async def preprocess_schema(self, schema: SchemaDocument):
+        for field in schema.fields.values():
+            if field.source == "ai":
+                field.extraction = await self.kbw.extract_field(
+                    company_id=schema.company_id,
+                    project_id=schema.project_id,
+                    field_prompt=field.prompt,
+                    field_type=field.data_type
+                )
+            else:
+                field.value = "USER INPUT REQUIRED !"
+            
         for child in schema.children:
             self._preprocess_field(fields=schema.fields, node=child)
 
@@ -100,16 +114,10 @@ class DocxGenerator:
             field = fields.get(node.field)
             if not field:
                 raise ValueError(f"Could not find field for key: {node.field}")
-            
-            # TODO: Evaluate with AI
-            if field.source == 'user':
-                node.content = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam fringilla orci justo, non porta leo posuere eget."
+            if field.source == 'ai':
+                node.content = field.extraction
             else:
-                # TODO: Implement RAG generation
-                # from app.infra.knowledge_base.instances_knowledge_base import get_knowledge_base_wrapper
-                # kbw = get_knowledge_base_wrapper()
-                # node.content = await kbw.query
-                node.content = "AI Generated"
+                node.content = field.value
         
         
     # -------------------------
@@ -130,9 +138,19 @@ class DocxGenerator:
         self.document.add_paragraph(node.text, style="Heading 3")
 
     def _render_paragraph(self, node: SchemaParagraph):
-        text = node.content or ""
-        p = self.document.add_paragraph(text, style="Normal")
+        from app.models.field_extraction import FieldExtraction
+        p = self.document.add_paragraph(style="Normal")
         p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        if not isinstance(node.content, FieldExtraction):
+            run = p.add_run(node.content or "")
+            return
+        confidence = node.content.confidence
+        text = node.content.value or node.content.reasoning or ""
+        run = p.add_run(text)
+        if confidence < 0.6:
+            run.font.color.rgb = RGBColor(255, 0, 0)
+        elif confidence < 0.9:
+            run.font.color.rgb = RGBColor(255, 255, 0)
 
 
     def _render_list(self, node: SchemaList):
