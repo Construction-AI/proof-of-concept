@@ -40,11 +40,9 @@ class RagEngineWrapper:
             project_id=project_id
         )
         
-    async def generate_docx(self, document_category: str, company_id: str, project_id: str) -> LocalFile:
+    async def generate_docx(self, bucket: str, file_url: str) -> str:
         return await self.rag_engine_service.generate_docx(
-            document_category=document_category,
-            company_id=company_id,
-            project_id=project_id
+            bucket=bucket, file_url=file_url
         )
     
         

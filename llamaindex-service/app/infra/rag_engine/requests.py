@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, Literal
+from fastapi import FastAPI, UploadFile, File
 
 class RagEngineRequest:
     class UploadDocument(BaseModel):
@@ -50,8 +51,14 @@ class RagEngineRequest:
         document_category: str
         
     class GenerateDocx(BaseModel):
+        bucket: str
+        file_url: str
+        # company_id: str
+        # project_id: str
+        # document_category: str
+        
+    class GenerateDocumentFromSchema(BaseModel):
         company_id: str
         project_id: str
-        document_category: str
-        
+        file_url: str
     

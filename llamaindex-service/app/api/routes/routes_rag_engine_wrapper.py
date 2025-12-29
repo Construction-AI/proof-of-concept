@@ -106,7 +106,7 @@ async def route_query(req: RagEngineRequest.QueryKnowledgeBase):
 @router.post("/generate_document")
 async def route_generate_document(req: RagEngineRequest.GenerateDocument):
     try:
-        rag_engine_wrapper = get_rag_engine_wrapper()        
+        rag_engine_wrapper = get_rag_engine_wrapper()
         generated_file: LocalFile = await rag_engine_wrapper.generate_document(document_type=req.document_category, author=req.author, company_id=req.company_id, project_id=req.project_id)
         return FileResponse(
             status_code=200,
@@ -120,30 +120,11 @@ async def route_generate_document(req: RagEngineRequest.GenerateDocument):
 async def route_generate_docx(req: RagEngineRequest.GenerateDocx):
     try:
         rag_engine_wrapper = get_rag_engine_wrapper()
-        generated_file: LocalFile = await rag_engine_wrapper.generate_docx(
-            document_category=req.document_category,
-            company_id=req.company_id,
-            project_id=req.project_id
+        generated_file: str = await rag_engine_wrapper.generate_docx(
+            bucket=req.bucket,
+            file_url=req.file_url
         )
-        return FileResponse(status_code=200, path=generated_file.local_path, filename=generated_file.file_name)
+        from pathlib import Path
+        return FileResponse(status_code=200, path=generated_file, filename=Path(generated_file).name)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-        
-# TEST
-@router.get("/parse")
-def route_parse_schema():
-    try:
-        from app.core.schema.mapper import SchemaMapper, SchemaDocument
-        import json
-        with open("/app/schemas/v2/test.json", "r") as f:
-            schema_dict = json.load(f)
-            doc: SchemaDocument = SchemaMapper.parse_schema(data=schema_dict)
-            print(str(doc.model_dump_json(ensure_ascii=False)))
-        from app.core.docx.generator import DocxGenerator
-        gen = DocxGenerator()
-        gen.preprocess_schema(schema=doc)
-        gen.generate(schema=doc, output_path="/app/generated_doc.docx")
-        return json.loads(s=doc.model_dump_json(ensure_ascii=False))
-    except Exception as e:
-        raise HTTPException(detail=str(e), status_code=500)
-        
