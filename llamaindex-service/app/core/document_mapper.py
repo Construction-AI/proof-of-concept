@@ -3,9 +3,19 @@ class DocumentMapper:
     __DOCX_TEMPLATE_BASE_PATH = "/app/templates"
     
     __HSE_KEY = "health_and_safety_plan"
+    __BIOZ_KEY = "bioz"
     __SDR_KEY = "structural_design_report"
     
     __DOCUMENT_CATEGORIES_MAP = {
+        "pl": {
+            __BIOZ_KEY: {
+                "template_path": __DOCX_TEMPLATE_BASE_PATH + "/bioz.docx",
+                "schema_path": __SCHEMA_BASE_PATH + "/bioz.json",
+                "valid_names": [
+                    "bioz"
+                ]
+            },    
+        },
         __HSE_KEY: {
             "template_path": __DOCX_TEMPLATE_BASE_PATH + "/health_and_safety_plan.docx",
             "schema_path": __SCHEMA_BASE_PATH + "/health_and_safety_plan.json",
