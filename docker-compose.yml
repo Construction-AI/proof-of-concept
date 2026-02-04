@@ -33,10 +33,11 @@ services:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     volumes:
-      - ./static/documents:/app/documents
-      - ./static/schemas:/app/schemas
-      - ./static/templates:/app/templates
+      - ./static/documents:/static/documents
+      - ./static/schemas:/static/schemas
+      - ./static/templates:/static/templates
       - ./llamaindex-service:/app
+      - ./data:/data
     depends_on:
       - qdrant
     networks:
