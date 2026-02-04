@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from app.api.routes import (
     routes_health,
+    routes_database,
     routes_rag_engine_wrapper
 )
 from contextlib import asynccontextmanager
@@ -25,6 +26,7 @@ def create_app() -> FastAPI:
         )
 
     # Register routes
+    app.include_router(routes_database.router, prefix="/db", tags=["Database"])
     app.include_router(routes_health.router, prefix="/health", tags=["Health Check"])
     app.include_router(routes_rag_engine_wrapper.router, prefix="/rag_engine", tags=["Rag Engine Wrapper"])
     return app
