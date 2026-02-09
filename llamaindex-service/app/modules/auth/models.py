@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Integer
+from sqlalchemy.orm import relationship
 from app.db.base import Base, TimestampMixin
 
 class User(Base, TimestampMixin):
@@ -10,3 +11,4 @@ class User(Base, TimestampMixin):
     last_name = Column(String)
     hashed_password = Column(String)
     
+    projects = relationship("Project", back_populates="owner")
