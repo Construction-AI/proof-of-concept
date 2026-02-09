@@ -34,10 +34,10 @@ services:
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
 
       # Database
-      - DATABASE_PATH=${DATABASE_PATH}
+      - DATABASE_URL=${DATABASE_URL}
 
       # AUTH SERVICE
-      - AUTH_SECRET_KEY=${AUTH_SECRET_KEY}
+      - SECRET_KEY=${AUTH_SECRET_KEY}
     volumes:
       - ./static/documents:/static/documents
       - ./static/schemas:/static/schemas
