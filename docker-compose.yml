@@ -32,6 +32,12 @@ services:
       - MINIO_ENDPOINT=${MINIO_ENDPOINT}
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+
+      # Database
+      - DATABASE_PATH=${DATABASE_PATH}
+
+      # AUTH SERVICE
+      - AUTH_SECRET_KEY=${AUTH_SECRET_KEY}
     volumes:
       - ./static/documents:/static/documents
       - ./static/schemas:/static/schemas
