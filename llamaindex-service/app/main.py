@@ -1,6 +1,8 @@
 from fastapi import FastAPI, APIRouter
 
 from app.modules.auth.router import router as auth_router
+from app.modules.projects.router import router as projects_router
+
 from app.db.session import engine
 from app.db.base import Base
 from app.modules.auth import models as auth_models
@@ -22,7 +24,10 @@ def create_app() -> FastAPI:
     )
 
     api_router = APIRouter(prefix="/api/v1")
-    api_router.include_router(auth_router, prefix="/auth")
+    
+    api_router.include_router(auth_router, prefix="/auth", tags=["Authentication Section"])
+    api_router.include_router(projects_router, prefix="/projects", tags=["Projects Section"])
+    
     app.include_router(api_router)
     
     return app
