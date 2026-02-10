@@ -2,14 +2,15 @@ from fastapi import FastAPI, APIRouter
 
 from app.modules.auth.router import router as auth_router
 from app.modules.projects.router import router as projects_router
+from app.modules.documents.router import router as documents_router
+from app.modules.health.router import router as health_router
 
 from app.db.session import engine
 from app.db.base import Base
-from app.modules.auth import models as auth_models
 
 Base.metadata.create_all(bind=engine)
 
-from contextlib import asynccontextmanager
+# from contextlib import asynccontextmanager
 
 # @asynccontextmanager
 # async def lifespan(app: FastAPI):
@@ -27,6 +28,8 @@ def create_app() -> FastAPI:
     
     api_router.include_router(auth_router, prefix="/auth", tags=["Authentication Section"])
     api_router.include_router(projects_router, prefix="/projects", tags=["Projects Section"])
+    api_router.include_router(documents_router, prefix="/documents", tags=["Documents Section"])
+    api_router.include_router(health_router, prefix="/health", tags=["Health Section"])
     
     app.include_router(api_router)
     

@@ -12,3 +12,4 @@ class User(Base, TimestampMixin):
     hashed_password = Column(String)
     
     projects = relationship("Project", back_populates="owner")
+    documents = relationship("Document", back_populates="owner")
