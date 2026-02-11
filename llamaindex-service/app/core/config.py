@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     # QDRANT_URL: str
     # QDRANT_API_KEY: str
     
+    MINIO_ENDPOINT: str 
+    MINIO_ACCESS_KEY: str
+    MINIO_SECRET_KEY: str
+    
     # class Config:
     #     env_file = ".env"
     
