@@ -7,9 +7,10 @@ class Document(Base, TimestampMixin):
     
     id = Column(Integer, primary_key=True, index=True)
     file_name = Column(String, index=True)
-    file_storage_key= Column(String)
+    storage_key= Column(String)
     content_type = Column(String)
     size = Column(BigInteger)
+    content_hash = Column(String)
     
     owner_id = Column(Integer, ForeignKey("users.id"))
     project_id = Column(Integer, ForeignKey("projects.id"))
