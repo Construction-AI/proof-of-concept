@@ -13,9 +13,10 @@ class DocumentGetDownloadUrl(BaseModel):
 class DocumentResponse(BaseModel):
     id: int
     file_name: str
-    file_storage_key: str
+    storage_key: str
     content_type: str
     size: int
+    content_hash: str
     created_at: datetime
     last_modified: datetime
     
@@ -24,3 +25,7 @@ class DocumentResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+class DocumentQuery(BaseModel):
+    q: str
+    document_id: int

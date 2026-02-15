@@ -24,6 +24,13 @@ class ProjectService:
         )
         
     @staticmethod
+    def get_projects_by_ids(db: Session, project_ids: list[int]):
+        projects = []
+        for id in project_ids:
+            projects.append(ProjectService.get_project_by_id(db=db, project_id=id))
+        return projects
+        
+    @staticmethod
     def get_projects_by_owner(db: Session, owner_id: int):
         return db.query(models.Project).filter(models.Project.owner_id == owner_id).all()
     
