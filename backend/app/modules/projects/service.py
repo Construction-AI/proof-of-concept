@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session, joinedload
 from app.modules.projects import models, schemas
 
+from app.modules.projects.models import Project
+
 class ProjectService:
     
     @staticmethod
@@ -24,8 +26,8 @@ class ProjectService:
         )
         
     @staticmethod
-    def get_projects_by_ids(db: Session, project_ids: list[int]):
-        projects = []
+    def get_projects_by_ids(db: Session, project_ids: list[int]) -> list[Project]:
+        projects: list[Project] = []
         for id in project_ids:
             projects.append(ProjectService.get_project_by_id(db=db, project_id=id))
         return projects

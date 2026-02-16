@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
 from fastapi import UploadFile
-import uuid
 
 from app.core.logger import get_logger
 from app.infra.storage import storage_client
@@ -9,7 +8,6 @@ from app.infra.vector_store import vector_store_client
 
 from app.modules.documents.models import Document
 from app.modules.documents.schemas import DocumentCreate
-from app.modules.documents.security import document_check_user_access
 
 from app.modules.projects.models import Project
 from app.modules.projects.service import ProjectService
@@ -79,7 +77,8 @@ class DocumentService:
     @staticmethod
     async def delete_document(db: Session, document_id: int, user_id: int):
         document: Document = DocumentService.get_document_by_id(db=db, document_id=document_id)
-        document_check_user_access(user_id, document)
+        if not document or document.owner_id != user_id:
+            raise Exception("Document not found or belongs to another user.")
         identifier: DocumentIdentifier = DocumentIdentifier.from_storage_key(storage_key=document.storage_key)
         try:
             # 0. DB
@@ -153,7 +152,7 @@ class DocumentService:
             raise Exception(f"[Query Document] Document `{document_id}` was not found.")
         if not document.owner_id == user_id:
             raise Exception(f"[Query Document] Document `{document_id}` does not belong to current user.")
-        return await vector_store_client.query(question=question, storage_keys=document.storage_key)
+        return await vector_store_client.query(question=question, storage_keys=[document.storage_key])
     
     @staticmethod
     def get_document_content_hash(file: UploadFile) -> str:

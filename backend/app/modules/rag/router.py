@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, status, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
-from typing import Any, List
+from typing import Any
 
 from app.modules.rag.schemas import QueryDocsRequest, QueryResponse, QueryProjectRequest
 from app.modules.rag.service import RagService
@@ -13,7 +13,7 @@ from app.modules.auth import models as auth_models
 router = APIRouter()
 
 @router.post("/q/docs", response_model=QueryResponse)
-async def query(
+async def query_docs(
     query_in: QueryDocsRequest,
     db: Session = Depends(get_db),
     current_user: auth_models.User = Depends(get_current_user)
@@ -24,7 +24,7 @@ async def query(
     )
     
 @router.post("/q/project", response_model=QueryResponse)
-async def query(
+async def query_project(
     query_in: QueryProjectRequest,
     db: Session = Depends(get_db),
     current_user: auth_models.User = Depends(get_current_user)
