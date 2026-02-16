@@ -16,5 +16,7 @@ class AnswerWithConfidence(BaseModel):
 
 class QueryResponse(BaseModel):
     response: str
-    # structured_answer: AnswerWithConfidence
-    # sources: List[str]
+
+class FinalResponse(BaseModel):
+    structured_answer: AnswerWithConfidence
+    sources: List[str]

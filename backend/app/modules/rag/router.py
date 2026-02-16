@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from typing import Any
 
-from app.modules.rag.schemas import QueryDocsRequest, QueryResponse, QueryProjectRequest
+from app.modules.rag.schemas import QueryDocsRequest, QueryResponse, QueryProjectRequest, FinalResponse
 from app.modules.rag.service import RagService
 
 from app.db.session import get_db
@@ -36,3 +36,19 @@ async def query_project(
         )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+@router.post("/c/project", response_model=FinalResponse)
+async def query_project_with_confidence(
+    query_in: QueryProjectRequest,
+    db: Session = Depends(get_db),
+    current_user: auth_models.User = Depends(get_current_user)
+) -> Any:
+    try:
+        response: dict[str, Any] = await RagService.query_with_confidence(db=db, question=query_in.question, project_id=query_in.project_id, user_id=current_user.id)
+        return FinalResponse(
+            structured_answer=response["answer"],
+            sources=response["sources"]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    

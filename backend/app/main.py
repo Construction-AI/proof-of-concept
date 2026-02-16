@@ -9,6 +9,8 @@ from app.modules.rag.router import router as rag_router
 from app.db.session import engine
 from app.db.base import Base
 
+from app.core.config import settings
+
 Base.metadata.create_all(bind=engine)
 
 # from contextlib import asynccontextmanager
@@ -19,9 +21,9 @@ Base.metadata.create_all(bind=engine)
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="LlamaIndex Service",
+        title=settings.SERVICE_NAME,
         description="Document ingestion, indexing and querying API using LlamaIndex and Qdrant.",
-        version="1.0.0",
+        version=settings.APP_VERSION,
         # lifespan=lifespan,
     )
 

@@ -2,6 +2,10 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Construction AI"
+
+    SERVICE_NAME: str = "API Service"
+    APP_VERSION: str
+
     BUCKET_COLLECTION_NAME: str = "construction-docs"
     UPLOAD_DIR: str = "/uploads"
     

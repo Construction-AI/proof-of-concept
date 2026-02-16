@@ -29,7 +29,17 @@ class RagService:
         doc_ids = [doc.id for doc in docs]
         return await RagService.query_documents(db=db, question=question, document_ids=doc_ids, user_id=user_id)
     
-    # @staticmethod
-    # async def query_with_confidence(db: Session, question: str, project_id: int, user_id: int):
+    @staticmethod
+    async def query_with_confidence(db: Session, question: str, project_id: int, user_id: int):
+        from typing import Any
+        
+        project: Project = ProjectService.get_project_by_id(db=db, project_id=project_id)
+        if not project or project.owner_id != user_id:
+            raise Exception(f"Project `{project_id}` does not exist or belongs to different user.")
+
+        docs: list[Document] = DocumentService.get_documents_by_project_id(db=db, project_id=project_id, user_id=user_id)
+        storage_keys: list[str] = [doc.storage_key for doc in docs]
+        details: dict[str, Any] = await vector_store_client.query_with_confidence(question=question, storage_keys=storage_keys)
+        return details
 
         
