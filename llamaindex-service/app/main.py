@@ -1,36 +1,40 @@
-from fastapi import FastAPI
-from app.api.routes import (
-    routes_health,
-    routes_rag_engine_wrapper
-)
-from contextlib import asynccontextmanager
+from fastapi import FastAPI, APIRouter
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup: code before yield
-    # await startup_load_all_projects()
-    
-    yield
-    
-    # Shutdown: code after yield (if you need cleanup)
-    # Add any cleanup code here if needed
-    pass
+from app.modules.auth.router import router as auth_router
+from app.modules.projects.router import router as projects_router
+from app.modules.documents.router import router as documents_router
+from app.modules.health.router import router as health_router
+from app.modules.rag.router import router as rag_router
+
+from app.db.session import engine
+from app.db.base import Base
+
+Base.metadata.create_all(bind=engine)
+
+# from contextlib import asynccontextmanager
+
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     yield
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="LlamaIndex Service", 
+        title="LlamaIndex Service",
         description="Document ingestion, indexing and querying API using LlamaIndex and Qdrant.",
         version="1.0.0",
-        lifespan=lifespan
-        )
+        # lifespan=lifespan,
+    )
 
-    # Register routes
-    app.include_router(routes_health.router, prefix="/health", tags=["Health Check"])
-    app.include_router(routes_rag_engine_wrapper.router, prefix="/rag_engine", tags=["Rag Engine Wrapper"])
+    api_router = APIRouter(prefix="/api/v1")
+    
+    api_router.include_router(auth_router, prefix="/auth", tags=["Authentication Section"])
+    api_router.include_router(projects_router, prefix="/projects", tags=["Projects Section"])
+    api_router.include_router(documents_router, prefix="/documents", tags=["Documents Section"])
+    api_router.include_router(rag_router, prefix="/rag", tags=["RAG Section"])
+    api_router.include_router(health_router, prefix="/health", tags=["Health Section"])
+    
+    app.include_router(api_router)
+    
     return app
 
 app = create_app()
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

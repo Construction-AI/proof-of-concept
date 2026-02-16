@@ -22,39 +22,63 @@ services:
       - QDRANT_PORT=6333
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - LLM_PROVIDER=${LLM_PROVIDER}
-      - OLLAMA_EMBEDDING_MODEL=${OLLAMA_EMBEDDING_MODEL}
-      - OLLAMA_MODEL=${OLLAMA_MODEL}
-      - OLLAMA_URL=${OLLAMA_URL}
+      - MODEL=${MODEL}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL}
       - EMBEDDING_DIMENSION=${EMBEDDING_DIMENSION}
       - QDRANT_URL=${QDRANT_URL}
       - MINIO_URL=${MINIO_URL}
       - MINIO_ENDPOINT=${MINIO_ENDPOINT}
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+
+      # Database
+      - DATABASE_URL=${DATABASE_URL}
+
+      # AUTH SERVICE
+      - SECRET_KEY=${AUTH_SECRET_KEY}
     volumes:
-      - ./static/documents:/app/documents
-      - ./static/schemas:/app/schemas
-      - ./static/templates:/app/templates
+      - ./static/documents:/static/documents
+      - ./static/schemas:/static/schemas
+      - ./static/templates:/static/templates
       - ./llamaindex-service:/app
+      - ./data:/data
     depends_on:
       - qdrant
     networks:
       - rag-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 1m30s
       timeout: 30s
       retries: 5
       start_period: 30s
 
-  schema-editor:
+  # schema-editor:
+  #   build:
+  #     context: ./schema-editor
+  #     dockerfile: Dockerfile
+  #   container_name: schema-editor
+  #   volumes:
+  #     - ./schema-editor:/app
+  #   ports:
+  #     - "8501:8501"
+  #   networks:
+  #     - rag-network
+  #   command: streamlit run app.py --server.port=8501 --server.address=0.0.0.0 --server.runOnSave=true
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+  #     interval: 1m30s
+  #     timeout: 30s
+  #     retries: 5
+  #     start_period: 30s
+
+  simple-ui-service:
     build:
-      context: ./schema-editor
+      context: ./simple-ui-service
       dockerfile: Dockerfile
-    container_name: schema-editor
+    container_name: simple-ui-service
     volumes:
-      - ./schema-editor:/app
+      - ./simple-ui-service:/app
     ports:
       - "8501:8501"
     networks:

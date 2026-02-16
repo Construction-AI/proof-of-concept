@@ -2,6 +2,9 @@ FROM python:3.11-bookworm
 
 WORKDIR /app
 
+RUN mkdir -p /static
+RUN mkdir -p /data
+
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install build dependencies
