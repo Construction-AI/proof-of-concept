@@ -8,6 +8,9 @@ services:
     ports:
       - "8000:8000"
     environment:
+      # Service
+      - APP_VERSION=${APP_VERSION}
+
       # Vector Store
       - QDRANT_URL=${QDRANT_URL}
       - QDRANT_HOST=qdrant

@@ -24,6 +24,8 @@ SENTENCE_WINDOW_PARSER = SentenceWindowNodeParser.from_defaults(window_size=3)
 WINDOW_POST = MetadataReplacementPostProcessor(target_metadata_key="window")
 
 import shutil
+from app.modules.rag.schemas import AnswerWithConfidence
+from typing import Optional, Type, Any
 
 
 class VectorStoreClient:
@@ -103,13 +105,32 @@ class VectorStoreClient:
         self.logger.info(f"Deleted nodes of `storage_key`: {identifier.storage_key}")
         
     async def query(self, question: str, storage_keys: list[str]) -> str:
-        query_engine = self.__build_query_engine(
+        query_engine = self.__build_query_engine( # type: ignore
             storage_keys=storage_keys
         )
         response = await query_engine.aquery(question)
         return response.response
     
-    def __build_query_engine(self, storage_keys: list[str]) -> RetrieverQueryEngine:
+    async def query_with_confidence(self, question: str, storage_keys: list[str]) -> dict[str, Any]:
+        query_engine: RetrieverQueryEngine = self.__build_query_engine(storage_keys=storage_keys, output_cls=AnswerWithConfidence, response_mode="tree_summarize") # type: ignore
+
+        response = await query_engine.aquery(question)
+
+        structured_output: AnswerWithConfidence = response.response
+
+        source_list: list[str] = []
+        for node in response.source_nodes:
+            meta = node.node.metadata
+            source_name = meta.get("source", "Unknown Source")
+            score = f"{node.score:.2f}" if node.score else "N/A"
+            source_list.append(f"{source_name} (Similarity: {score})")
+
+        return {
+            "answer": structured_output,
+            "sources": source_list
+        }
+    
+    def __build_query_engine(self, storage_keys: list[str], output_cls: Optional[Type] = None, response_mode: Optional[str] = None) -> RetrieverQueryEngine: # type: ignore
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(key="storage_key", operator="in", value=storage_keys)
@@ -119,11 +140,19 @@ class VectorStoreClient:
             similarity_top_k=10,
             filters=filters
         )
+
+        args: dict[str, Any] = {
+            "retriever": retriever,
+            "node_postprocessors": [WINDOW_POST, self.reranker],
+        }
+
+        if output_cls:
+            args["output_cls"] = output_cls
+        if response_mode:
+            args["response_mode"] = response_mode
         
-        query_engine: RetrieverQueryEngine = RetrieverQueryEngine.from_args( # type: ignore
-            retriever=retriever,
-            node_postprocessors=[self.reranker]
-        )
+        
+        query_engine: RetrieverQueryEngine = RetrieverQueryEngine.from_args(**args) # type: ignore
         return query_engine
         
         

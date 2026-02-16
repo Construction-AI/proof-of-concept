@@ -44,14 +44,6 @@ def read_my_documents(
 ) -> Any:
     return DocumentService.get_documents_by_owner(db=db, owner_id=current_user.id)
 
-@router.post("/q")
-async def query(
-    document_in: document_schemas.DocumentQuery,
-    db: Session = Depends(get_db),
-    current_user: auth_models.User = Depends(get_current_user)
-) -> Any:
-    return await DocumentService.query_document(db=db, question=document_in.q, document_id=document_in.document_id, user_id=current_user.id)
-
 @router.delete("/{document_id}")
 async def delete(
     document_id: int,
