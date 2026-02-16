@@ -15,5 +15,6 @@ class AnswerWithConfidence(BaseModel):
     reasoning: str = Field(..., description="A brief explanation of why you gave this answer.")
 
 class QueryResponse(BaseModel):
-    structured_answer: AnswerWithConfidence
-    sources: List[str]
+    response: str
+    # structured_answer: AnswerWithConfidence
+    # sources: List[str]

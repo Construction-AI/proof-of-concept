@@ -1,4 +1,5 @@
 from qdrant_client import QdrantClient, AsyncQdrantClient
+from qdrant_client.conversions import common_types as q_types
 from app.core.config import settings
 from app.core.logger import get_logger
 
@@ -22,7 +23,6 @@ from llama_index.core.postprocessor import MetadataReplacementPostProcessor
 SENTENCE_WINDOW_PARSER = SentenceWindowNodeParser.from_defaults(window_size=3)
 WINDOW_POST = MetadataReplacementPostProcessor(target_metadata_key="window")
 
-import tempfile
 import shutil
 
 
@@ -45,7 +45,7 @@ class VectorStoreClient:
             aclient=self.aclient
         )
         self.storage_context = StorageContext.from_defaults(vector_store=self.vector_store)
-        self.index = VectorStoreIndex.from_vector_store(vector_store=self.vector_store)
+        self.index: VectorStoreIndex = VectorStoreIndex.from_vector_store(vector_store=self.vector_store) # type: ignore
         self.reranker = SentenceTransformerRerank(
             model=settings.QDRANT_RERANKER_MODEL,
             top_n=settings.QDRANT_RERANKER_TOP_N
@@ -72,7 +72,10 @@ class VectorStoreClient:
     def _ensure_default_collection_exists(self):
         try:
             if not self.client.collection_exists(collection_name=self.collection_name):
-                self.client.create_collection(collection_name=self.collection_name, vectors_config={"size": settings.EMBEDDING_DIMENSION, "distance": "Cosine"})
+                self.client.create_collection(collection_name=self.collection_name, vectors_config=q_types.VectorParams(
+                    size=settings.EMBEDDING_DIMENSION,
+                    distance=q_types.Distance.COSINE # type: ignore
+                ))
             self.logger.info(f"Default collection ({self.collection_name}) has been created")
         except Exception as e:
             self.logger.error(f"Failed to create default collection: {str(e)}")
@@ -117,7 +120,7 @@ class VectorStoreClient:
             filters=filters
         )
         
-        query_engine = RetrieverQueryEngine.from_args(
+        query_engine: RetrieverQueryEngine = RetrieverQueryEngine.from_args( # type: ignore
             retriever=retriever,
             node_postprocessors=[self.reranker]
         )

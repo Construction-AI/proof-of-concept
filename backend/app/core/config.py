@@ -24,14 +24,11 @@ class Settings(BaseSettings):
     QDRANT_API_KEY: str | None = None
     QDRANT_RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     QDRANT_RERANKER_TOP_N: int = 6
-    EMBEDDING_DIMENSION: int # TODO: Add default value
+    EMBEDDING_DIMENSION: int
     
     MINIO_ENDPOINT: str 
     MINIO_ACCESS_KEY: str
     MINIO_SECRET_KEY: str
+            
     
-    # class Config:
-    #     env_file = ".env"
-        
-    
-settings = Settings()
+settings = Settings() # type: ignore
