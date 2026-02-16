@@ -31,11 +31,14 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
 
+      # Auth
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS}
+      - SECRET_KEY=${AUTH_SECRET_KEY}
+
       # Database
       - DATABASE_URL=${DATABASE_URL}
 
-      # AUTH SERVICE
-      - SECRET_KEY=${AUTH_SECRET_KEY}
     volumes:
       - ./static/documents:/static/documents
       - ./static/schemas:/static/schemas
