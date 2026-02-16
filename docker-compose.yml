@@ -1,31 +1,25 @@
 services:
-  qdrant:
-    image: qdrant/qdrant:latest
-    container_name: qdrant
-    ports:
-      - "6333:6333"
-      - "6334:6334"
-    volumes:
-      - qdrant_storage:/qdrant/storage
-    networks:
-      - rag-network
 
-  llamaindex-service:
+  backend:
     build:
-      context: ./llamaindex-service
+      context: ./backend
       dockerfile: Dockerfile
-    container_name: llamaindex-service
+    container_name: backend
     ports:
       - "8000:8000"
     environment:
+      # Vector Store
+      - QDRANT_URL=${QDRANT_URL}
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
+
+      # LlamaIndex
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - LLM_PROVIDER=${LLM_PROVIDER}
       - MODEL=${MODEL}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL}
       - EMBEDDING_DIMENSION=${EMBEDDING_DIMENSION}
-      - QDRANT_URL=${QDRANT_URL}
+
+      # S3
       - MINIO_URL=${MINIO_URL}
       - MINIO_ENDPOINT=${MINIO_ENDPOINT}
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
@@ -40,13 +34,11 @@ services:
       - DATABASE_URL=${DATABASE_URL}
 
     volumes:
-      - ./static/documents:/static/documents
-      - ./static/schemas:/static/schemas
-      - ./static/templates:/static/templates
-      - ./llamaindex-service:/app
+      - ./backend:/app
       - ./data:/data
     depends_on:
       - qdrant
+      - minio
     networks:
       - rag-network
     healthcheck:
@@ -56,13 +48,13 @@ services:
       retries: 5
       start_period: 30s
 
-  # schema-editor:
+   # frontend:
   #   build:
-  #     context: ./schema-editor
+  #     context: ./frontend
   #     dockerfile: Dockerfile
-  #   container_name: schema-editor
+  #   container_name: frontend
   #   volumes:
-  #     - ./schema-editor:/app
+  #     - ./frontend:/app
   #   ports:
   #     - "8501:8501"
   #   networks:
@@ -74,39 +66,17 @@ services:
   #     timeout: 30s
   #     retries: 5
   #     start_period: 30s
-
-  simple-ui-service:
-    build:
-      context: ./simple-ui-service
-      dockerfile: Dockerfile
-    container_name: simple-ui-service
-    volumes:
-      - ./simple-ui-service:/app
+  
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
     ports:
-      - "8501:8501"
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
     networks:
       - rag-network
-    command: streamlit run app.py --server.port=8501 --server.address=0.0.0.0 --server.runOnSave=true
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
-      interval: 1m30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
-
-  # ollama:
-  #   build:
-  #     context: ./ollama-service
-  #     dockerfile: Dockerfile
-  #   volumes:
-  #     - ollama_storage:/root/.ollama
-  #   ports:
-  #     - "11434:11434"
-  #   networks:
-  #     - rag-network
-  #   environment:
-  #     - OLLAMA_EMBEDDING_MODEL=${OLLAMA_EMBEDDING_MODEL}
-  #     - OLLAMA_MODEL=${OLLAMA_MODEL}
 
   minio:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
