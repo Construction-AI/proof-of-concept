@@ -9,6 +9,7 @@ argon2-cffi==25.1.0
 argon2-cffi-bindings==25.1.0
 attrs==25.4.0
 banks==2.2.0
+bcrypt==5.0.0
 beautifulsoup4==4.14.2
 bm25s==0.2.14
 boto3==1.42.4
@@ -19,12 +20,16 @@ charset-normalizer==3.4.4
 click==8.3.0
 colorama==0.4.6
 coloredlogs==15.0.1
+cryptography==46.0.4
 dataclasses-json==0.6.7
 defusedxml==0.7.1
 Deprecated==1.2.18
 dirtyjson==1.0.8
 distro==1.9.0
+dnspython==2.8.0
 docxtpl==0.20.2
+ecdsa==0.19.1
+email-validator==2.3.0
 fastapi==0.120.0
 filelock==3.20.0
 filetype==1.2.0
@@ -86,6 +91,7 @@ onnxruntime==1.23.2
 openai==1.109.1
 packaging==25.0
 pandas==2.2.3
+passlib==1.7.4
 pillow==11.3.0
 platformdirs==4.5.0
 pluggy==1.6.0
@@ -93,6 +99,7 @@ portalocker==3.2.0
 propcache==0.4.1
 protobuf==6.33.0
 py_rust_stemmers==0.1.5
+pyasn1==0.6.2
 pycparser==2.23
 pycryptodome==3.23.0
 pydantic==2.12.3
@@ -107,12 +114,14 @@ pytest-asyncio==1.2.0
 python-dateutil==2.9.0.post0
 python-docx==1.2.0
 python-dotenv==1.2.1
+python-jose==3.5.0
 python-multipart==0.0.20
 pytz==2025.2
 PyYAML==6.0.3
 qdrant-client==1.15.1
 regex==2025.10.23
 requests==2.32.5
+rsa==4.9.1
 s3transfer==0.16.0
 safetensors==0.6.2
 scikit-learn==1.7.2

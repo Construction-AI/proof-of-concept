@@ -6,5 +6,6 @@ router = APIRouter()
 @router.get("")
 def route_get_health():
     return Response(
+        content="ok",
         status_code=status.HTTP_200_OK
     )
