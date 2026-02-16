@@ -68,7 +68,7 @@ services:
   #     start_period: 30s
   
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:v1.16
     container_name: qdrant
     ports:
       - "6333:6333"
@@ -79,7 +79,7 @@ services:
       - rag-network
 
   minio:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: minio
     command: [ "server", "--console-address", ":9001", "/data" ]
     environment:
