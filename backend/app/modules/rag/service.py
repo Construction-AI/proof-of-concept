@@ -9,6 +9,8 @@ from app.modules.projects.service import ProjectService
 
 from app.infra.vector_store import vector_store_client
 
+from typing import Any, Type
+
 class RagService:
     LOGGER = get_logger("RagService")
     
@@ -30,9 +32,7 @@ class RagService:
         return await RagService.query_documents(db=db, question=question, document_ids=doc_ids, user_id=user_id)
     
     @staticmethod
-    async def query_with_confidence(db: Session, question: str, project_id: int, user_id: int):
-        from typing import Any
-        
+    async def query_with_confidence(db: Session, question: str, project_id: int, user_id: int):        
         project: Project = ProjectService.get_project_by_id(db=db, project_id=project_id)
         if not project or project.owner_id != user_id:
             raise Exception(f"Project `{project_id}` does not exist or belongs to different user.")
@@ -41,5 +41,12 @@ class RagService:
         storage_keys: list[str] = [doc.storage_key for doc in docs]
         details: dict[str, Any] = await vector_store_client.query_with_confidence(question=question, storage_keys=storage_keys)
         return details
+    
+    @staticmethod
+    async def query_with_dynamic_type(db: Session, instruction: str, output_type: Type[Any], document_ids: list[int], user_id: int):
+        docs: list[Document] = DocumentService.get_documents_by_ids(db=db, document_ids=document_ids)
+        storage_keys: list[str] = [doc.storage_key for doc in docs]
+        return await vector_store_client.query_with_dynamic_type(instruction=instruction, output_type=output_type, storage_keys=storage_keys)
+
 
         
