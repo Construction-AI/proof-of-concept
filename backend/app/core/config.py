@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     QDRANT_RERANKER_MODEL: str = "BAAI/bge-reranker-v2-m3"
     QDRANT_RERANKER_TOP_N: int = 6
     EMBEDDING_DIMENSION: int
-    REREANKER_DEVICE: Literal["mps", "cuda"] = "mps"
+    REREANKER_DEVICE: Optional[Literal["mps", "cuda"]] = None
     
     MINIO_ENDPOINT: str 
     MINIO_ACCESS_KEY: str
