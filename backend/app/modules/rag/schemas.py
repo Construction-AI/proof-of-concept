@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Dict, Type, Any
 
 class QueryDocsRequest(BaseModel):
     question: str
@@ -20,3 +20,26 @@ class QueryResponse(BaseModel):
 class FinalResponse(BaseModel):
     structured_answer: AnswerWithConfidence
     sources: List[str]
+
+from enum import Enum
+class OutputFormat(str, Enum):
+    STRING ="string"
+    INTEGER = "integer"
+    FLOAT = "float"
+    BOOLEAN = "boolean"
+    LIST_OF_STRING = "list_of_strings"
+    LIST_OF_INTEGERS = "list_of_integers"
+
+TYPE_MAP: Dict[OutputFormat, Type[Any]] = {
+    OutputFormat.STRING: str,
+    OutputFormat.INTEGER: int,
+    OutputFormat.FLOAT: float,
+    OutputFormat.BOOLEAN: bool,
+    OutputFormat.LIST_OF_STRING: List[str],
+    OutputFormat.LIST_OF_INTEGERS: List[int]
+}
+
+class DynamicRAGRequest(BaseModel):
+    instruction: str
+    output_format: OutputFormat
+    document_ids: List[int]
