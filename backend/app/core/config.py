@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from typing import Literal, Optional
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Construction AI"
@@ -18,10 +19,12 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "/data/database.db"
     
-    # External APIs
-    OPENAI_API_KEY: str
-    MODEL: str
-    EMBEDDING_MODEL: str
+    # External APIs (either LOCAL or REMOTE)
+    LLM_PROVIDER: Literal["OPENAI", "LMSTUDIO"]
+    LLM_PROVIDER_API_KEY: Optional[str]
+    LLM_PROVIDER_BASE_URL: Optional[str]
+    LLM_MODEL: str
+    LLM_EMBEDDING_MODEL: str
     
     # Vector Store (Qdrant)
     QDRANT_URL: str

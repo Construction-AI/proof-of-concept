@@ -18,10 +18,16 @@ async def query_docs(
     db: Session = Depends(get_db),
     current_user: auth_models.User = Depends(get_current_user)
 ) -> Any:
-    response: str = await RagService.query_documents(db=db, question=query_in.question, document_ids=query_in.document_ids, user_id=current_user.id)
-    return QueryResponse(
-        response=response
-    )
+    try:
+        response: str = await RagService.query_documents(db=db, question=query_in.question, document_ids=query_in.document_ids, user_id=current_user.id)
+        return QueryResponse(
+            response=response
+        )
+    except Exception as e:
+        raise HTTPException(
+            detail=str(e),
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
     
 @router.post("/q/project", response_model=QueryResponse)
 async def query_project(
