@@ -25,7 +25,9 @@ WINDOW_POST = MetadataReplacementPostProcessor(target_metadata_key="window")
 
 import shutil
 from app.modules.rag.schemas import AnswerWithConfidence
-from typing import Optional, Type, Any
+from typing import Optional, Type, Any, List, Dict
+
+from pydantic import BaseModel, create_model, Field
 
 
 class VectorStoreClient:
@@ -48,10 +50,14 @@ class VectorStoreClient:
         )
         self.storage_context = StorageContext.from_defaults(vector_store=self.vector_store)
         self.index: VectorStoreIndex = VectorStoreIndex.from_vector_store(vector_store=self.vector_store) # type: ignore
+
+        # reranker setup to give nodes in proper order
         self.reranker = SentenceTransformerRerank(
             model=settings.QDRANT_RERANKER_MODEL,
-            top_n=settings.QDRANT_RERANKER_TOP_N
+            top_n=settings.QDRANT_RERANKER_TOP_N,
+            device=settings.REREANKER_DEVICE
         )
+
         self.initialized = True
         
     def __initialize_llamaindex(self):
@@ -103,10 +109,10 @@ class VectorStoreClient:
             self.initialized = False
         
     async def upload_document(self, file: UploadFile, identifier: DocumentIdentifier):
-        if await self.__nodes_exist_for_storage_key(storage_key=identifier.storage_key):
+        if await self._nodes_exist_for_storage_key(storage_key=identifier.storage_key):
             raise Exception(f"Nodes already exist for `storage_key` ({identifier.storage_key})")
         
-        docs = self.__load_documents(file=file, identifier=identifier)
+        docs = self._load_documents(file=file, identifier=identifier)
         if not docs:
             raise Exception(f"No docs were extracted from file: {file.filename}")
         
@@ -115,7 +121,7 @@ class VectorStoreClient:
         self.logger.info(f"Document {file.filename} has been added to the knowledge base. Nodes count: {len(nodes)}.")
         
     async def delete_document(self, identifier: DocumentIdentifier):
-        nodes: list[BaseNode] = await self.__get_nodes_for_storage_key(storage_key=identifier.storage_key)
+        nodes: list[BaseNode] = await self._get_nodes_for_storage_key(storage_key=identifier.storage_key)
         if len(nodes) == 0:
             self.logger.info("No nodes matching given storage key. Skipping delete.")
             return
@@ -124,14 +130,14 @@ class VectorStoreClient:
         self.logger.info(f"Deleted nodes of `storage_key`: {identifier.storage_key}")
         
     async def query(self, question: str, storage_keys: list[str]) -> str:
-        query_engine = self.__build_query_engine( # type: ignore
+        query_engine = self._build_query_engine( # type: ignore
             storage_keys=storage_keys
         )
         response = await query_engine.aquery(question)
         return response.response
     
     async def query_with_confidence(self, question: str, storage_keys: list[str]) -> dict[str, Any]:
-        query_engine: RetrieverQueryEngine = self.__build_query_engine(storage_keys=storage_keys, output_cls=AnswerWithConfidence, response_mode="tree_summarize") # type: ignore
+        query_engine: RetrieverQueryEngine = self._build_query_engine(storage_keys=storage_keys, output_cls=AnswerWithConfidence, response_mode="tree_summarize") # type: ignore
 
         response = await query_engine.aquery(question)
 
@@ -149,7 +155,7 @@ class VectorStoreClient:
             "sources": source_list
         }
     
-    def __build_query_engine(self, storage_keys: list[str], output_cls: Optional[Type] = None, response_mode: Optional[str] = None) -> RetrieverQueryEngine: # type: ignore
+    def _build_query_engine(self, storage_keys: list[str], output_cls: Optional[Type] = None, response_mode: Optional[str] = None) -> RetrieverQueryEngine: # type: ignore
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(key="storage_key", operator="in", value=storage_keys)
@@ -175,7 +181,7 @@ class VectorStoreClient:
         return query_engine
         
         
-    def __load_documents(self, file: UploadFile, identifier: DocumentIdentifier) -> list[Document]:
+    def _load_documents(self, file: UploadFile, identifier: DocumentIdentifier) -> list[Document]:
         import os
         
         os.makedirs(name=settings.UPLOAD_DIR, exist_ok=True)
@@ -199,13 +205,13 @@ class VectorStoreClient:
         os.remove(path=file_path)
         return docs
         
-    async def __nodes_exist_for_storage_key(self, storage_key: str) -> bool:
-        return len(await self.__get_nodes_for_storage_key(storage_key=storage_key)) > 0
+    async def _nodes_exist_for_storage_key(self, storage_key: str) -> bool:
+        return len(await self._get_nodes_for_storage_key(storage_key=storage_key)) > 0
         
     # async def check_nodes_exist(self, storage_key: str) -> bool:
     #     nodes = await self.
     
-    async def __get_nodes_for_storage_key(self, storage_key: str) -> list[BaseNode]:
+    async def _get_nodes_for_storage_key(self, storage_key: str) -> list[BaseNode]:
         filters = MetadataFilters(
             filters=[
                 ExactMatchFilter(key="storage_key", value=storage_key)
@@ -214,5 +220,53 @@ class VectorStoreClient:
         
         nodes = await self.index.vector_store.aget_nodes(filters=filters)
         return nodes
+
+    def _create_dynamic_schema(self, expected_type: Type[Any]) -> Type[BaseModel]:
+        return create_model(
+            "DynamicResponse",
+            answer=(expected_type, Field(..., description="The factual answer to the instruction, strictly matching the requested format / type")),
+            confidence_score=(float, Field(..., description="A score from 0.0 to 1.0 indicating how confident you are that the context fully answers the question.")),
+            reasoning=(str, Field(..., description="Explanation of why this answer and confidence score were given."))
+        )
+    
+    async def query_with_dynamic_type(
+            self,
+            instruction: str,
+            output_type: Type[Any],
+            storage_keys: List[str]
+    ) -> Dict[str, Any]:
+        DynamicSchema = self._create_dynamic_schema(expected_type=output_type)
+
+        query_engine: RetrieverQueryEngine = self._build_query_engine( # type: ignore
+            storage_keys=storage_keys,
+            output_cls=DynamicSchema,
+            response_mode="tree_summarize"
+        )
+
+        response = await query_engine.aquery(instruction)
+        structured_data = response.response
+
+        source_list: list[Dict[str, Any]] = []
+        for node in response.source_nodes:
+            meta = node.node.metadata
+            source_name = f'file: [{meta.get("file_name", "Unknown File")}], page: [{meta.get("page_label", "Unknown Page")}]'
+            score = f"{node.score:.2f}" if node.score else "N/A"
+
+            original_sentence = meta.get("original_text", "Sentence not found")
+            context_window = meta.get("window", "Context not found")
+
+            source_list.append({
+                "source": source_name,
+                "node_confidence": score,
+                "exact_sentence": original_sentence,
+                "context_window": context_window
+            })
+
+        return {
+            "answer": structured_data.answer, # Guaranteed to match 'output_type'
+            "llm_confidence": structured_data.confidence_score,
+            "reasoning": structured_data.reasoning,
+            "sources": source_list
+        }
     
 vector_store_client = VectorStoreClient()

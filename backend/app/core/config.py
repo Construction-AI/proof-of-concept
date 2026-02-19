@@ -29,9 +29,10 @@ class Settings(BaseSettings):
     # Vector Store (Qdrant)
     QDRANT_URL: str
     QDRANT_API_KEY: str | None = None
-    QDRANT_RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    QDRANT_RERANKER_MODEL: str = "BAAI/bge-reranker-v2-m3"
     QDRANT_RERANKER_TOP_N: int = 6
     EMBEDDING_DIMENSION: int
+    REREANKER_DEVICE: Optional[Literal["mps", "cuda"]] = None
     
     MINIO_ENDPOINT: str 
     MINIO_ACCESS_KEY: str

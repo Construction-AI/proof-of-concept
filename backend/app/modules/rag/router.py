@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from typing import Any
 
-from app.modules.rag.schemas import QueryDocsRequest, QueryResponse, QueryProjectRequest, FinalResponse
+from app.modules.rag.schemas import QueryDocsRequest, QueryResponse, QueryProjectRequest, FinalResponse, DynamicRAGRequest, TYPE_MAP
 from app.modules.rag.service import RagService
 
 from app.db.session import get_db
@@ -58,3 +58,23 @@ async def query_project_with_confidence(
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     
+@router.post("/q/dynamic")
+async def ask_rag_dynamic(
+    request: DynamicRAGRequest,
+    db: Session = Depends(get_db),
+    current_user: auth_models.User = Depends(get_current_user)
+    ):
+    target_python_type = TYPE_MAP[request.output_format]
+
+    try:
+        result = await RagService.query_with_dynamic_type(
+            db=db,
+            instruction=request.instruction,
+            output_type=target_python_type,
+            document_ids=request.document_ids,
+            user_id=current_user.id
+        )
+        return result
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
