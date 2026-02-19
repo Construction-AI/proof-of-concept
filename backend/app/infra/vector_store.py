@@ -56,20 +56,39 @@ class VectorStoreClient:
         
     def __initialize_llamaindex(self):
         from llama_index.core.settings import Settings as LlamaSettings
-        from llama_index.embeddings.openai import OpenAIEmbedding
-        from llama_index.llms.openai import OpenAI
-
-
-        LlamaSettings.llm = OpenAI(
-            model=settings.MODEL,
-            api_key=settings.OPENAI_API_KEY
-        )
         
-        LlamaSettings.embed_model = OpenAIEmbedding(
-            model=settings.EMBEDDING_MODEL,
-            api_key=settings.OPENAI_API_KEY,
-            dimensions=settings.EMBEDDING_DIMENSION
-        )
+        if settings.LLM_PROVIDER == "OPENAI":
+            assert settings.LLM_PROVIDER_API_KEY is not None, "OpenAI selected as provider, `LLM_PROVIDER_API_KEY` cannot be null."
+
+            from llama_index.llms.openai import OpenAI
+
+            LlamaSettings.llm = OpenAI(
+                model=settings.LLM_MODEL,
+                api_key=settings.LLM_PROVIDER_API_KEY
+            )
+
+            from llama_index.embeddings.openai import OpenAIEmbedding
+            LlamaSettings.embed_model = OpenAIEmbedding(
+                    model=settings.LLM_EMBEDDING_MODEL,
+                    api_key=settings.LLM_PROVIDER_API_KEY,
+                    dimensions=settings.EMBEDDING_DIMENSION
+                )
+        else:
+            assert settings.LLM_PROVIDER_BASE_URL is not None, "LMStudio selected as LLM provider, `LLM_PROVIDER_BASE_URL` cannot be null"
+
+            from llama_index.llms.lmstudio import LMStudio
+            LlamaSettings.llm = LMStudio(
+                base_url=settings.LLM_PROVIDER_BASE_URL,
+                model_name=settings.LLM_MODEL
+            )
+
+            from llama_index.embeddings.openai import OpenAIEmbedding
+            LlamaSettings.embed_model = OpenAIEmbedding(
+                    model=settings.LLM_EMBEDDING_MODEL,
+                    api_key=settings.LLM_PROVIDER_API_KEY,
+                    dimensions=settings.EMBEDDING_DIMENSION
+                )
+        
         
     def _ensure_default_collection_exists(self):
         try:
