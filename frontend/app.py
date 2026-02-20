@@ -1,260 +1,124 @@
 import streamlit as st
-import pandas as pd
-import requests
+from streamlit_cookies_controller.cookie_controller import CookieController
+from src.api.client import APIClient
+from typing import cast
 
-# --- CONFIGURATION ---
-st.set_page_config(page_title="Project Dashboard", layout="wide")
+controller = CookieController()
 
-# The internal docker DNS name provided in your prompt
-API_BASE_URL = "http://llamaindex-service:8000/api/v1/db"
+def main():
+    st.set_page_config(page_title="Document RAG Portal", layout="wide")
 
-# --- API CLIENT FUNCTIONS ---
-# We use 'params' for POST requests because your FastAPI endpoints 
-# are defined with query parameters, not Pydantic bodies.
+    # 1. Initialize State Keys Safely
+    if "token" not in st.session_state:
+        st.session_state.token = cast(str | None, controller.get('auth_token'))
+    if "user" not in st.session_state:
+        st.session_state.user = None
 
-def api_create_user(first, last, email):
-    try:
-        resp = requests.post(f"{API_BASE_URL}/create_user", 
-                             params={"first_name": first, "last_name": last, "email": email})
-        return resp.status_code == 201
-    except: return False
+    # 2. Instantiate Client
+    api = APIClient(token=st.session_state.token)
 
-def api_get_users():
-    try:
-        resp = requests.get(f"{API_BASE_URL}/read_all_users")
-        return resp.json() if resp.status_code == 200 else []
-    except: return []
-
-def api_get_user(user_id):
-    try:
-        resp = requests.get(f"{API_BASE_URL}/read_user/{user_id}")
-        return resp.json() if resp.status_code == 200 else None
-    except: return None
-
-def api_create_project(name, user_id):
-    try:
-        resp = requests.post(f"{API_BASE_URL}/create_project", 
-                             params={"project_name": name, "user_id": user_id})
-        return resp.status_code == 201
-    except: return False
-
-def api_get_projects():
-    try:
-        resp = requests.get(f"{API_BASE_URL}/read_all_projects")
-        return resp.json() if resp.status_code == 200 else []
-    except: return []
-
-def api_create_document(user_id, project_id, title, file_obj=None):
-    try:
-        # Query parameters (metadata)
-        params = {
-            "user_id": user_id, 
-            "project_id": project_id, 
-            "document_title": title
-        }
-        
-        # File payload (if a file was uploaded)
-        files = None
-        if file_obj is not None:
-            # The key 'file' must match the parameter name in your FastAPI backend
-            files = {"file": (file_obj.name, file_obj, file_obj.type)}
-
-        # We send params in the URL query string, and files in the multipart body
-        resp = requests.post(
-            f"{API_BASE_URL}/create_document", 
-            params=params,
-            files=files
-        )
-        return resp.status_code == 201
-    except Exception as e:
-        print(f"Error: {e}")
-        return False
-
-def api_get_doc(doc_id):
-    try:
-        resp = requests.get(f"{API_BASE_URL}/read_document/{doc_id}")
-        return resp.json() if resp.status_code == 200 else None
-    except: return None
-
-def api_get_project_docs(project_id):
-    # This calls the NEW endpoint added above
-    try:
-        resp = requests.get(f"{API_BASE_URL}/read_documents_by_project/{project_id}")
-        return resp.json() if resp.status_code == 200 else []
-    except: return []
-
-# --- HELPER ---
-def get_user_name_map():
-    users = api_get_users()
-    # Returns a dict: {"John Doe": 1, "Jane Smith": 2}
-    return {f"{u['first_name']} {u['last_name']}": u['id'] for u in users}
-
-# --- STATE MANAGEMENT ---
-if 'active_project_id' not in st.session_state:
-    st.session_state['active_project_id'] = None
-
-# --- UI PAGES ---
-
-def page_users():
-    st.header("👥 User Management")
-    tab1, tab2, tab3 = st.tabs(["Create User", "Find User", "All Users"])
-    
-    # 1a.1 Create
-    with tab1:
-        with st.form("new_user"):
-            c1, c2 = st.columns(2)
-            first = c1.text_input("First Name")
-            last = c2.text_input("Last Name")
-            email = st.text_input("Email")
-            if st.form_submit_button("Create"):
-                if api_create_user(first, last, email):
-                    st.success("User created!")
-                else:
-                    st.error("Failed to create user.")
-
-    # 1a.2 Read Single
-    with tab2:
-        uid = st.number_input("User ID", min_value=1, step=1)
-        if st.button("Search User"):
-            user = api_get_user(uid)
-            if user:
-                st.json(user)
-            else:
-                st.error("User not found")
-
-    # 1a.3 Read All
-    with tab3:
-        users = api_get_users()
-        if users:
-            st.dataframe(pd.DataFrame(users), use_container_width=True)
+    # 3. Fetch User Profile if we have a token but no user data
+    if st.session_state.token and st.session_state.user is None:
+        res = api.get_me()
+        if res.status_code == 200:
+            st.session_state.user = res.json()
         else:
-            st.info("No users found.")
-
-def page_specific_project(project_id):
-    # Fetch project details
-    all_projs = api_get_projects()
-    project = next((p for p in all_projs if p['id'] == project_id), None)
-
-    if not project:
-        st.error("Project not found.")
-        if st.button("Back"):
-            st.session_state['active_project_id'] = None
+            # Token is invalid or expired. Clear everything.
+            st.session_state.token = None
+            st.session_state.user = None
+            controller.remove('auth_token')
             st.rerun()
-        return
 
-    col1, col2 = st.columns([1, 6])
+    # 4. Authentication Gate
+    if not st.session_state.token:
+        show_login_page(api)
+    else:
+        show_dashboard(api)
+
+def show_login_page(api: APIClient):
+    st.title("🔐 Welcome")
+    tab1, tab2 = st.tabs(["Login", "Register"])
+    
+    with tab1:
+        with st.form("login"):
+            u = st.text_input("Email")
+            p = st.text_input("Password", type="password")
+            if st.form_submit_button("Sign In"):
+                res = api.login(u, p)
+                if res.status_code == 200:
+                    token = res.json()["access_token"]
+                    st.session_state.token = token
+                    controller.set('auth_token', token) # type: ignore
+                    # We don't need to fetch the user here; a rerun will trigger it in main()
+                    st.rerun()
+                else:
+                    st.error("Invalid credentials")
+                    
+    with tab2:
+        # Added the missing register form!
+        with st.form("register"):
+            email = st.text_input("Email")
+            first_name = st.text_input("First Name")
+            last_name = st.text_input("Last Name")
+            password = st.text_input("Password", type="password")
+            if st.form_submit_button("Register"):
+                # Make sure you have a register method in your APIClient!
+                res = api.register(email, password, first_name, last_name)
+                if res.status_code == 201:
+                    st.success("Account created! Please switch to the Login tab.")
+                else:
+                    st.error("Registration failed.")
+
+def show_dashboard(api: APIClient):
+    # --- Sidebar Navigation Helpers ---
+    with st.sidebar:
+        st.title("Settings")
+        if st.session_state.user:
+            st.write(f"Logged in: **{st.session_state.user['first_name']}**")
+        
+        if st.button("Log Out", use_container_width=True):
+            st.session_state.token = None
+            st.session_state.user = None # Clear the user on logout
+            controller.remove('auth_token')
+            st.rerun()
+
+    # --- Main Dashboard Navigation Hub ---
+    st.title("🏠 Document AI Dashboard")
+    st.info("Welcome back! Select a module below or use the sidebar to navigate.")
+
+    col1, col2, col3 = st.columns(3)
+
     with col1:
-        if st.button("← Back"):
-            st.session_state['active_project_id'] = None
-            st.rerun()
-    with col2:
-        # Note: Ensure your API returns 'name' or 'project_name' consistently. 
-        # Your last snippet used 'name', previous used 'project_name'.
-        p_name = project.get('name', project.get('project_name', 'Unnamed Project'))
-        st.title(f"📂 {p_name}")
-        st.caption(f"Project ID: {project['id']} | User ID: {project['user_id']}")
+        st.subheader("📂 Projects")
+        st.write("Manage your document collections and project settings.")
+        if st.button("Go to Projects", key="nav_projects", use_container_width=True):
+            st.switch_page("pages/projects.py")
+
+    # with col2:
+    #     st.subheader("📄 Documents")
+    #     st.write("Upload new PDF or Text files to your vector store.")
+    #     if st.button("Go to Documents", key="nav_docs", use_container_width=True):
+    #         st.switch_page("pages/2_Documents.py")
+
+    with col3:
+        st.subheader("🤖 AI Chat")
+        st.write("Query your documents using RAG and confidence scores.")
+        if st.button("Go to Chat", key="nav_rag", use_container_width=True):
+            st.switch_page("pages/rag.py")
 
     st.divider()
-
-    tab1, tab2, tab3 = st.tabs(["Add Document", "Read Document", "Project Documents"])
-
-    # --- 1b.4.1 Add Document (UPDATED WITH FILE UPLOAD) ---
-    with tab1:
-        with st.form("add_doc"):
-            title = st.text_input("Document Title")
-            
-            # New File Uploader
-            uploaded_file = st.file_uploader("Upload File (Optional)", type=['txt', 'pdf', 'docx', 'md'])
-            
-            if st.form_submit_button("Add Document"):
-                if api_create_document(project['user_id'], project_id, title, uploaded_file):
-                    st.success("Document added successfully!")
-                    # Optional: Rerun to refresh the list if needed
-                else:
-                    st.error("Failed to add document.")
-
-    # 1b.4.2 Read Doc
-    with tab2:
-        did = st.number_input("Document ID", min_value=1, step=1)
-        if st.button("Find Document"):
-            doc = api_get_doc(did)
-            if doc and doc.get('project_id') == project_id:
-                st.json(doc)
-            elif doc:
-                st.warning("Document exists but belongs to a different project.")
-            else:
-                st.error("Document not found.")
-
-    # 1b.4.3 Read All for Project
-    with tab3:
-        docs = api_get_project_docs(project_id)
-        if docs:
-            st.dataframe(pd.DataFrame(docs), use_container_width=True)
+    
+    # Optional: Quick Stats or Recent Activity
+    st.write("### System Status")
+    
+    # Make sure your APIClient has this method mapped to /api/v1/health/
+    try:
+        health_res = api.get_health()
+        if health_res.status_code == 200:
+            st.success("API: Connected")
         else:
-            st.info("No documents in this project.")
-
-def page_projects_menu():
-    if st.session_state['active_project_id']:
-        page_specific_project(st.session_state['active_project_id'])
-        return
-
-    st.header("🏗️ Projects Menu")
-    tab1, tab2, tab3 = st.tabs(["Create Project", "Find Project", "All Projects"])
-
-    # 1b.1 Create Project
-    with tab1:
-        user_map = get_user_name_map()
-        if not user_map:
-            st.warning("No users found. Create a user first.")
-        else:
-            with st.form("new_proj"):
-                p_name = st.text_input("Project Name")
-                u_name = st.selectbox("Assign to User", options=list(user_map.keys()))
-                if st.form_submit_button("Create Project"):
-                    if api_create_project(p_name, user_map[u_name]):
-                        st.success("Project created!")
-                    else:
-                        st.error("Failed.")
-
-    # 1b.2 Read Single
-    with tab2:
-        pid = st.number_input("Enter Project ID", min_value=1, step=1)
-        # Note: We don't have a direct 'read_project' API wrapper above, 
-        # but we can add one or filter the list.
-        # Let's filter the list for simplicity in this snippet.
-        if st.button("Search"):
-            all_p = api_get_projects()
-            target = next((p for p in all_p if p['id'] == pid), None)
-            if target:
-                st.json(target)
-            else:
-                st.error("Project not found.")
-
-    # 1b.3 List All
-    with tab3:
-        projects = api_get_projects()
-        if projects:
-            for p in projects:
-                with st.container(border=True):
-                    c1, c2 = st.columns([5, 1])
-                    c1.subheader(p['name'])
-                    c1.text(f"ID: {p['id']} | User ID: {p['user_id']}")
-                    if c2.button("Open", key=f"btn_{p['id']}"):
-                        st.session_state['active_project_id'] = p['id']
-                        st.rerun()
-        else:
-            st.info("No projects found.")
-
-# --- MAIN ---
-def main():
-    st.sidebar.title("Dashboard")
-    menu = st.sidebar.radio("Go to:", ["Users Menu", "Projects Menu"])
-
-    if menu == "Users Menu":
-        st.session_state['active_project_id'] = None
-        page_users()
-    elif menu == "Projects Menu":
-        page_projects_menu()
-
-if __name__ == "__main__":
-    main()
+            st.error("API: Offline")
+    except Exception:
+        st.error("API: Offline or Unreachable")
+        
+main()
