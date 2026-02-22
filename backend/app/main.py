@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.modules.auth.router import router as auth_router
 from app.modules.projects.router import router as projects_router
@@ -40,3 +41,17 @@ def create_app() -> FastAPI:
     return app
 
 app = create_app()
+
+
+origins = [
+    "http://localhost:5173",     # Twój lokalny frontend Vite
+    "http://127.0.0.1:5173",     # Alternatywny zapis localhosta
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,       # Zezwalamy na te adresy
+    allow_credentials=True,      # Zezwalamy na przesyłanie ciasteczek/autoryzacji
+    allow_methods=["*"],         # Zezwalamy na wszystkie metody (GET, POST, PUT, DELETE)
+    allow_headers=["*"],         # Zezwalamy na wszystkie nagłówki (w tym nasz Authorization: Bearer)
+)
