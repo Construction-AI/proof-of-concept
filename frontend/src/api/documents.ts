@@ -34,5 +34,10 @@ export const documentsService = {
 
     delete: async (documentId: number) => {
         await apiClient.delete(`/documents/${documentId}`);
+    },
+
+    getDownloadUrl: async (documentId: number) => {
+        const response = await apiClient.get<string>(`/documents/download_url/${documentId}`);
+        return response.data;
     }
 };
