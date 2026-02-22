@@ -13,6 +13,14 @@ class StorageClient:
             secret_key=settings.MINIO_SECRET_KEY,
             secure=False
         )
+        self.presign_client = Minio(
+            # endpoint=settings.MINIO_ENDPOINT,
+            endpoint="localhost:9000",
+            access_key=settings.MINIO_ACCESS_KEY,
+            secret_key=settings.MINIO_SECRET_KEY,
+            secure=False,
+            region="us-east-1"
+        )
         self.bucket = settings.BUCKET_COLLECTION_NAME
         self.logger = get_logger(self.__class__.__name__)
         self.initialized = True
@@ -51,7 +59,7 @@ class StorageClient:
             return False
     
     def get_download_url(self, storage_key: str, expiration: int = 3600):
-        return self.client.get_presigned_url(
+        return self.presign_client.get_presigned_url(
             method="GET",
             bucket_name=self.bucket,
             object_name=storage_key,
