@@ -42,4 +42,10 @@ TYPE_MAP: Dict[OutputFormat, Type[Any]] = {
 class DynamicRAGRequest(BaseModel):
     instruction: str
     output_format: OutputFormat
-    document_ids: List[int]
+    project_id: int
+    
+class DynamicRAGResponse(BaseModel):
+    answer: Any
+    llm_confidence: float
+    reasoning: str
+    sources: list[Dict[str, Any]]

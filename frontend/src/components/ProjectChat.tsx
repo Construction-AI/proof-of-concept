@@ -1,7 +1,7 @@
 // src/components/ProjectChat.tsx
 import { useState } from 'react';
 import { Send, Bot, User, AlertCircle, BookOpen } from 'lucide-react';
-import { ragService } from '../api/rag';
+import { ragService, type Source } from '../api/rag';
 
 // Definiujemy, jak wygląda pojedyncza wiadomość w naszym interfejsie
 type Message = {
@@ -11,7 +11,7 @@ type Message = {
   // Pola opcjonalne (tylko dla odpowiedzi AI)
   confidence?: number;
   reasoning?: string;
-  sources?: string[];
+  sources?: Source[];
 };
 
 interface ProjectChatProps {
@@ -52,9 +52,9 @@ export const ProjectChat = ({ projectId }: ProjectChatProps) => {
       const newAiMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'ai',
-        text: response.structured_answer.answer,
-        confidence: response.structured_answer.confidence_score,
-        reasoning: response.structured_answer.reasoning,
+        text: response.answer,
+        confidence: response.llm_confidence,
+        reasoning: response.reasoning,
         sources: response.sources,
       };
       
@@ -135,7 +135,7 @@ export const ProjectChat = ({ projectId }: ProjectChatProps) => {
                         <div className="flex flex-wrap gap-1">
                           {msg.sources.map((source, idx) => (
                             <span key={idx} className="bg-gray-100 px-2 py-0.5 rounded text-xs">
-                              {source}
+                              {source.source}
                             </span>
                           ))}
                         </div>
