@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { UploadCloud, FileText, ArrowLeft, Trash2 } from 'lucide-react';
 import { documentsService, type Document } from '../api/documents';
+import { ProjectChat } from '../components/ProjectChat';
 
 export const ProjectDetails = () => {
   // 1. REACT: useParams wyciąga zmienną ":id" z paska adresu URL
@@ -145,6 +146,10 @@ export const ProjectDetails = () => {
           </div>
         )}
 
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Przeszukaj bazę wiedzy</h2>
+          <ProjectChat projectId={Number(id)} />
+        </div>
       </div>
     </div>
   );
