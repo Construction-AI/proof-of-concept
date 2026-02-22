@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@minoru/react-dnd-treeview": "^3.5.3",
+    "@tailwindcss/vite": "^4.2.0",
     "@types/react-router-dom": "^5.3.3",
     "axios": "^1.13.5",
     "lucide-react": "^0.575.0",
