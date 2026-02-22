@@ -1,0 +1,38 @@
+import { apiClient } from "./client";
+import type { User } from "../store/authStore";
+import type { Project } from "./projects";
+
+export interface Document {
+    id: number;
+    file_name: string;
+    size: number;
+    created_at: string;
+    content_type: string;
+    owner: User;
+    project: Project;
+};
+
+export const documentsService = {
+    getAll: async () => {
+        const response = await apiClient.get<Document[]>("/documents");
+        return response.data;
+    },
+
+    upload: async (projectId: number, file: File) => {
+        const formData = new FormData();
+        
+        formData.append("project_id", projectId.toString());
+        formData.append("file", file);
+
+        const response = await apiClient.post<Document>("/documents/create", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data"
+            },
+        });
+        return response.data;
+    },
+
+    delete: async (documentId: number) => {
+        await apiClient.delete(`/documents/${documentId}`);
+    }
+};
