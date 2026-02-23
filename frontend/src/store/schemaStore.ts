@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
 
-export type NodeType = "section" | "list" | "static-text";
+export type NodeType = "section" | "list" | "static_text" | "rag_extraction";
 
 export interface BaseSchemaNode {
     id: string;
@@ -38,11 +38,22 @@ export interface StaticTextData {
 };
 
 export interface StaticTextNode extends BaseSchemaNode {
-    type: "static-text";
+    type: "static_text";
     data: StaticTextData;
 }
 
-export type SchemaNode = SectionNode | ListNode | StaticTextNode;
+// -- Rag Extraction --
+export interface RagExtractionData {
+    prompt: string;
+    fallback_text: string;
+};
+
+export interface RagExtractionNode extends BaseSchemaNode {
+    type: "rag_extraction";
+    data: RagExtractionData;
+};
+
+export type SchemaNode = SectionNode | ListNode | StaticTextNode | RagExtractionNode;
 
 interface SchemaState {
     nodes: SchemaNode[];
@@ -52,7 +63,7 @@ interface SchemaState {
     selectNode: (id: string | null) => void;
     addNode: (type: NodeType, parent_id: string | null) => void;
     removeNode: (id: string) => void;
-    updateNodeData: (id: string, newData: Partial<SectionData & ListData & StaticTextData>) => void;
+    updateNodeData: (id: string, newData: Partial<SectionData & ListData & StaticTextData & RagExtractionData>) => void;
     reorderNodes: (newNodes: SchemaNode[]) => void;
 };
 
@@ -74,13 +85,21 @@ export const useSchemaStore = create<SchemaState>((set) => ({
                 data: { title: "New Section", show_title: true, heading_level: 2, page_before_break: false }
             };
         } 
-        else if (type == "static-text") {
+        else if (type == "static_text") {
             newNode = {
                 id: newNodeId,
                 parent_id,
-                type: "static-text",
+                type: "static_text",
                 data: { text: "Wprowadź statyczny tekst..." }
-            }
+            };
+        }
+        else if (type == "rag_extraction") {
+            newNode = {
+                id: newNodeId,
+                parent_id,
+                type: "rag_extraction",
+                data: { prompt: "Przeanalizuj dokumentację i napisz...", fallback_text: "Brak danych w bazie wiedzy." }
+            };
         }
         else {
             newNode = {

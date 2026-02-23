@@ -1,5 +1,5 @@
 // src/components/schema-editor/SchemaTreeNode.tsx
-import { AlignLeft, LayoutList, Type, Trash2, ChevronRight, ChevronDown } from 'lucide-react'; // Dodano Chevrons!
+import { AlignLeft, LayoutList, Type, Trash2, ChevronRight, ChevronDown, Sparkles } from 'lucide-react'; // Dodano Chevrons!
 import type { NodeModel } from '@minoru/react-dnd-treeview';
 import { useSchemaStore, type SchemaNode } from '../../store/schemaStore';
 
@@ -44,12 +44,14 @@ export const SchemaTreeNode = ({ node, depth, isOpen, onToggle, hasChild }: Prop
         {/* Ikona Typu Klocka */}
         {data.type === 'section' && <LayoutList size={16} className="text-blue-500" />}
         {data.type === 'list' && <Type size={16} className="text-green-500" />}
-        {data.type === 'static-text' && <AlignLeft size={16} className="text-gray-500" />}
-
+        {data.type === 'static_text' && <AlignLeft size={16} className="text-gray-500" />}
+        {data.type === 'rag_extraction' && <Sparkles size={16} className="text-purple-500" />}
+        
         <span className="font-medium text-sm text-gray-800">
-          {data.type === 'static-text'
-            // Jeśli to statyczny tekst, pokażmy początek wpisanego tekstu zamiast sztywnej nazwy
+          {data.type === 'static_text' 
             ? (data.data.text.length > 25 ? data.data.text.substring(0, 25) + '...' : data.data.text || 'Pusty tekst')
+            : data.type === 'rag_extraction'
+            ? (data.data.prompt.length > 25 ? data.data.prompt.substring(0, 25) + '...' : data.data.prompt || 'Pusty prompt')
             : node.text}
         </span>
       </div>

@@ -1,4 +1,4 @@
-import { AlignLeft, LayoutList, Type } from 'lucide-react';
+import { AlignLeft, LayoutList, Sparkles, Type } from 'lucide-react';
 import { useSchemaStore } from '../../store/schemaStore';
 
 export const BlockPalette = () => {
@@ -8,7 +8,7 @@ export const BlockPalette = () => {
     <div className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col overflow-y-auto">
       <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Blocks</h2>
       <div className="space-y-2">
-        <button 
+        <button
           onClick={() => addNode('section', null)}
           className="w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
         >
@@ -20,7 +20,7 @@ export const BlockPalette = () => {
         </button>
 
         <button
-          onClick={() => addNode("static-text", null)}
+          onClick={() => addNode("static_text", null)}
           className='w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:border-gray-500 hover:bg-gray-50 transition-colors'
         >
           <AlignLeft className="text-gray-500 size={20}" />
@@ -30,7 +30,20 @@ export const BlockPalette = () => {
           </div>
         </button>
 
-        <button 
+        <button
+          onClick={() => addNode('rag_extraction', null)}
+          className="w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors"
+        >
+          <div className="p-2 bg-purple-100 rounded-lg">
+            <Sparkles className="text-purple-600" size={18} />
+          </div>
+          <div>
+            <p className="font-medium text-gray-900 text-sm">RAG Extraction</p>
+            <p className="text-xs text-gray-500">AI generated content</p>
+          </div>
+        </button>
+
+        <button
           onClick={() => addNode('list', null)}
           className="w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
         >
