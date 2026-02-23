@@ -53,24 +53,23 @@ services:
       retries: 5
       start_period: 30s
 
-   # frontend:
-  #   build:
-  #     context: .
-  #     dockerfile: frontend/Dockerfile
-  #   container_name: frontend
-  #   volumes:
-  #     - ./frontend:/app
-  #   ports:
-  #     - "8501:8501"
-  #   networks:
-  #     - rag-network
-  #   command: streamlit run app.py --server.port=8501 --server.address=0.0.0.0 --server.runOnSave=true
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
-  #     interval: 1m30s
-  #     timeout: 30s
-  #     retries: 5
-  #     start_period: 30s
+  frontend:
+    build:
+      context: frontend/
+      dockerfile: Dockerfile
+    container_name: frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    networks:
+      - rag-network
+    environment:
+      - VITE_API_URL=http://localhost:8000/api/v1
+    depends_on:
+      - backend
+    restart: unless-stopped
   
   qdrant:
     image: qdrant/qdrant:v1.16
