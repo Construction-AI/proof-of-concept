@@ -101,7 +101,7 @@ class VectorStoreClient:
             if not self.client.collection_exists(collection_name=self.collection_name):
                 self.client.create_collection(collection_name=self.collection_name, vectors_config=q_types.VectorParams(
                     size=settings.EMBEDDING_DIMENSION,
-                    distance=q_types.Distance.COSINE # type: ignore
+                    distance="Cosine" # type: ignore
                 ))
             self.logger.info(f"Default collection ({self.collection_name}) has been created")
         except Exception as e:

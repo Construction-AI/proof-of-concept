@@ -1,12 +1,18 @@
-FROM python:3.11-bookworm
+# frontend/Dockerfile
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy and install shared library
-COPY shared_schema/ /shared_schema/
-RUN pip install /shared_schema/
+# Kopiujemy tylko pliki pakietów, aby wykorzystać cache warstw Dockera
+COPY package.json package-lock.json* ./
 
-COPY frontend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN npm install
 
-COPY frontend/ .
+# Kopiujemy resztę kodu
+COPY . .
+
+# Port, na którym domyślnie działa Vite
+EXPOSE 5173
+
+# Uruchomienie serwera deweloperskiego
+CMD ["npm", "run", "dev"]

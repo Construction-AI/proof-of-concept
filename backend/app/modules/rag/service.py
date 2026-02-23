@@ -43,8 +43,8 @@ class RagService:
         return details
     
     @staticmethod
-    async def query_with_dynamic_type(db: Session, instruction: str, output_type: Type[Any], document_ids: list[int], user_id: int):
-        docs: list[Document] = DocumentService.get_documents_by_ids(db=db, document_ids=document_ids)
+    async def query_with_dynamic_type(db: Session, instruction: str, output_type: Type[Any], project_id: int, user_id: int):
+        docs: list[Document] = DocumentService.get_documents_by_project_id(db=db, project_id=project_id, user_id=user_id)
         storage_keys: list[str] = [doc.storage_key for doc in docs]
         return await vector_store_client.query_with_dynamic_type(instruction=instruction, output_type=output_type, storage_keys=storage_keys)
 
