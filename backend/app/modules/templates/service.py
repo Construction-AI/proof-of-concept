@@ -27,4 +27,4 @@ class TemplateService:
     
     @staticmethod
     def get_template_tree(db: Session, template_id: int) -> List[TemplateNodes]:
-        return db.query(TemplateNodes).filter(TemplateNodes.id == template_id).all()
+        return db.query(TemplateNodes).filter(TemplateNodes.template_id == template_id).all()

@@ -1,15 +1,36 @@
 // src/components/schema-editor/TreeEditor.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tree, type NodeModel } from '@minoru/react-dnd-treeview';
-import { PlusCircle, Save, Check } from 'lucide-react';
+import { PlusCircle, Save, Check, Loader2 } from 'lucide-react';
 import { useSchemaStore, type SchemaNode } from '../../store/schemaStore';
 import { SchemaTreeNode } from './SchemaTreeNode';
 import { templatesService } from '../../api/templates';
 
 export const TreeEditor = () => {
-  const { nodes, reorderNodes } = useSchemaStore();
+  // Wyciągamy 'setNodes' ze store'a
+  const { nodes, reorderNodes, setNodes } = useSchemaStore();
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // NOWY STAN: Czy aplikacja wczytuje dane z serwera?
+  const [isLoading, setIsLoading] = useState(true);
+
+  // NOWY HOOK: Uruchamia się raz po załadowaniu strony
+  useEffect(() => {
+    const loadSchema = async () => {
+      try {
+        const TEMPLATE_ID_DO_TESTOW = 1;
+        const savedNodes = await templatesService.getNodes(TEMPLATE_ID_DO_TESTOW);
+        setNodes(savedNodes); // Wrzucamy pobrane z bazy dane do pamięci (Zustand)
+      } catch (error) {
+        console.error("Błąd ładowania schematu z bazy:", error);
+      } finally {
+        setIsLoading(false); // Kończymy kręcenie kółeczkiem
+      }
+    };
+
+    loadSchema();
+  }, [setNodes]);
 
   const treeData: NodeModel<SchemaNode>[] = nodes.map((node) => ({
     id: node.id,
@@ -56,7 +77,7 @@ export const TreeEditor = () => {
   return (
     <div className="flex-1 flex flex-col p-8 overflow-y-auto">
       <div className="max-w-3xl mx-auto w-full">
-        
+
         {/* ... (Nagłówek i przycisk zapisu bez zmian) ... */}
         <div className="mb-8 flex items-center justify-between">
           <div>
@@ -66,16 +87,20 @@ export const TreeEditor = () => {
           <button
             onClick={handleSaveSchema}
             disabled={isSaving || nodes.length === 0}
-            className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium text-white transition-all ${
-              saveSuccess ? 'bg-green-500' : 'bg-blue-600 hover:bg-blue-700'
-            }`}
+            className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium text-white transition-all ${saveSuccess ? 'bg-green-500' : 'bg-blue-600 hover:bg-blue-700'
+              }`}
           >
             {isSaving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : saveSuccess ? <><Check size={20} /> Zapisano!</> : <><Save size={20} /> Zapisz Schemat</>}
           </button>
         </div>
 
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 min-h-[400px]">
-          {nodes.length === 0 ? (
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 min-h-100">
+          {isLoading ? (
+            <div className="h-full flex flex-col items-center justify-center text-gray-400 py-20">
+              <Loader2 size={48} className="mb-4 text-blue-500 animate-spin" />
+              <p>Wczytywanie schematu z bazy danych...</p>
+            </div>
+          ) : nodes.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-400 py-20">
               <PlusCircle size={48} className="mb-4 opacity-20" />
               <p>Your schema is empty. Click a block on the left to start.</p>
@@ -90,7 +115,7 @@ export const TreeEditor = () => {
               onDrop={handleDrop}
               // --- NOWOŚĆ 2: Wyraźny wskaźnik upuszczania (Placeholder) ---
               placeholderRender={(node, { depth }) => (
-                <div 
+                <div
                   className="flex items-center z-10 py-1"
                   style={{ marginLeft: depth * 24 }}
                 >
