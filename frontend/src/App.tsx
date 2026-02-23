@@ -4,6 +4,7 @@ import { Login } from './pages/Login';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Dashboard } from './pages/Dashboard';
 import { ProjectDetails } from './pages/ProjectDetails';
+import { SchemaBuilder } from './pages/SchemaBuilder';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/projects/:id" element={<ProjectDetails />} />
+          <Route path="/schema-editor" element={<SchemaBuilder />} />
         </Route>
 
         {/* Jeśli ktoś wpisze dziwny adres, wrzucamy go na stronę główną */}

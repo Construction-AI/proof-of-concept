@@ -1,9 +1,8 @@
 from typing import List
-from schemas import SchemaNode
 from sqlalchemy.orm import Session
 
-from models import TemplateNodes
-
+from app.modules.templates.schemas import SchemaNode
+from app.modules.templates.models import TemplateNodes
 
 class TemplateService:
     @staticmethod
