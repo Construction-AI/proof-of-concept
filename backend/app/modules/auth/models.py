@@ -15,6 +15,7 @@ class User(Base, TimestampMixin):
     
     projects = relationship("Project", back_populates="owner")
     documents = relationship("Document", back_populates="owner")
+    templates = relationship("Template", back_populates="owner")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
     
 class RefreshToken(Base):
