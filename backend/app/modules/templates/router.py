@@ -10,8 +10,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import List
 
-from schemas import SchemaNode
-from service import TemplateService
+from app.modules.templates.schemas import SchemaNode
+from app.modules.templates.service import TemplateService
 
 from app.db.session import get_db
 

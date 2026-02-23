@@ -1,9 +1,8 @@
 from typing import List
-from schemas import SchemaNode
 from sqlalchemy.orm import Session
 
-from models import TemplateNodes
-
+from app.modules.templates.schemas import SchemaNode
+from app.modules.templates.models import TemplateNodes
 
 class TemplateService:
     @staticmethod
@@ -28,4 +27,4 @@ class TemplateService:
     
     @staticmethod
     def get_template_tree(db: Session, template_id: int) -> List[TemplateNodes]:
-        return db.query(TemplateNodes).filter(TemplateNodes.id == template_id).all()
+        return db.query(TemplateNodes).filter(TemplateNodes.template_id == template_id).all()
