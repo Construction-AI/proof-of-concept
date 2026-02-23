@@ -6,4 +6,9 @@ export const templatesService = {
         const response = await apiClient.put<SchemaNode[]>(`/templates/${templateId}/nodes`, nodes);
         return response.data;
     },
+
+    getNodes: async (templateId: number) => {
+        const response = await apiClient.get<SchemaNode[]>(`/templates/${templateId}/nodes`);
+        return response.data;
+    }
 };
