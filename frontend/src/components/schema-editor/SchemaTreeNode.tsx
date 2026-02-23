@@ -19,12 +19,15 @@ export const SchemaTreeNode = ({ node, depth, isOpen, onToggle, hasChild }: Prop
 
   return (
     <div
-      className={`flex items-center justify-between p-2 mb-1 rounded cursor-pointer border transition-colors ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'
+      // ZMIANY W KLASACH TAILWIND PONIŻEJ (py-3 px-4 zamiast p-2 mb-1)
+      className={`flex items-center justify-between py-3 px-4 my-0.5 rounded-lg cursor-grab active:cursor-grabbing border transition-all ${isSelected
+          ? 'border-blue-500 bg-blue-50 shadow-sm'
+          : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm'
         }`}
       style={{ marginLeft: depth * 24 }}
       onClick={() => selectNode(String(node.id))}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3"> {/* Zwiększony gap */}
 
         {/* STRZAŁKA ZWIJANIA / ROZWIJANIA */}
         <div
@@ -46,13 +49,13 @@ export const SchemaTreeNode = ({ node, depth, isOpen, onToggle, hasChild }: Prop
         {data.type === 'list' && <Type size={16} className="text-green-500" />}
         {data.type === 'static_text' && <AlignLeft size={16} className="text-gray-500" />}
         {data.type === 'rag_extraction' && <Sparkles size={16} className="text-purple-500" />}
-        
+
         <span className="font-medium text-sm text-gray-800">
-          {data.type === 'static_text' 
+          {data.type === 'static_text'
             ? (data.data.text.length > 25 ? data.data.text.substring(0, 25) + '...' : data.data.text || 'Pusty tekst')
             : data.type === 'rag_extraction'
-            ? (data.data.prompt.length > 25 ? data.data.prompt.substring(0, 25) + '...' : data.data.prompt || 'Pusty prompt')
-            : node.text}
+              ? (data.data.prompt.length > 25 ? data.data.prompt.substring(0, 25) + '...' : data.data.prompt || 'Pusty prompt')
+              : node.text}
         </span>
       </div>
 
