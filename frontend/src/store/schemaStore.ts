@@ -1,8 +1,14 @@
 import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
 
-export type NodeType = "section" | "list";
+export type NodeType = "section" | "list" | "static-text";
 
+export interface BaseSchemaNode {
+    id: string;
+    parent_id: string | null;
+};
+
+// -- Section -- 
 export interface SectionData {
     title: string;
     show_title: boolean;
@@ -10,19 +16,15 @@ export interface SectionData {
     page_before_break: boolean;
 };
 
-export interface ListData {
-    list_type: "bullet" | "numbered";
-    spacing: "compact" | "normal" | "relaxed";
-};
-
-export interface BaseSchemaNode {
-    id: string;
-    parent_id: string | null;
-};
-
 export interface SectionNode extends BaseSchemaNode {
     type: "section";
     data: SectionData;
+};
+
+// -- List -- 
+export interface ListData {
+    list_type: "bullet" | "numbered";
+    spacing: "compact" | "normal" | "relaxed";
 };
 
 export interface ListNode extends BaseSchemaNode {
@@ -30,7 +32,17 @@ export interface ListNode extends BaseSchemaNode {
     data: ListData;
 };
 
-export type SchemaNode = SectionNode | ListNode;
+// -- Static Text ---
+export interface StaticTextData {
+    text: string;
+};
+
+export interface StaticTextNode extends BaseSchemaNode {
+    type: "static-text";
+    data: StaticTextData;
+}
+
+export type SchemaNode = SectionNode | ListNode | StaticTextNode;
 
 interface SchemaState {
     nodes: SchemaNode[];
@@ -40,7 +52,7 @@ interface SchemaState {
     selectNode: (id: string | null) => void;
     addNode: (type: NodeType, parent_id: string | null) => void;
     removeNode: (id: string) => void;
-    updateNodeData: (id: string, newData: Partial<SectionData & ListData>) => void;
+    updateNodeData: (id: string, newData: Partial<SectionData & ListData & StaticTextData>) => void;
     reorderNodes: (newNodes: SchemaNode[]) => void;
 };
 
@@ -61,7 +73,16 @@ export const useSchemaStore = create<SchemaState>((set) => ({
                 type: "section",
                 data: { title: "New Section", show_title: true, heading_level: 2, page_before_break: false }
             };
-        } else {
+        } 
+        else if (type == "static-text") {
+            newNode = {
+                id: newNodeId,
+                parent_id,
+                type: "static-text",
+                data: { text: "Wprowadź statyczny tekst..." }
+            }
+        }
+        else {
             newNode = {
                 id: newNodeId,
                 parent_id,
