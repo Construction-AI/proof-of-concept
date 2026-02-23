@@ -94,6 +94,22 @@ export const PropertyPanel = () => {
               </div>
             </>
           )}
+          {/* Properties for STATIC TEXT */}
+          {selectedNode.type === 'static-text' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Text Content</label>
+              <textarea 
+                value={selectedNode.data.text}
+                onChange={(e) => updateNodeData(selectedNode.id, { text: e.target.value })}
+                rows={6}
+                className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-sm resize-y"
+                placeholder="Wpisz treść akapitu..."
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                Ten tekst pojawi się w każdym wygenerowanym dokumencie dokładnie w takiej formie.
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

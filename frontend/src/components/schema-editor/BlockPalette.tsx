@@ -1,4 +1,4 @@
-import { LayoutList, Type } from 'lucide-react';
+import { AlignLeft, LayoutList, Type } from 'lucide-react';
 import { useSchemaStore } from '../../store/schemaStore';
 
 export const BlockPalette = () => {
@@ -16,6 +16,17 @@ export const BlockPalette = () => {
           <div>
             <p className="font-medium text-gray-900 text-sm">Section</p>
             <p className="text-xs text-gray-500">Group items together</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => addNode("static-text", null)}
+          className='w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:border-gray-500 hover:bg-gray-50 transition-colors'
+        >
+          <AlignLeft className="text-gray-500 size={20}" />
+          <div>
+            <p className="font-medium text-gray-900 text-sm">Static Text</p>
+            <p className="text-xs text-gray-500">Fixed Paragraph</p>
           </div>
         </button>
 
