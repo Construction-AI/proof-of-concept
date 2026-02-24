@@ -20,6 +20,20 @@ export const authService = {
         await authService.fetchMe();
     },
 
+    register: async (
+        email: string,
+        password: string,
+        first_name: string,
+        last_name: string
+    ) => {
+        const payload = { email, password, first_name, last_name };
+
+        await apiClient.post("/auth/register", payload);
+
+        // Automatically log the user in after successful registration
+        await authService.login(email, password);
+    },
+
     fetchMe: async () => {
         const response = await apiClient.get("/auth/me");
         useAuthStore.getState().setUser(response.data);
