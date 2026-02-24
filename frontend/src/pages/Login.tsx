@@ -1,6 +1,6 @@
 // src/pages/Login.tsx
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../api/auth';
 
 export const Login = () => {
@@ -8,7 +8,7 @@ export const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,7 +19,7 @@ export const Login = () => {
     try {
       // Wywołujemy nasz serwis, który robi request i zapisuje tokeny w Zustandzie
       await authService.login(username, password);
-      
+
       // Jeśli się udało, przenosimy użytkownika na stronę główną projektów
       navigate('/');
     } catch (err) {
@@ -40,7 +40,7 @@ export const Login = () => {
             System generatora dokumentów RAG
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4 rounded-md shadow-sm">
             <div>
@@ -78,6 +78,14 @@ export const Login = () => {
           >
             {isLoading ? 'Logowanie...' : 'Zaloguj się'}
           </button>
+          <div className="text-center">
+            <Link
+              to="/register"
+              className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200"
+            >
+              Zarejestruj się
+            </Link>
+          </div>
         </form>
       </div>
     </div>
