@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Dashboard } from './pages/Dashboard';
 import { ProjectDetails } from './pages/ProjectDetails';
 import { SchemaBuilder } from './pages/SchemaBuilder';
+import { Register } from './pages/Register';
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
       <Routes>
         {/* Ścieżki publiczne */}
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
         {/* Ścieżki chronione - owinięte w naszego "bramkarza" */}
         <Route element={<ProtectedRoute />}>
