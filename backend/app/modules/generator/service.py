@@ -85,7 +85,7 @@ class DocumentGenerator:
         return content_html
 
     # --- FAZA 3: Kompilacja (Złożenie w całość i generacja PDF) ---
-    async def generate_pdf(self, project_id: int, template_nodes: List[TemplateNodes], project_name: str, user_id: int) -> bytes:
+    async def generate_pdf(self, project_id: int, template_nodes: List[TemplateNodes], project_name: str, template_name: str, user_id: int) -> bytes:
         # 1. Budowa drzewa
         tree = self._build_tree(template_nodes)
         
@@ -102,27 +102,126 @@ class DocumentGenerator:
         <head>
             <meta charset="UTF-8">
             <style>
+                /* Ustawienia strony i marginesów */
                 @page {
                     size: A4;
-                    margin: 2.5cm 2cm;
+                    margin: 25mm 20mm 25mm 20mm;
+                    
+                    /* Nagłówek i stopka dla każdej strony */
+                    @top-left {
+                        content: "Projekt: {{ project_name }}";
+                        font-size: 9pt;
+                        color: #64748b;
+                        border-bottom: 1px solid #e2e8f0;
+                        padding-bottom: 5px;
+                    }
+                    @top-right {
+                        content: "Dokumentacja Techniczna";
+                        font-size: 9pt;
+                        color: #64748b;
+                        border-bottom: 1px solid #e2e8f0;
+                        padding-bottom: 5px;
+                    }
+                    @bottom-left {
+                        content: "Wygenerowano automatycznie przez system RAG AI";
+                        font-size: 8pt;
+                        color: #94a3b8;
+                        border-top: 1px solid #e2e8f0;
+                        padding-top: 5px;
+                    }
                     @bottom-right {
                         content: "Strona " counter(page) " z " counter(pages);
-                        font-size: 10pt;
-                        color: gray;
+                        font-size: 9pt;
+                        color: #64748b;
+                        border-top: 1px solid #e2e8f0;
+                        padding-top: 5px;
                     }
                 }
-                body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; line-height: 1.6; }
-                h1 { color: #1e3a8a; border-bottom: 2px solid #e5e7eb; padding-bottom: 5px; }
-                h2 { color: #2563eb; margin-top: 1.5em; }
-                .text-gray { color: #6b7280; }
-                ul.spacing-relaxed li { margin-bottom: 10px; }
+
+                /* Usunięcie nagłówków i stopek ze strony tytułowej */
+                @page :first {
+                    @top-left { content: none; border: none; }
+                    @top-right { content: none; border: none; }
+                    @bottom-left { content: none; border: none; }
+                    @bottom-right { content: none; border: none; }
+                }
+
+                /* Główne style typograficzne */
+                body { 
+                    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; 
+                    color: #1e293b; 
+                    line-height: 1.6; 
+                    font-size: 11pt;
+                    text-align: justify;
+                }
+
+                /* Strona tytułowa */
+                .cover-page {
+                    text-align: center;
+                    margin-top: 30vh;
+                    page-break-after: always;
+                }
+                .cover-title {
+                    font-size: 28pt;
+                    color: #0f172a;
+                    margin-bottom: 10px;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                }
+                .cover-subtitle {
+                    font-size: 16pt;
+                    color: #3b82f6;
+                    margin-bottom: 40px;
+                }
+                .cover-meta {
+                    font-size: 12pt;
+                    color: #64748b;
+                    border-top: 2px solid #e2e8f0;
+                    padding-top: 20px;
+                    width: 60%;
+                    margin: 0 auto;
+                }
+
+                /* Nagłówki w treści */
+                h1 { 
+                    color: #0f172a; 
+                    border-bottom: 2px solid #2563eb; 
+                    padding-bottom: 8px; 
+                    font-size: 18pt; 
+                    margin-top: 1.5em; 
+                    page-break-after: avoid; /* Zapobiega zostawianiu nagłówka na końcu strony */
+                }
+                h2 { 
+                    color: #1e293b; 
+                    font-size: 14pt; 
+                    margin-top: 1.2em; 
+                    page-break-after: avoid; 
+                }
+                
+                /* Elementy list i tekstu */
+                /* Precyzyjna kontrola wcięcia list */
+                ul, ol { 
+                    padding-left: 18px; 
+                    margin-left: 0; 
+                    margin-bottom: 1em; 
+                }
+                li { margin-bottom: 6px; }
+                .text-gray { color: #64748b; font-style: italic; }
+                
+                /* Różne warianty odstępów dla list z kreatora */
+                ul.spacing-compact li, ol.spacing-compact li { margin-bottom: 2px; }
+                ul.spacing-relaxed li, ol.spacing-relaxed li { margin-bottom: 12px; }
             </style>
         </head>
         <body>
-            <div style="text-align: center; margin-bottom: 50px;">
-                <h1>Raport z Bazy Wiedzy RAG</h1>
-                <h3>Projekt: {{ project_name }}</h3>
-                <p>Wygenerowano automatycznie przez AI.</p>
+            <div class="cover-page">
+                <div class="cover-title">{{ template_name }}</div>
+                <div class="cover-subtitle">Baza Wiedzy Projektu</div>
+                <div class="cover-meta">
+                    <p><strong>Projekt:</strong> {{ project_name }}</p>
+                    <p><strong>Data wygenerowania:</strong> {{ date }}</p>
+                </div>
             </div>
             
             {{ body_content }}
@@ -131,10 +230,13 @@ class DocumentGenerator:
         """
         
         # Kompilujemy HTML
+        from datetime import datetime
         template = Template(html_template)
         final_html_string = template.render(
             project_name=project_name, 
-            body_content=body_html
+            body_content=body_html,
+            template_name=template_name,
+            date=datetime.now().strftime("%d/%m/%Y")
         )
 
         # 4. Magia WeasyPrint: Zamiana HTML na fizyczny plik PDF w pamięci RAM

@@ -65,7 +65,7 @@ export const Dashboard = () => {
             <p className="text-blue-100 text-sm">Zbuduj strukturę dokumentów, która zostanie wypełniona danymi przez AI.</p>
           </div>
           <button
-            onClick={() => navigate('/schema-editor')}
+            onClick={() => navigate('/templates-editor')}
             className="flex items-center gap-2 bg-white text-blue-700 px-6 py-3 rounded-lg font-bold hover:bg-blue-50 transition-colors shadow-sm"
           >
             <LayoutTemplate size={20} />

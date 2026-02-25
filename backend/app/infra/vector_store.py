@@ -23,6 +23,8 @@ from llama_index.core.postprocessor import MetadataReplacementPostProcessor
 SENTENCE_WINDOW_PARSER = SentenceWindowNodeParser.from_defaults(window_size=3)
 WINDOW_POST = MetadataReplacementPostProcessor(target_metadata_key="window")
 
+from llama_index.core import PromptTemplate
+
 import shutil
 from app.modules.rag.schemas import AnswerWithConfidence
 from typing import Optional, Type, Any, List, Dict
@@ -155,7 +157,7 @@ class VectorStoreClient:
             "sources": source_list
         }
     
-    def _build_query_engine(self, storage_keys: list[str], output_cls: Optional[Type] = None, response_mode: Optional[str] = None) -> RetrieverQueryEngine: # type: ignore
+    def _build_query_engine(self, storage_keys: list[str], output_cls: Optional[Type] = None, response_mode: Optional[str] = None, text_qa_template: Optional[PromptTemplate] = None) -> RetrieverQueryEngine: # type: ignore
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(key="storage_key", operator="in", value=storage_keys)
@@ -175,6 +177,9 @@ class VectorStoreClient:
             args["output_cls"] = output_cls
         if response_mode:
             args["response_mode"] = response_mode
+            
+        if text_qa_template:
+            args["text_qa_template"] = text_qa_template
         
         
         query_engine: RetrieverQueryEngine = RetrieverQueryEngine.from_args(**args) # type: ignore
@@ -236,11 +241,31 @@ class VectorStoreClient:
             storage_keys: List[str]
     ) -> Dict[str, Any]:
         DynamicSchema = self._create_dynamic_schema(expected_type=output_type)
+        
+        # TODO: Move this, this is just temporary
+        # 1. Definicja twardego promptu systemowego
+        QA_PROMPT_TMPL = (
+            "Jesteś naczelnym inżynierem budownictwa i ekspertem ds. BHP. "
+            "Twoim zadaniem jest pisanie BARDZO SZCZEGÓŁOWYCH, wyczerpujących i profesjonalnych raportów.\n\n"
+            "Zasady:\n"
+            "- Nigdy nie odpowiadaj pojedynczymi zdaniami. Każdy punkt analizuj dogłębnie.\n"
+            "- Opisuj przyczyny, przewidywane skutki i wymagane działania naprawcze/zapobiegawcze.\n"
+            "- Używaj specjalistycznego słownictwa z branży budowlanej.\n\n"
+            "Informacje kontekstowe z bazy wiedzy:\n"
+            "---------------------\n"
+            "{context_str}\n"
+            "---------------------\n"
+            "Polecenie: {query_str}\n"
+            "Wyczerpująca odpowiedź:"
+        )
+        
+        qa_prompt = PromptTemplate(QA_PROMPT_TMPL)
 
         query_engine: RetrieverQueryEngine = self._build_query_engine( # type: ignore
             storage_keys=storage_keys,
             output_cls=DynamicSchema,
-            response_mode="tree_summarize"
+            response_mode="tree_summarize",
+            text_qa_template=qa_prompt
         )
 
         response = await query_engine.aquery(instruction)

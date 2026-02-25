@@ -67,6 +67,20 @@ interface SchemaState {
     reorderNodes: (newNodes: SchemaNode[]) => void;
 };
 
+export interface TemplateCreateRequest {
+    name: string
+    description: string | null;
+};
+
+export interface TemplateResponse {
+    id: number
+    name: string
+    description: string | null;
+    owner_id: number;
+    created_at: string;
+    last_modified: string;
+};
+
 export const useSchemaStore = create<SchemaState>((set) => ({
     nodes: [],
     selectedNodeId: null,
