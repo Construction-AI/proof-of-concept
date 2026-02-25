@@ -38,9 +38,16 @@ services:
       # Database
       - DATABASE_URL=${DATABASE_URL}
 
+      # Hugging Face
+      - HF_HUB_DOWNLOAD_TIMEOUT=120
+      - HF_HUB_DISABLE_TELEMETRY=1
+
     volumes:
       - ./backend:/app
       - ./data:/data
+
+      # Hugging Face (Model Caching)
+      - hf_cache:/root/.cache/huggingface
     depends_on:
       - qdrant
       - minio
@@ -67,6 +74,7 @@ services:
       - rag-network
     environment:
       - VITE_API_URL=http://localhost:8000/api/v1
+      - VITE_DEV_API_URL=http://localhost:8001/api/v1
     depends_on:
       - backend
     restart: unless-stopped
@@ -107,3 +115,4 @@ volumes:
   ollama_storage:
   minio_data:
     driver: local
+  hf_cache:
