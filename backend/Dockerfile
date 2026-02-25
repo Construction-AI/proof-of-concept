@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     python3-dev \
     build-essential \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
  && rm -rf /var/lib/apt/lists/*
 
 # Copy and install shared library
