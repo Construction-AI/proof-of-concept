@@ -6,6 +6,7 @@ import { Dashboard } from './pages/Dashboard';
 import { ProjectDetails } from './pages/ProjectDetails';
 import { SchemaBuilder } from './pages/SchemaBuilder';
 import { Register } from './pages/Register';
+import { Health } from './pages/Health';
 
 export default function App() {
   return (
@@ -14,12 +15,13 @@ export default function App() {
         {/* Ścieżki publiczne */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/health" element={<Health />} />
 
         {/* Ścieżki chronione - owinięte w naszego "bramkarza" */}
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/projects/:id" element={<ProjectDetails />} />
-          <Route path="/schema-editor" element={<SchemaBuilder />} />
+          <Route path="/templates-editor" element={<SchemaBuilder />} />
         </Route>
 
         {/* Jeśli ktoś wpisze dziwny adres, wrzucamy go na stronę główną */}

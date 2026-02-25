@@ -4,6 +4,7 @@ import { documentsService, type Document } from '../api/documents';
 import { ProjectChat } from '../components/ProjectChat';
 import { UploadZone } from '../components/project/UploadZone';
 import { DocumentList } from '../components/project/DocumentList';
+import { LayoutTemplate } from 'lucide-react';
 
 export const ProjectDetails = () => {
   const { id } = useParams();
@@ -13,12 +14,10 @@ export const ProjectDetails = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
-  // --- ZMODYFIKOWANA FUNKCJA PODGLĄDU ---
   const handlePreview = async (doc: Document) => {
     setIsPreviewLoading(true);
     try {
       const url = await documentsService.getDownloadUrl(doc.id);
-      // Otwieramy pobrany, podpisany URL w nowej karcie przeglądarki
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (error) {
       console.error("Błąd pobierania linku podglądu:", error);
@@ -75,16 +74,28 @@ export const ProjectDetails = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-5xl mx-auto">
-        <button onClick={() => navigate('/')} className="...">Wróć do projektów</button>
+        <div className="flex items-center justify-between mb-8">
+          <button onClick={() => navigate('/')} className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors">
+            Wróć do projektów
+          </button>
+
+          <button
+            onClick={() => navigate(`/templates-editor`)}
+            className="flex items-center gap-2 bg-linear-to-r from-blue-600 to-indigo-700 text-white px-6 py-2 rounded-lg font-bold hover:shadow-lg transition-all"
+          >
+            <LayoutTemplate size={20} />
+            Kreator Raportów
+          </button>
+        </div>
 
         <UploadZone isUploading={isUploading} onFileSelect={handleFileSelect} />
-        
+
         <h3 className="text-lg font-bold text-gray-900 mb-4">Wgrane dokumenty:</h3>
-        <DocumentList 
-          documents={documents} 
-          isPreviewLoading={isPreviewLoading} 
-          onPreview={handlePreview} 
-          onDelete={handleDelete} 
+        <DocumentList
+          documents={documents}
+          isPreviewLoading={isPreviewLoading}
+          onPreview={handlePreview}
+          onDelete={handleDelete}
         />
 
         <div className="mt-12">
