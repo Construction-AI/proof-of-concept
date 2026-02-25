@@ -151,19 +151,19 @@ class VectorStoreClient:
         filters = MetadataFilters(
             filters=[MetadataFilter(key="storage_key", operator="in", value=storage_keys)]
         )
-        retriever = self.index.as_retriever(similarity_top_k=10, filters=filters)
-        
-        # 3. Inicjalizacja silnika czatu 
+        # retriever = self.index.as_retriever(similarity_top_k=10, filters=filters)
+                
         chat_engine = self.index.as_chat_engine( # type: ignore
             chat_history=chat_history,
             system_prompt=system_prompt,
-            retriever=retriever,
-            node_postprocessors=[WINDOW_POST, self.reranker]
+            similarity_top_k=10,
+            filters=filters,
+            node_postprocessors=[WINDOW_POST, self.reranker],
         )
         
         # 4. Asynchroniczne odpytanie
-        response = await chat_engine.achat(question)
-        return response.response
+        response = await chat_engine.achat(question)  # type: ignore
+        return response.response  # type: ignore
     
     async def query_with_confidence(self, question: str, storage_keys: list[str]) -> dict[str, Any]:
         query_engine: RetrieverQueryEngine = self._build_query_engine(storage_keys=storage_keys, output_cls=AnswerWithConfidence, response_mode="tree_summarize") # type: ignore

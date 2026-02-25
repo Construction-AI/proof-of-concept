@@ -9,6 +9,7 @@ from app.modules.rag.router import router as rag_router
 from app.modules.templates.router import router as templates_router
 from app.modules.generator.router import router as generator_router
 from app.modules.libraries.router import router as libraries_router
+from app.modules.chats.router import router as chats_router
 
 from app.db.session import engine
 from app.db.base import Base
@@ -41,6 +42,7 @@ def create_app() -> FastAPI:
     api_router.include_router(templates_router, prefix="/templates", tags=["Templates Section"])
     api_router.include_router(generator_router, prefix="/generator", tags=["Generator Section"])
     api_router.include_router(libraries_router, prefix="/libraries", tags=["Libraries Section"])
+    api_router.include_router(chats_router, prefix="/chats", tags=["Chats Section"])
     
     app.include_router(api_router)
     
