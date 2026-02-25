@@ -2,6 +2,8 @@ from sqlalchemy import String, Integer, ForeignKey, JSON
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from app.db.base import Base, TimestampMixin
 
+from app.modules.libraries.models import template_library_link
+
 from typing import Optional, Any, Dict, List
 
 class Template(Base, TimestampMixin):
@@ -19,6 +21,8 @@ class Template(Base, TimestampMixin):
         back_populates="template",
         cascade="all, delete-orphan"
     )
+    
+    libraries = relationship("TemplateLibrary", secondary=template_library_link, back_populates="templates")
     
 class TemplateNodes(Base, TimestampMixin):
     __tablename__ = "template_nodes"

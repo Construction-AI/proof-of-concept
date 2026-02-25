@@ -27,5 +27,10 @@ export const templatesService = {
     
     delete: async (templateId: number) => {
         await apiClient.delete(`/templates/${templateId}`);
+    },
+
+    copyTemplate: async (templateId: number) => {
+        const response = await apiClient.post(`/templates/${templateId}/copy`);
+        return response.data;
     }
 };

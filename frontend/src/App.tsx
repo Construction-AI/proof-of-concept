@@ -7,6 +7,8 @@ import { ProjectDetails } from './pages/ProjectDetails';
 import { SchemaBuilder } from './pages/SchemaBuilder';
 import { Register } from './pages/Register';
 import { Health } from './pages/Health';
+import { Library } from './pages/Library';
+import { LibraryTemplates } from './pages/LibraryTemplates';
 
 export default function App() {
   return (
@@ -22,6 +24,8 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/projects/:id" element={<ProjectDetails />} />
           <Route path="/templates-editor" element={<SchemaBuilder />} />
+          <Route path="/library" element={<Library />} />
+          <Route path="/library/:id" element={<LibraryTemplates />} />
         </Route>
 
         {/* Jeśli ktoś wpisze dziwny adres, wrzucamy go na stronę główną */}
