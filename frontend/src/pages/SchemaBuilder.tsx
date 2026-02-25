@@ -15,7 +15,7 @@ import { templatesService } from '../api/templates';
 import { generatorService } from '../api/generator';
 
 export const SchemaBuilder = () => {
-  const { projectId } = useParams(); // ID projektu z adresu URL!
+  const { projectId } = useParams();
   const navigate = useNavigate();
   
   const { nodes, setNodes } = useSchemaStore();
@@ -28,26 +28,31 @@ export const SchemaBuilder = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoadingNodes, setIsLoadingNodes] = useState(false);
 
-  // 1. Pobierz listę dostępnych szablonów użytkownika po wejściu na stronę
+  // NOWOŚĆ: Stan przechowujący strukturę jako string, aby sprawdzić czy zaszły faktyczne zmiany (do autosave'a)
+  const [lastSavedState, setLastSavedState] = useState<string>('');
+
+  const fetchTemplates = async () => {
+    try {
+      const data = await templatesService.getAll();
+      setTemplates(data);
+    } catch (error) {
+      console.error("Błąd pobierania szablonów", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchTemplates = async () => {
-      try {
-        const data = await templatesService.getAll();
-        setTemplates(data);
-      } catch (error) {
-        console.error("Błąd pobierania szablonów", error);
-      }
-    };
     fetchTemplates();
   }, []);
 
-  // 2. Kiedy użytkownik wybierze szablon z listy, pobierz jego klocki (nodes) z bazy
+  // --- ZARZĄDZANIE SZABLONAMI ---
+
   const handleSelectTemplate = async (templateId: number) => {
     setSelectedTemplateId(templateId);
     setIsLoadingNodes(true);
     try {
       const savedNodes = await templatesService.getNodes(templateId);
       setNodes(savedNodes);
+      setLastSavedState(JSON.stringify(savedNodes)); // Zabezpieczenie przed autosavem pustych zmian po załadowaniu
     } catch (error) {
       console.error("Błąd pobierania struktury", error);
     } finally {
@@ -55,30 +60,87 @@ export const SchemaBuilder = () => {
     }
   };
 
-  // 3. Zapisywanie
-  const handleSave = async () => {
+  const handleCreateTemplate = async () => {
+    const name = window.prompt("Podaj nazwę dla nowego szablonu:");
+    if (!name || !name.trim()) return;
+    
+    try {
+      const newTemplate = await templatesService.create(name.trim());
+      await fetchTemplates(); // Odśwież listę
+      
+      // Automatycznie przejdź do nowego, pustego szablonu
+      setSelectedTemplateId(newTemplate.id);
+      setNodes([]);
+      setLastSavedState('[]');
+    } catch (error) {
+      alert("Nie udało się utworzyć szablonu.");
+    }
+  };
+
+  const handleDeleteTemplate = async () => {
     if (!selectedTemplateId) return;
+    if (!window.confirm("Czy na pewno chcesz usunąć ten szablon? Usunięcie jest nieodwracalne.")) return;
+
+    try {
+      await templatesService.delete(selectedTemplateId);
+      await fetchTemplates(); // Odśwież listę
+      
+      // Wyczyść edytor
+      setSelectedTemplateId(null);
+      setNodes([]);
+      setLastSavedState('');
+    } catch (error) {
+      alert("Nie udało się usunąć szablonu.");
+    }
+  };
+
+  // --- LOGIKA ZAPISYWANIA ---
+
+  const handleSave = async () => {
+    if (!selectedTemplateId || isSaving) return;
     setIsSaving(true);
     try {
       await templatesService.saveNodes(selectedTemplateId, nodes);
+      setLastSavedState(JSON.stringify(nodes)); // Po zapisie to jest nasz nowy punkt odniesienia
+      
       setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      setTimeout(() => setSaveSuccess(false), 2500);
     } catch (error) {
-      alert("Błąd zapisu!");
+      console.error("Błąd zapisu!", error);
     } finally {
       setIsSaving(false);
     }
   };
 
-  // 4. GENEROWANIE RAPORTU (Zapis + Strzał do API LLM)
+  // --- MAGIA AUTOSAVE'A (DEBOUNCE) ---
+  useEffect(() => {
+    // Nie robimy autosave'a, jeśli ładujemy dane lub nic nie jest wybrane
+    if (!selectedTemplateId || isLoadingNodes) return;
+
+    const currentState = JSON.stringify(nodes);
+    
+    // Zapobiegamy pętli - zapisujemy tylko jeśli stan w edytorze różni się od ostatnio zapisanego w bazie
+    if (currentState === lastSavedState) return;
+
+    // Ustawiamy "stoper". Zapis nastąpi 2.5 sekundy po tym, jak użytkownik przestanie przesuwać klocki/pisać.
+    const timeoutId = setTimeout(() => {
+      handleSave();
+    }, 2500);
+
+    // Jeśli w ciągu tych 2.5 sek. `nodes` znowu się zmieni, czyścimy stary stoper i odpalamy nowy
+    return () => clearTimeout(timeoutId);
+  }, [nodes, selectedTemplateId, isLoadingNodes, lastSavedState]);
+
+
+  // --- GENEROWANIE ---
   const handleGenerate = async () => {
     if (!selectedTemplateId || !projectId) return;
     setIsGenerating(true);
     try {
-      // Zawsze upewniamy się, że najnowszy stan jest w bazie przed generowaniem
+      // Dla pewności przed wygenerowaniem wymuszamy ostateczny zapis
       await templatesService.saveNodes(selectedTemplateId, nodes);
+      setLastSavedState(JSON.stringify(nodes));
       
-      // Wywołujemy nasz nowy silnik!
       await generatorService.generatePdf(Number(projectId), selectedTemplateId);
     } catch (error) {
       console.error(error);
@@ -90,28 +152,26 @@ export const SchemaBuilder = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
-      
-      {/* Pasek Nawigacji Powrotnej */}
       <div className="bg-gray-800 text-white px-4 py-2 flex items-center text-sm">
         <button onClick={() => navigate(`/projects/${projectId}`)} className="flex items-center gap-1 hover:text-blue-300 transition-colors">
           <ArrowLeft size={16} /> Powrót do projektu
         </button>
       </div>
 
-      {/* Wyciągnięty Header Szablonów */}
       <TemplateHeader 
         templates={templates}
         selectedTemplateId={selectedTemplateId}
         onSelectTemplate={handleSelectTemplate}
-        onSave={handleSave}
+        onSave={handleSave} // Zostawiłem, ale de facto i tak działa autosave w tle
         onGenerate={handleGenerate}
+        onCreate={handleCreateTemplate}
+        onDelete={handleDeleteTemplate}
         isSaving={isSaving}
         saveSuccess={saveSuccess}
         isGenerating={isGenerating}
         isSchemaEmpty={nodes.length === 0}
       />
 
-      {/* Obszar roboczy Drag & Drop */}
       <div className="flex flex-1 overflow-hidden">
         <DndProvider backend={HTML5Backend}>
           <BlockPalette />
@@ -119,7 +179,6 @@ export const SchemaBuilder = () => {
           <PropertyPanel />
         </DndProvider>
       </div>
-
     </div>
   );
 };
