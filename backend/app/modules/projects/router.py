@@ -27,3 +27,24 @@ def read_my_projects(
     current_user: auth_models.User = Depends(get_current_user)
 ) -> Any:
     return project_service.ProjectService.get_projects_by_owner(db=db, owner_id=current_user.id)
+
+from typing import List
+from app.modules.chats.schemas import ChatResponse, ChatCreateRequest
+from app.modules.chats.service import ChatService
+
+@router.post("/{project_id}/chats", response_model=ChatResponse)
+def create_project_chat(
+    project_id: int,
+    request: ChatCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: auth_models.User = Depends(get_current_user)
+):
+    return ChatService.create_chat(db=db, user_id=current_user.id, chat=request, project_id=project_id)
+
+@router.get("/{project_id}/chats", response_model=List[ChatResponse])
+def read_project_chats(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: auth_models.User = Depends(get_current_user)
+):
+    return ChatService.read_my_project_chats(db=db, user_id=current_user.id, project_id=project_id)
