@@ -1,6 +1,6 @@
-// src/pages/SchemaBuilder.tsx
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { projectsService, type Project } from '../api/projects';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ArrowLeft } from 'lucide-react';
@@ -15,14 +15,13 @@ import { templatesService } from '../api/templates';
 import { generatorService } from '../api/generator';
 
 export const SchemaBuilder = () => {
-  const { projectId } = useParams();
   const navigate = useNavigate();
-  
+
   const { nodes, setNodes } = useSchemaStore();
-  
+
   const [templates, setTemplates] = useState<any[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
-  
+
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -63,11 +62,11 @@ export const SchemaBuilder = () => {
   const handleCreateTemplate = async () => {
     const name = window.prompt("Podaj nazwę dla nowego szablonu:");
     if (!name || !name.trim()) return;
-    
+
     try {
       const newTemplate = await templatesService.create(name.trim());
       await fetchTemplates(); // Odśwież listę
-      
+
       // Automatycznie przejdź do nowego, pustego szablonu
       setSelectedTemplateId(newTemplate.id);
       setNodes([]);
@@ -84,7 +83,7 @@ export const SchemaBuilder = () => {
     try {
       await templatesService.delete(selectedTemplateId);
       await fetchTemplates(); // Odśwież listę
-      
+
       // Wyczyść edytor
       setSelectedTemplateId(null);
       setNodes([]);
@@ -94,7 +93,37 @@ export const SchemaBuilder = () => {
     }
   };
 
-  // --- LOGIKA ZAPISYWANIA ---
+  // --- NOWE STANY DLA MODALA ---
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+
+  // 1. Otwarcie modala i pobranie listy projektów
+  const handleOpenGenerateModal = async () => {
+    if (!selectedTemplateId) return;
+    setShowModal(true);
+    try {
+      const data = await projectsService.getAll();
+      setProjects(data);
+    } catch (error) {
+      console.error("Błąd pobierania projektów", error);
+    }
+  };
+
+  // 2. Faktyczne generowanie po zatwierdzeniu w modalu
+  const handleConfirmGenerate = async () => {
+    if (!selectedTemplateId || !selectedProjectId) return;
+    setIsGenerating(true);
+    setShowModal(false); // Zamykamy modal
+    try {
+      await templatesService.saveNodes(selectedTemplateId, nodes);
+      await generatorService.generatePdf(selectedProjectId, selectedTemplateId);
+    } catch (error) {
+      alert("Wystąpił błąd podczas generowania dokumentu.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!selectedTemplateId || isSaving) return;
@@ -102,7 +131,7 @@ export const SchemaBuilder = () => {
     try {
       await templatesService.saveNodes(selectedTemplateId, nodes);
       setLastSavedState(JSON.stringify(nodes)); // Po zapisie to jest nasz nowy punkt odniesienia
-      
+
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2500);
     } catch (error) {
@@ -118,7 +147,7 @@ export const SchemaBuilder = () => {
     if (!selectedTemplateId || isLoadingNodes) return;
 
     const currentState = JSON.stringify(nodes);
-    
+
     // Zapobiegamy pętli - zapisujemy tylko jeśli stan w edytorze różni się od ostatnio zapisanego w bazie
     if (currentState === lastSavedState) return;
 
@@ -131,54 +160,72 @@ export const SchemaBuilder = () => {
     return () => clearTimeout(timeoutId);
   }, [nodes, selectedTemplateId, isLoadingNodes, lastSavedState]);
 
-
-  // --- GENEROWANIE ---
-  const handleGenerate = async () => {
-    if (!selectedTemplateId || !projectId) return;
-    setIsGenerating(true);
-    try {
-      // Dla pewności przed wygenerowaniem wymuszamy ostateczny zapis
-      await templatesService.saveNodes(selectedTemplateId, nodes);
-      setLastSavedState(JSON.stringify(nodes));
-      
-      await generatorService.generatePdf(Number(projectId), selectedTemplateId);
-    } catch (error) {
-      console.error(error);
-      alert("Wystąpił błąd podczas generowania dokumentu AI.");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
       <div className="bg-gray-800 text-white px-4 py-2 flex items-center text-sm">
-        <button onClick={() => navigate(`/projects/${projectId}`)} className="flex items-center gap-1 hover:text-blue-300 transition-colors">
-          <ArrowLeft size={16} /> Powrót do projektu
+        <button onClick={() => navigate(`/dashboard`)} className="flex items-center gap-1 hover:text-blue-300 transition-colors">
+          <ArrowLeft size={16} /> Powrót do panelu użytkownika
         </button>
       </div>
 
-      <TemplateHeader 
+      <TemplateHeader
         templates={templates}
         selectedTemplateId={selectedTemplateId}
         onSelectTemplate={handleSelectTemplate}
         onSave={handleSave} // Zostawiłem, ale de facto i tak działa autosave w tle
-        onGenerate={handleGenerate}
         onCreate={handleCreateTemplate}
         onDelete={handleDeleteTemplate}
         isSaving={isSaving}
         saveSuccess={saveSuccess}
         isGenerating={isGenerating}
         isSchemaEmpty={nodes.length === 0}
+        onGenerate={handleOpenGenerateModal} // ZMIANA: Podpinamy nową funkcję
       />
 
       <div className="flex flex-1 overflow-hidden">
         <DndProvider backend={HTML5Backend}>
           <BlockPalette />
-          <TreeEditor isLoading={isLoadingNodes} /> 
+          <TreeEditor isLoading={isLoadingNodes} />
           <PropertyPanel />
         </DndProvider>
       </div>
+
+      {/* --- NOWY MODAL WYBORU PROJEKTU --- */}
+      {showModal && (
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl w-96 shadow-2xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Wybierz projekt docelowy</h3>
+            <p className="text-sm text-gray-500 mb-6">Z jakiej bazy wiedzy (projektu) AI ma pobrać dane do tego szablonu?</p>
+
+            <select
+              className="w-full border border-gray-300 p-2 rounded-lg mb-6 outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => setSelectedProjectId(Number(e.target.value))}
+              defaultValue=""
+            >
+              <option value="" disabled>-- Wybierz projekt --</option>
+              {projects.map(p => (
+                <option key={p.id} value={p.id}>{p.title}</option>
+              ))}
+            </select>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleConfirmGenerate}
+                disabled={!selectedProjectId}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 transition-colors"
+              >
+                Generuj raport
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

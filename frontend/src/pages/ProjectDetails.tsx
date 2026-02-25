@@ -80,7 +80,7 @@ export const ProjectDetails = () => {
           </button>
 
           <button
-            onClick={() => navigate(`/projects/${id}/editor`)}
+            onClick={() => navigate(`/templates-editor`)}
             className="flex items-center gap-2 bg-linear-to-r from-blue-600 to-indigo-700 text-white px-6 py-2 rounded-lg font-bold hover:shadow-lg transition-all"
           >
             <LayoutTemplate size={20} />
