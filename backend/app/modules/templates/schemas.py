@@ -55,3 +55,19 @@ SchemaNode = Annotated[
     Union[SectionNode, ListNode, StaticTextNode, RagExtractionNode],
     Field(discriminator="type")
 ]
+
+# !-- Responses --!
+from datetime import datetime
+
+class TemplateCreateRequest(BaseModel):
+    name: str
+    description: str
+
+class TemplateResponse(BaseModel):
+    id: int
+    name: str
+    description: str | None
+    owner_id: int
+    created_at: datetime
+    last_modified: datetime
+    model_config = ConfigDict(from_attributes=True)

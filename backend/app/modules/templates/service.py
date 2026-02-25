@@ -2,7 +2,7 @@ from typing import List
 from sqlalchemy.orm import Session
 
 from app.modules.templates.schemas import SchemaNode
-from app.modules.templates.models import TemplateNodes
+from app.modules.templates.models import TemplateNodes, Template
 
 class TemplateService:
     @staticmethod
@@ -28,3 +28,8 @@ class TemplateService:
     @staticmethod
     def get_template_tree(db: Session, template_id: int) -> List[TemplateNodes]:
         return db.query(TemplateNodes).filter(TemplateNodes.template_id == template_id).all()
+    
+    @staticmethod
+    def get_templates_for_user_id(db: Session, user_id: int) -> List[Template]:
+        return db.query(Template).filter(Template.owner_id == user_id).all()
+        

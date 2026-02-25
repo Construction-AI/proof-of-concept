@@ -19,7 +19,7 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/projects/:id" element={<ProjectDetails />} />
-          <Route path="/schema-editor" element={<SchemaBuilder />} />
+          <Route path="/projects/:projectId/editor" element={<SchemaBuilder />} />
         </Route>
 
         {/* Jeśli ktoś wpisze dziwny adres, wrzucamy go na stronę główną */}
