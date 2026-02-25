@@ -17,7 +17,7 @@ export const TreeEditor = ({ isLoading }: TreeEditorProps) => {
   const treeData: NodeModel<SchemaNode>[] = nodes.map((node) => ({
     id: node.id,
     parent: node.parent_id === null ? 0 : node.parent_id,
-    droppable: node.type === 'section' || node.type === 'list',
+    droppable: true,
     text: node.type === 'section' ? node.data.title : 'List Container',
     data: node,
   }));
@@ -58,6 +58,7 @@ export const TreeEditor = ({ isLoading }: TreeEditorProps) => {
               rootId={0}
               initialOpen={true}
               sort={false}
+              dropTargetOffset={20}
               canDrop={handleCanDrop}
               onDrop={handleDrop}
               placeholderRender={(node, { depth }) => (
