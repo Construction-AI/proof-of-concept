@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { projectsService, type Project } from '../api/projects';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -15,6 +15,9 @@ import { templatesService } from '../api/templates';
 import { generatorService } from '../api/generator';
 
 export const SchemaBuilder = () => {
+  const [searchParams] = useSearchParams();
+  const templateId = searchParams.get('templateId');
+
   const navigate = useNavigate();
 
   const { nodes, setNodes } = useSchemaStore();
@@ -42,6 +45,12 @@ export const SchemaBuilder = () => {
   useEffect(() => {
     fetchTemplates();
   }, []);
+
+  useEffect(() => {
+    if (templateId) {
+      handleSelectTemplate(Number(templateId));
+    }
+  }, [templateId]);
 
   // --- ZARZĄDZANIE SZABLONAMI ---
 

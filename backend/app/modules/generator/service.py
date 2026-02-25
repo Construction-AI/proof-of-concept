@@ -1,56 +1,70 @@
 import markdown
 import asyncio
-from weasyprint import HTML #, CSS
+from weasyprint import HTML
 from jinja2 import Template
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from app.modules.templates.models import TemplateNodes
+
 from app.modules.rag.service import RagService
 
 class DocumentGenerator:
     def __init__(self, db_session: Session):
         self.db = db_session
-
-    # --- FAZA 1: Rekonstrukcja (Z płaskiej tablicy w zagnieżdżone drzewo) ---
-    def _build_tree(self, flat_nodes: List[TemplateNodes]):
-        """Zamienia płaską listę z bazy na strukturę drzewiastą O(N)"""
+        self.semaphore = asyncio.Semaphore(3)
+        
+    def _build_tree(self, flat_nodes: List[TemplateNodes]) -> List[TemplateNodes]:
         nodes_by_id: Dict[str, Any] = {node.id: {**node.__dict__, "data": node.data, "children": []} for node in flat_nodes}
         roots: List[TemplateNodes] = []
         
         for node in flat_nodes:
             if node.parent_id:
-                # Dodajemy węzeł jako dziecko jego rodzica
                 nodes_by_id[node.parent_id]["children"].append(nodes_by_id[node.id])
             else:
-                # Jeśli nie ma rodzica, to jest korzeń (np. główna sekcja)
                 roots.append(nodes_by_id[node.id])
-                
+
         return roots
 
-    # --- FAZA 2: Rezolucja (Przechodzenie po drzewie i pytanie AI) ---
-    async def _resolve_node(self, node: Dict[str, Any], project_id: int, user_id: int) -> str:
-        """Przetwarza pojedynczy węzeł i jego dzieci na czysty HTML"""
+    async def _resolve_node(self, node: Dict[str, Any], project_id: int, user_id: int, parent_type: Optional[str] = None) -> str:
         node_type = node["type"]
         node_data = node["data"]
         
         content_html = ""
 
-        # 1. RAG EXTRACTION - Uderzamy do LLM / Qdranta
         if node_type == "rag_extraction":
             try:
-                # Wywołanie Twojego LLM-a!
-                response = await RagService.query_with_dynamic_type(
-                    db=self.db,
-                    instruction=node_data["prompt"],
-                    output_type=str, # TODO: Change dynamically
-                    project_id=project_id,
-                    user_id=user_id
-                    )
-                # LLM często zwraca Markdown, konwertujemy to na HTML
-                content_html = markdown.markdown(response["answer"])
-            except Exception:
-                # W razie awarii AI lub braku dokumentów, wstawiamy Fallback
+                is_in_list = (parent_type == "list")
+                response = None
+                
+                # Prosty system Retry (maksymalnie 3 próby)
+                for attempt in range(3):
+                    try:
+                        # Semafor kolejkuje zapytania do OpenAI
+                        async with self.semaphore:
+                            response = await RagService.query_with_dynamic_type(
+                                db=self.db,
+                                instruction=node_data["prompt"],
+                                output_type=List[str] if is_in_list else str,
+                                project_id=project_id,
+                                user_id=user_id
+                            )
+                        break  # Jeśli się udało, przerywamy pętlę prób
+                    except Exception as e:
+                        if "429" in str(e) and attempt < 2:
+                            # Exponential backoff: czeka 1s, potem 2s
+                            await asyncio.sleep(2 ** attempt) 
+                        else:
+                            raise e # Przekazujemy błąd dalej, jeśli to nie 429 lub wyczerpano próby
+                
+                if is_in_list:
+                    items_html = "".join([f"<li>{item}</li>" for item in response["answer"]]) # type: ignore
+                    content_html = items_html
+                else:
+                    content_html = markdown.markdown(response["answer"]) # type: ignore
+                    
+            except Exception as e:
+                print(f"Błąd węzła RAG: {e}")
                 content_html = f"<p class='text-gray'><em>{node_data.get('fallback_text', 'Brak danych')}</em></p>"
 
         # 2. STATIC TEXT
@@ -61,7 +75,7 @@ class DocumentGenerator:
         elif node_type in ["section", "list"]:
             # Równoległe wywołanie AI dla wszystkich dzieci! 
             # (Dzięki asyncio.gather wygenerowanie 10 paragrafów przez RAG trwa tyle samo co 1)
-            children_tasks = [self._resolve_node(child, project_id, user_id) for child in node["children"]]
+            children_tasks = [self._resolve_node(child, project_id, user_id, node_type) for child in node["children"]]
             children_results = await asyncio.gather(*children_tasks)
             children_html = "".join(children_results)
 

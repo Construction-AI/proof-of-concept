@@ -212,10 +212,7 @@ class VectorStoreClient:
         
     async def _nodes_exist_for_storage_key(self, storage_key: str) -> bool:
         return len(await self._get_nodes_for_storage_key(storage_key=storage_key)) > 0
-        
-    # async def check_nodes_exist(self, storage_key: str) -> bool:
-    #     nodes = await self.
-    
+            
     async def _get_nodes_for_storage_key(self, storage_key: str) -> list[BaseNode]:
         filters = MetadataFilters(
             filters=[
@@ -227,9 +224,20 @@ class VectorStoreClient:
         return nodes
 
     def _create_dynamic_schema(self, expected_type: Type[Any]) -> Type[BaseModel]:
+        # Wykrywamy, czy Pydantic oczekuje od nas listy
+        is_list = getattr(expected_type, '__origin__', expected_type) is list
+        
+        # Dynamiczny opis w zależności od typu - wymusza na LLM poprawne strukturyzowanie JSONa
+        answer_desc = (
+            "A list of separate points. EACH point/element must be a separate string in the array. "
+            "DO NOT put multiple points into a single string."
+        ) if is_list else (
+            "The factual answer to the instruction, strictly matching the requested format / type"
+        )
+
         return create_model(
             "DynamicResponse",
-            answer=(expected_type, Field(..., description="The factual answer to the instruction, strictly matching the requested format / type")),
+            answer=(expected_type, Field(..., description=answer_desc)),
             confidence_score=(float, Field(..., description="A score from 0.0 to 1.0 indicating how confident you are that the context fully answers the question.")),
             reasoning=(str, Field(..., description="Explanation of why this answer and confidence score were given."))
         )
@@ -242,15 +250,30 @@ class VectorStoreClient:
     ) -> Dict[str, Any]:
         DynamicSchema = self._create_dynamic_schema(expected_type=output_type)
         
-        # TODO: Move this, this is just temporary
-        # 1. Definicja twardego promptu systemowego
+        # Sprawdzamy, czy oczekujemy listy w tym węźle AST
+        is_list = getattr(output_type, '__origin__', output_type) is list
+        
+        # Dynamiczne reguły wstrzykiwane prosto do promptu
+        format_rules = ""
+        if is_list:
+            format_rules = (
+                "- UWAGA FORMATOWANIE: Zwracasz LISTĘ (array). "
+                "Każdy zidentyfikowany punkt/zagrożenie musi być OSOBNYM elementem tablicy! "
+                "Nie wrzucaj całego tekstu do jednego stringa. "
+                "Nie używaj ręcznej numeracji (np. '1.', '2.') na początku stringów."
+            )
+        else:
+            format_rules = "- Odpowiedz w formie ciągłego, spójnego tekstu (string)."
+
         QA_PROMPT_TMPL = (
             "Jesteś naczelnym inżynierem budownictwa i ekspertem ds. BHP. "
             "Twoim zadaniem jest pisanie BARDZO SZCZEGÓŁOWYCH, wyczerpujących i profesjonalnych raportów.\n\n"
             "Zasady:\n"
             "- Nigdy nie odpowiadaj pojedynczymi zdaniami. Każdy punkt analizuj dogłębnie.\n"
             "- Opisuj przyczyny, przewidywane skutki i wymagane działania naprawcze/zapobiegawcze.\n"
-            "- Używaj specjalistycznego słownictwa z branży budowlanej.\n\n"
+            "- Jeśli w bazie wiedzy nie znajdziesz odpowiedzi, to zwróć NULL albo None.\n"
+            "- Używaj specjalistycznego słownictwa z branży budowlanej.\n"
+            f"{format_rules}\n\n"  # <--- Wstrzykujemy dynamiczne reguły formatowania
             "Informacje kontekstowe z bazy wiedzy:\n"
             "---------------------\n"
             "{context_str}\n"
@@ -288,7 +311,7 @@ class VectorStoreClient:
             })
 
         return {
-            "answer": structured_data.answer, # Guaranteed to match 'output_type'
+            "answer": structured_data.answer, 
             "llm_confidence": structured_data.confidence_score,
             "reasoning": structured_data.reasoning,
             "sources": source_list
