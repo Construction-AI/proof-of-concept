@@ -21,7 +21,7 @@ def create_project(
     new_project = project_service.ProjectService.create_project(db=db, project=project_in, user_id=current_user.id)
     return new_project
 
-@router.get("/", response_model=List[project_schemas.ProjectResponse])
+@router.get("", response_model=List[project_schemas.ProjectResponse])
 def read_my_projects(
     db: Session = Depends(get_db),
     current_user: auth_models.User = Depends(get_current_user)

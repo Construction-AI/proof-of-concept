@@ -18,10 +18,14 @@ export const templatesService = {
     },
 
     create: async (name: string, description: string = "") => {
-        const response = await apiClient.put(`/templates/create`, {
+        const response = await apiClient.post(`/templates`, {
             name,
             description
         });
         return response.data;
+    },
+    
+    delete: async (templateId: number) => {
+        await apiClient.delete(`/templates/${templateId}`);
     }
 };

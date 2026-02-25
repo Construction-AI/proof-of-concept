@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from sqlalchemy.orm import Session
 
 from app.modules.templates.schemas import SchemaNode
@@ -30,6 +30,30 @@ class TemplateService:
         return db.query(TemplateNodes).filter(TemplateNodes.template_id == template_id).all()
     
     @staticmethod
+    def get_template_by_id(db: Session, template_id: int, user_id: int) -> Template:
+        template: Template = db.query(Template).filter(Template.id == template_id).first()
+        if not template or template.owner_id != user_id:
+            raise Exception("Template not found or belongs to another user")
+        return template
+    
+    @staticmethod
     def get_templates_for_user_id(db: Session, user_id: int) -> List[Template]:
         return db.query(Template).filter(Template.owner_id == user_id).all()
-        
+    
+    @staticmethod
+    def delete_template(db: Session, template_id: int, user_id: int):
+        template: Template = TemplateService.get_template_by_id(db=db, template_id=template_id, user_id=user_id)
+        if template:
+            db.delete(template)
+            
+    @staticmethod
+    def create_template(db: Session, name: str, user_id: int, description: Optional[str] = None):
+        db_template = Template(
+            name=name,
+            description=description,
+            owner_id=user_id
+        )
+        db.add(db_template)
+        db.commit()
+        db.refresh(db_template)
+        return db_template
