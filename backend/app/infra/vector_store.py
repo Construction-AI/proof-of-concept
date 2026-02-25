@@ -7,6 +7,9 @@ from app.infra.document_identifier import DocumentIdentifier
 
 from fastapi import UploadFile
 
+
+from llama_index.core.llms import ChatMessage, MessageRole
+
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.core.storage import StorageContext
 from llama_index.core import VectorStoreIndex, Document
@@ -137,6 +140,30 @@ class VectorStoreClient:
         )
         response = await query_engine.aquery(question)
         return response.response
+    
+    async def chat_with_history(self, question: str, history: List[Dict[str, str]], storage_keys: List[str], system_prompt: str) -> str:
+        chat_history: List[str] = []
+        for msg in history:
+            role = MessageRole.USER if msg["role"] == "user" else MessageRole.ASSISTANT
+            chat_history.append(ChatMessage(role=role, content=msg["content"]))
+            
+        # 2. Konfiguracja retrievera (jak w zwykłym zapytaniu)
+        filters = MetadataFilters(
+            filters=[MetadataFilter(key="storage_key", operator="in", value=storage_keys)]
+        )
+        # retriever = self.index.as_retriever(similarity_top_k=10, filters=filters)
+                
+        chat_engine = self.index.as_chat_engine( # type: ignore
+            chat_history=chat_history,
+            system_prompt=system_prompt,
+            similarity_top_k=10,
+            filters=filters,
+            node_postprocessors=[WINDOW_POST, self.reranker],
+        )
+        
+        # 4. Asynchroniczne odpytanie
+        response = await chat_engine.achat(question)  # type: ignore
+        return response.response  # type: ignore
     
     async def query_with_confidence(self, question: str, storage_keys: list[str]) -> dict[str, Any]:
         query_engine: RetrieverQueryEngine = self._build_query_engine(storage_keys=storage_keys, output_cls=AnswerWithConfidence, response_mode="tree_summarize") # type: ignore
