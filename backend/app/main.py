@@ -8,6 +8,7 @@ from app.modules.health.router import router as health_router
 from app.modules.rag.router import router as rag_router
 from app.modules.templates.router import router as templates_router
 from app.modules.generator.router import router as generator_router
+from app.modules.libraries.router import router as libraries_router
 
 from app.db.session import engine
 from app.db.base import Base
@@ -39,6 +40,7 @@ def create_app() -> FastAPI:
     api_router.include_router(health_router, prefix="/health", tags=["Health Section"])
     api_router.include_router(templates_router, prefix="/templates", tags=["Templates Section"])
     api_router.include_router(generator_router, prefix="/generator", tags=["Generator Section"])
+    api_router.include_router(libraries_router, prefix="/libraries", tags=["Libraries Section"])
     
     app.include_router(api_router)
     

@@ -4,7 +4,7 @@ import { documentsService, type Document } from '../api/documents';
 import { ProjectChat } from '../components/ProjectChat';
 import { UploadZone } from '../components/project/UploadZone';
 import { DocumentList } from '../components/project/DocumentList';
-import { LayoutTemplate } from 'lucide-react';
+import { ArrowLeft, LayoutTemplate } from 'lucide-react';
 
 export const ProjectDetails = () => {
   const { id } = useParams();
@@ -74,17 +74,9 @@ export const ProjectDetails = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <button onClick={() => navigate('/')} className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors">
-            Wróć do projektów
-          </button>
-
-          <button
-            onClick={() => navigate(`/templates-editor`)}
-            className="flex items-center gap-2 bg-linear-to-r from-blue-600 to-indigo-700 text-white px-6 py-2 rounded-lg font-bold hover:shadow-lg transition-all"
-          >
-            <LayoutTemplate size={20} />
-            Kreator Raportów
+        <div className="text-black px-4 py-2 flex items-center text-sm my-2">
+          <button onClick={() => navigate(`/dashboard`)} className="flex items-center gap-1 hover:text-blue-300 transition-colors">
+            <ArrowLeft size={16} /> Powrót do panelu użytkownika
           </button>
         </div>
 
