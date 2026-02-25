@@ -3,15 +3,13 @@ from typing import  List
 
 class ChatCreateRequest(BaseModel):
     title: str
-    project_id: int
-    user_id: int
         
 class MessageResponse(BaseModel):
     id: int
     chat_id: int
     role: str
     content: str
-    date_created: str
+    # date_created: str
     
 class ChatResponse(BaseModel):
     id: int

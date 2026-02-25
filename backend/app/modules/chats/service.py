@@ -9,10 +9,10 @@ from typing import List, Optional
 class ChatService:
     
     @staticmethod
-    def create_chat(db: Session, user_id: int, chat: ChatCreateRequest):
+    def create_chat(db: Session, user_id: int, chat: ChatCreateRequest, project_id: int):
         db_chat = Chat(
             title=chat.title,
-            project_id=chat.project_id,
+            project_id=project_id,
             user_id=user_id
         )
         
