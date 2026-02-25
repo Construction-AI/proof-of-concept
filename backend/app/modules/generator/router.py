@@ -10,6 +10,8 @@ from app.modules.projects.models import Project
 from app.modules.templates.models import TemplateNodes
 from app.modules.generator.schemas import GenerateRequest
 
+from app.modules.templates.service import TemplateService
+
 from urllib.parse import quote
 
 
@@ -30,11 +32,16 @@ async def generate_report_from_template(
     nodes = db.query(TemplateNodes).filter(TemplateNodes.template_id == request.template_id).all()
     if not nodes:
         raise HTTPException(status_code=400, detail="Szablon jest pusty!")
+    
+    template = TemplateService.get_template_by_id(db=db, template_id=request.template_id, user_id=user.id)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template was not found or does not exist")
 
     generator = DocumentGenerator(db)
     pdf_bytes = await generator.generate_pdf(
         project_id=request.project_id,
         template_nodes=nodes,
+        template_name=template.name,
         project_name=project.title,
         user_id=user.id
     )
