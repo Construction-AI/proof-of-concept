@@ -8,6 +8,7 @@ from app.modules.auth.dependencies import get_current_user
 from app.modules.auth.models import User
 from app.modules.projects.models import Project
 from app.modules.templates.models import TemplateNodes
+from app.modules.generator.schemas import GenerateRequest
 
 from urllib.parse import quote
 
@@ -16,24 +17,23 @@ router = APIRouter()
 
 @router.post("/generate")
 async def generate_report_from_template(
-    project_id: int, 
-    template_id: int, 
+    request: GenerateRequest,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
     # 1. Pobierz dane o projekcie (żeby mieć jego nazwę do nagłówka)
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).filter(Project.id == request.project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Projekt nie istnieje")
 
     # 2. Pobierz płaską listę klocków z bazy dla tego szablonu
-    nodes = db.query(TemplateNodes).filter(TemplateNodes.template_id == template_id).all()
+    nodes = db.query(TemplateNodes).filter(TemplateNodes.template_id == request.template_id).all()
     if not nodes:
         raise HTTPException(status_code=400, detail="Szablon jest pusty!")
 
     generator = DocumentGenerator(db)
     pdf_bytes = await generator.generate_pdf(
-        project_id=project_id, 
+        project_id=request.project_id,
         template_nodes=nodes,
         project_name=project.title,
         user_id=user.id
