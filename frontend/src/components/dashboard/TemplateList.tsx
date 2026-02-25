@@ -20,22 +20,18 @@ export const TemplateList = ({ onAssignToLibrary }: Props) => {
   return (
     <div className="grid grid-cols-1 gap-4">
       {templates.length === 0 ? <p className="text-gray-500">Brak utworzonych szablonów.</p> : null}
-      
-      {templates.map(t => (
-        /*
-        <div key={p.id} onClick={() => navigate(`/projects/${p.id}`)} className="bg-white p-4 rounded-lg border hover:border-blue-300 cursor-pointer flex items-center gap-4 shadow-sm transition-colors">
-            <FolderGit2 className="text-blue-500" size={24} />
-            <span className="font-semibold text-gray-800">{p.title}</span>
-          </div>
-        */
 
+      {templates.map(t => (
         <div key={t.id} onClick={() => navigate(`/templates-editor?templateId=${t.id}`)} className="bg-white p-4 rounded-lg border hover:border-emerald-300 cursor-pointer flex items-center justify-between shadow-sm transition-colors">
           <div className="flex items-center gap-3">
             <FileText className="text-emerald-500" size={24} />
             <span className="font-semibold text-gray-800">{t.name}</span>
           </div>
-          <button 
-            onClick={() => onAssignToLibrary(t.id)} 
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAssignToLibrary(t.id);
+            }}
             className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-1.5 rounded-md border hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors"
           >
             <FolderPlus size={16} /> Dodaj do biblioteki
