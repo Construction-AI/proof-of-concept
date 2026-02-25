@@ -47,6 +47,10 @@ class RagService:
         docs: list[Document] = DocumentService.get_documents_by_project_id(db=db, project_id=project_id, user_id=user_id)
         storage_keys: list[str] = [doc.storage_key for doc in docs]
         return await vector_store_client.query_with_dynamic_type(instruction=instruction, output_type=output_type, storage_keys=storage_keys)
+    
+    @staticmethod
+    async def chat_with_history(question: str, history: list[dict[str, str]], storage_keys: list[str], system_prompt: str):
+        return await vector_store_client.chat_with_history(question=question, history=history, storage_keys=storage_keys, system_prompt=system_prompt)
 
 
         

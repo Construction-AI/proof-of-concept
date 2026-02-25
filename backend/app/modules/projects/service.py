@@ -43,3 +43,16 @@ class ProjectService:
             .options(joinedload(models.Project.owner))
             .all()
         )
+        
+    @staticmethod
+    def get_storage_keys_for_project_id(db: Session, user_id: int, project_id: int):
+        from app.modules.documents.models import Document
+        from app.modules.documents.service import DocumentService
+        
+        project: Project = ProjectService.get_project_by_id(db=db, project_id=project_id)
+        if not project or project.owner_id != user_id:
+            raise Exception(f"Project `{project_id}` does not exist or belongs to different user.")
+
+        docs: list[Document] = DocumentService.get_documents_by_project_id(db=db, project_id=project_id, user_id=user_id)
+        storage_keys: list[str] = [doc.storage_key for doc in docs]
+        return storage_keys
