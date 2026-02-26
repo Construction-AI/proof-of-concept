@@ -63,12 +63,11 @@ class ChatService:
         messages: List[Message] = (
             db.query(Message)
             .filter(Message.chat_id == chat_id)
-            .order_by(Message.created_at.desc())   # newest first
+            .order_by(Message.created_at.desc())
             .limit(limit)
             .all()
         )
 
-        # Optional: reverse so they return oldest → newest
         return list(reversed(messages))
 
     
@@ -118,8 +117,3 @@ class ChatService:
         ChatService.create_message(db=db, user_id=user_id, chat_id=request.chat_id, role="assistant", content=answer)
         return answer
         
-        
-        
-        
-        
-    
