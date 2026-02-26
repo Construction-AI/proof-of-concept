@@ -58,7 +58,6 @@ export const TreeEditor = ({ isLoading }: TreeEditorProps) => {
               rootId={0}
               initialOpen={true}
               sort={false}
-              dropTargetOffset={20}
               canDrop={handleCanDrop}
               onDrop={handleDrop}
               placeholderRender={(node, { depth }) => (

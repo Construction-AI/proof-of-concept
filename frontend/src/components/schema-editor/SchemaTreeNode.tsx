@@ -1,75 +1,65 @@
-// src/components/schema-editor/SchemaTreeNode.tsx
-import { AlignLeft, LayoutList, Type, Trash2, ChevronRight, ChevronDown, Sparkles } from 'lucide-react'; // Dodano Chevrons!
+import { AlignLeft, LayoutList, Type, Trash2, ChevronRight, ChevronDown, Sparkles } from 'lucide-react';
 import type { NodeModel } from '@minoru/react-dnd-treeview';
 import { useSchemaStore, type SchemaNode } from '../../store/schemaStore';
+import { Button } from '@/components/ui/button';
 
 type Props = {
   node: NodeModel<SchemaNode>;
   depth: number;
   isOpen: boolean;
   onToggle: (id: string | number) => void;
-  hasChild: boolean; // Nowy props z Kroku 1
+  hasChild: boolean;
 };
 
 export const SchemaTreeNode = ({ node, depth, isOpen, onToggle, hasChild }: Props) => {
   const { selectedNodeId, selectNode, removeNode } = useSchemaStore();
   const isSelected = node.id === selectedNodeId;
-
   const data = node.data as SchemaNode;
 
   return (
     <div
-      // ZMIANY W KLASACH TAILWIND PONIŻEJ (py-3 px-4 zamiast p-2 mb-1)
-      className={`flex items-center justify-between py-3 px-4 my-0.5 rounded-lg cursor-grab active:cursor-grabbing border transition-all ${isSelected
-          ? 'border-blue-500 bg-blue-50 shadow-sm'
-          : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm'
-        }`}
+      className={`flex items-center justify-between py-2 px-3 my-1 rounded-md cursor-grab active:cursor-grabbing border bg-card transition-all ${
+        isSelected ? 'border-primary ring-1 ring-primary/20 shadow-sm' : 'hover:border-primary/50'
+      }`}
       style={{ marginLeft: depth * 24 }}
       onClick={() => selectNode(String(node.id))}
     >
-      <div className="flex items-center gap-3"> {/* Zwiększony gap */}
-
-        {/* STRZAŁKA ZWIJANIA / ROZWIJANIA */}
+      <div className="flex items-center gap-2">
         <div
           onClick={(e) => {
-            e.stopPropagation(); // Blokuje kliknięcie przed zaznaczeniem całego klocka
-            if (hasChild) {
-              onToggle(node.id);
-            }
+            e.stopPropagation();
+            if (hasChild) onToggle(node.id);
           }}
-          // Jeśli klocek ma dzieci, pokazujemy strzałkę. Jeśli nie - dajemy pustą przezroczystą ramkę, by wyrównanie ikon zostało nienaruszone.
-          className={`p-1 rounded hover:bg-gray-200 text-gray-500 transition-colors ${hasChild ? 'visible cursor-pointer' : 'invisible'
-            }`}
+          className={`p-1 rounded-sm hover:bg-accent text-muted-foreground transition-colors ${hasChild ? 'cursor-pointer' : 'invisible'}`}
         >
-          {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </div>
 
-        {/* Ikona Typu Klocka */}
         {data.type === 'section' && <LayoutList size={16} className="text-blue-500" />}
         {data.type === 'list' && <Type size={16} className="text-green-500" />}
         {data.type === 'static_text' && <AlignLeft size={16} className="text-gray-500" />}
         {data.type === 'rag_extraction' && <Sparkles size={16} className="text-purple-500" />}
 
-        <span className="font-medium text-sm text-gray-800">
+        <span className="font-medium text-sm">
           {data.type === 'static_text'
-            ? (data.data.text.length > 25 ? data.data.text.substring(0, 25) + '...' : data.data.text || 'Pusty tekst')
+            ? (data.data.text.length > 30 ? data.data.text.substring(0, 30) + '...' : data.data.text || 'Pusty tekst')
             : data.type === 'rag_extraction'
-              ? (data.data.prompt.length > 25 ? data.data.prompt.substring(0, 25) + '...' : data.data.prompt || 'Pusty prompt')
+              ? (data.data.prompt.length > 30 ? data.data.prompt.substring(0, 30) + '...' : data.data.prompt || 'Pusty prompt')
               : node.text}
         </span>
       </div>
 
-      {/* Przycisk Usuwania */}
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
         onClick={(e) => {
           e.stopPropagation();
           removeNode(String(node.id));
         }}
-        className="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors"
-        title="Usuń blok"
       >
-        <Trash2 size={16} />
-      </button>
+        <Trash2 size={14} />
+      </Button>
     </div>
   );
 };
