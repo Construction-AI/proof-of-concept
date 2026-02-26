@@ -1,151 +1,107 @@
 import { Settings, Sparkles } from 'lucide-react';
 import { useSchemaStore } from '../../store/schemaStore';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card } from '@/components/ui/card';
 
 export const PropertyPanel = () => {
   const { nodes, selectedNodeId, updateNodeData } = useSchemaStore();
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
 
   return (
-    <div className="w-80 bg-white border-l border-gray-200 p-6 overflow-y-auto shadow-xl z-10 flex flex-col">
-      <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
-        <Settings className="text-gray-400" size={20} />
-        <h2 className="font-semibold text-gray-800">Node Properties</h2>
+    <div className="w-80 bg-background border-l p-6 flex flex-col h-full overflow-y-auto shadow-sm">
+      <div className="flex items-center gap-2 mb-6 pb-4 border-b">
+        <Settings className="h-5 w-5 text-muted-foreground" />
+        <h2 className="font-semibold">Właściwości węzła</h2>
       </div>
 
       {!selectedNode ? (
-        <p className="text-sm text-gray-500 italic">Select a node in the tree to edit its properties.</p>
+        <p className="text-sm text-muted-foreground italic text-center mt-10">Wybierz blok na drzewie, aby edytować jego właściwości.</p>
       ) : (
         <div className="space-y-6">
-
-          {/* Properties for SECTION */}
+          {/* SECTION */}
           {selectedNode.type === 'section' && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Section Title</label>
-                <input
-                  type="text"
-                  value={selectedNode.data.title}
-                  onChange={(e) => updateNodeData(selectedNode.id, { title: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-sm"
-                />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Tytuł sekcji</Label>
+                <Input value={selectedNode.data.title} onChange={(e) => updateNodeData(selectedNode.id, { title: e.target.value })} />
               </div>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={selectedNode.data.show_title}
-                  onChange={(e) => updateNodeData(selectedNode.id, { show_title: e.target.checked })}
-                  className="rounded text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">Show Title in Document</span>
-              </label>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Heading Level</label>
-                <select
-                  value={selectedNode.data.heading_level}
-                  onChange={(e) => updateNodeData(selectedNode.id, { heading_level: Number(e.target.value) })}
-                  className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-sm"
-                >
-                  <option value={1}>H1 (Main Chapter)</option>
-                  <option value={2}>H2 (Sub-chapter)</option>
-                  <option value={3}>H3 (Section)</option>
-                </select>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="show_title" checked={selectedNode.data.show_title} onCheckedChange={(c) => updateNodeData(selectedNode.id, { show_title: !!c })} />
+                <Label htmlFor="show_title" className="font-normal cursor-pointer">Pokaż tytuł w dokumencie</Label>
               </div>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={selectedNode.data.page_before_break}
-                  onChange={(e) => updateNodeData(selectedNode.id, { page_before_break: e.target.checked })}
-                  className="rounded text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">Page Break Before</span>
-              </label>
-            </>
-          )}
-
-          {/* Properties for LIST */}
-          {selectedNode.type === 'list' && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">List Type</label>
-                <select
-                  value={selectedNode.data.list_type}
-                  onChange={(e) => updateNodeData(selectedNode.id, { list_type: e.target.value as 'bullet' | 'numbered' })}
-                  className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 text-sm"
-                >
-                  <option value="bullet">Bullet Points</option>
-                  <option value="numbered">Numbered (1, 2, 3...)</option>
-                </select>
+              <div className="space-y-2">
+                <Label>Poziom nagłówka</Label>
+                <Select value={String(selectedNode.data.heading_level)} onValueChange={(v) => updateNodeData(selectedNode.id, { heading_level: Number(v) })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">H1 (Główny rozdział)</SelectItem>
+                    <SelectItem value="2">H2 (Podrozdział)</SelectItem>
+                    <SelectItem value="3">H3 (Sekcja)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Spacing</label>
-                <select
-                  value={selectedNode.data.spacing}
-                  onChange={(e) => updateNodeData(selectedNode.id, { spacing: e.target.value as 'compact' | 'normal' | 'relaxed' })}
-                  className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 text-sm"
-                >
-                  <option value="compact">Compact</option>
-                  <option value="normal">Normal</option>
-                  <option value="relaxed">Relaxed</option>
-                </select>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="page_break" checked={selectedNode.data.page_before_break} onCheckedChange={(c) => updateNodeData(selectedNode.id, { page_before_break: !!c })} />
+                <Label htmlFor="page_break" className="font-normal cursor-pointer">Zacznij od nowej strony</Label>
               </div>
-            </>
-          )}
-          {/* Properties for STATIC TEXT */}
-          {selectedNode.type === 'static_text' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Text Content</label>
-              <textarea
-                value={selectedNode.data.text}
-                onChange={(e) => updateNodeData(selectedNode.id, { text: e.target.value })}
-                rows={6}
-                className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-sm resize-y"
-                placeholder="Wpisz treść akapitu..."
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                Ten tekst pojawi się w każdym wygenerowanym dokumencie dokładnie w takiej formie.
-              </p>
             </div>
           )}
-          {/* Properties for RAG EXTRACTION */}
+
+          {/* LIST */}
+          {selectedNode.type === 'list' && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Typ listy</Label>
+                <Select value={selectedNode.data.list_type} onValueChange={(v) => updateNodeData(selectedNode.id, { list_type: v as 'bullet' | 'numbered' })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bullet">Punktowana</SelectItem>
+                    <SelectItem value="numbered">Numerowana (1, 2, 3...)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Odstępy</Label>
+                <Select value={selectedNode.data.spacing} onValueChange={(v) => updateNodeData(selectedNode.id, { spacing: v as 'compact' | 'normal' | 'relaxed' })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="compact">Kompaktowe</SelectItem>
+                    <SelectItem value="normal">Normalne</SelectItem>
+                    <SelectItem value="relaxed">Luźne</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          {/* STATIC TEXT */}
+          {selectedNode.type === 'static_text' && (
+            <div className="space-y-2">
+              <Label>Treść stała</Label>
+              <Textarea value={selectedNode.data.text} onChange={(e) => updateNodeData(selectedNode.id, { text: e.target.value })} rows={8} placeholder="Wpisz stałą treść..." />
+              <p className="text-xs text-muted-foreground mt-2">Ten tekst pojawi się w każdym dokumencie w tej formie.</p>
+            </div>
+          )}
+
+          {/* RAG EXTRACTION */}
           {selectedNode.type === 'rag_extraction' && (
-            <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-
-              <div className="bg-purple-50 border border-purple-200 p-3 rounded-md flex items-start gap-2">
-                <Sparkles className="text-purple-600 mt-0.5" size={16} />
-                <p className="text-xs text-purple-800">
-                  Ten blok automatycznie przeszuka wgrane dokumenty projektu (RAG) i wygeneruje treść na podstawie poniższego promptu.
-                </p>
+            <div className="space-y-4">
+              <Card className="bg-purple-50/50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900 p-3 flex items-start gap-2 shadow-none">
+                <Sparkles className="h-4 w-4 text-purple-600 mt-0.5 shrink-0" />
+                <p className="text-xs text-purple-800 dark:text-purple-300">Blok automatycznie przeszuka dokumentację (RAG) i wygeneruje treść na podstawie promptu.</p>
+              </Card>
+              <div className="space-y-2">
+                <Label>Prompt dla AI <span className="text-destructive">*</span></Label>
+                <Textarea value={selectedNode.data.prompt} onChange={(e) => updateNodeData(selectedNode.id, { prompt: e.target.value })} rows={6} placeholder="np. Wypisz usterki z raportu..." className="focus-visible:ring-purple-500" />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  AI Prompt <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={selectedNode.data.prompt}
-                  onChange={(e) => updateNodeData(selectedNode.id, { prompt: e.target.value })}
-                  rows={5}
-                  className="w-full p-3 border border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500 text-sm resize-y"
-                  placeholder="np. Przeanalizuj dziennik budowy i wypunktuj wszystkie przestoje betonowania wraz z ich przyczyną..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tekst zastępczy (Fallback)</label>
-                <input
-                  type="text"
-                  value={selectedNode.data.fallback_text}
-                  onChange={(e) => updateNodeData(selectedNode.id, { fallback_text: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500 text-sm"
-                  placeholder="np. Brak odnotowanych przestojów w tym tygodniu."
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Pojawi się w dokumencie, jeśli model nie znajdzie w wektorowej bazie danych kontekstu pasującego do Twojego promptu.
-                </p>
+              <div className="space-y-2">
+                <Label>Tekst zastępczy (Fallback)</Label>
+                <Input value={selectedNode.data.fallback_text} onChange={(e) => updateNodeData(selectedNode.id, { fallback_text: e.target.value })} placeholder="Brak danych." className="focus-visible:ring-purple-500" />
+                <p className="text-xs text-muted-foreground">Pojawi się, gdy AI nie znajdzie kontekstu w bazie.</p>
               </div>
             </div>
           )}
