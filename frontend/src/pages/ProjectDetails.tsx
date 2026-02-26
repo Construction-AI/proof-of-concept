@@ -50,6 +50,20 @@ export const ProjectDetails = () => {
     }
   };
 
+  const handlePreview = async (doc: Document) => {
+    // setIsPreviewLoading(true);
+    try {
+      const url = await documentsService.getDownloadUrl(doc.id);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      console.error("Błąd pobierania linku podglądu:", error);
+      alert("Nie udało się otworzyć podglądu.");
+    } 
+    // finally {
+      // setIsPreviewLoading(false);
+    // }
+  };
+
   const handleDelete = async (docId: number) => {
     if (!window.confirm("Usunąć ten plik z bazy wektorowej Qdrant?")) return;
     try {
@@ -85,7 +99,7 @@ export const ProjectDetails = () => {
 
           <TabsContent value="documents" className="mt-6 space-y-6">
             <UploadZone isUploading={isUploading} onFileSelect={handleFileSelect} />
-            <DocumentList documents={documents} isPreviewLoading={false} onPreview={() => {}} onDelete={handleDelete} />
+            <DocumentList documents={documents} isPreviewLoading={false} onPreview={handlePreview} onDelete={handleDelete} />
           </TabsContent>
 
           <TabsContent value="chat" className="mt-6 h-[700px] flex gap-6">
