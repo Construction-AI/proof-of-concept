@@ -1,6 +1,5 @@
-// src/pages/Dashboard.tsx
 import { useState } from 'react';
-import { Navbar } from '../components/dashboard/Navbar'; // Wyprowadzone do osobnego pliku
+import { Navbar } from '../components/dashboard/Navbar';
 import { ToolCards } from '../components/dashboard/ToolCards';
 import { ProjectList } from '../components/dashboard/ProjectList';
 import { TemplateList } from '../components/dashboard/TemplateList';
@@ -10,29 +9,17 @@ export const Dashboard = () => {
   const [assigningTemplateId, setAssigningTemplateId] = useState<number | null>(null);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background text-foreground">
       <Navbar />
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 py-8 max-w-6xl">
+        <ToolCards />
         
-        <ToolCards /> {/* Dwa duże kolorowe kafelki */}
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-10">
-          {/* Lewa kolumna: Projekty */}
-          <section>
-             <h2 className="text-2xl font-bold text-gray-900 mb-6">Twoje Projekty</h2>
-             <ProjectList />
-          </section>
-
-          {/* Prawa kolumna: Szablony */}
-          <section>
-             <h2 className="text-2xl font-bold text-gray-900 mb-6">Moje Szablony</h2>
-             <TemplateList onAssignToLibrary={(id) => setAssigningTemplateId(id)} />
-          </section>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+          <ProjectList />
+          <TemplateList onAssignToLibrary={(id) => setAssigningTemplateId(id)} />
         </div>
-
       </main>
 
-      {/* Renderowanie Modala */}
       {assigningTemplateId && (
         <LibraryAssignModal 
           templateId={assigningTemplateId} 

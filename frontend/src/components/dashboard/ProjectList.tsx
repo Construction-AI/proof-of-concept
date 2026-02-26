@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FolderGit2, Plus } from 'lucide-react';
 import { projectsService, type Project } from '../../api/projects';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 export const ProjectList = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -24,27 +27,37 @@ export const ProjectList = () => {
   };
 
   return (
-    <div>
-      <form onSubmit={handleCreate} className="mb-6 flex gap-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-        <input 
-          type="text" placeholder="Nazwa projektu..." value={newTitle} 
-          onChange={(e) => setNewTitle(e.target.value)} 
-          className="flex-1 border px-4 py-2 rounded-md outline-none focus:border-blue-500" 
-        />
-        <button type="submit" disabled={!newTitle.trim()} className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
-          <Plus size={20} /> Utwórz
-        </button>
-      </form>
-      
-      <div className="grid grid-cols-1 gap-4">
-        {projects.length === 0 ? <p className="text-gray-500">Brak projektów.</p> : null}
-        {projects.map((p) => (
-          <div key={p.id} onClick={() => navigate(`/projects/${p.id}`)} className="bg-white p-4 rounded-lg border hover:border-blue-300 cursor-pointer flex items-center gap-4 shadow-sm transition-colors">
-            <FolderGit2 className="text-blue-500" size={24} />
-            <span className="font-semibold text-gray-800">{p.title}</span>
-          </div>
-        ))}
-      </div>
-    </div>
+    <Card className="h-full border-0 shadow-none sm:border sm:shadow-sm">
+      <CardHeader className="px-0 sm:px-6">
+        <CardTitle>Twoje Projekty</CardTitle>
+      </CardHeader>
+      <CardContent className="px-0 sm:px-6 space-y-4">
+        <form onSubmit={handleCreate} className="flex gap-2">
+          <Input 
+            placeholder="Nazwa nowego projektu..." 
+            value={newTitle} 
+            onChange={(e) => setNewTitle(e.target.value)} 
+          />
+          <Button type="submit" disabled={!newTitle.trim()}>
+            <Plus className="h-4 w-4 sm:mr-2" /> 
+            <span className="hidden sm:inline">Dodaj</span>
+          </Button>
+        </form>
+        
+        <div className="flex flex-col gap-2 pt-2">
+          {projects.length === 0 && <p className="text-sm text-muted-foreground">Brak projektów.</p>}
+          {projects.map((p) => (
+            <div 
+              key={p.id} 
+              onClick={() => navigate(`/projects/${p.id}`)} 
+              className="flex items-center gap-3 p-3 rounded-md border bg-card hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+            >
+              <FolderGit2 className="h-5 w-5 text-muted-foreground" />
+              <span className="font-medium">{p.title}</span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
