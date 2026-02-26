@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { documentsService, type Document } from '../api/documents';
 import { chatsService, type Chat } from '../api/chats';
@@ -6,19 +6,17 @@ import { UploadZone } from '../components/project/UploadZone';
 import { DocumentList } from '../components/project/DocumentList';
 import { ChatWindow } from '../components/chat/ChatWindow';
 import { ArrowLeft, MessageSquare, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 export const ProjectDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const projectId = Number(id);
 
-  // --- STAN DOKUMENTÓW ---
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // --- STAN CZATÓW ---
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<number | null>(null);
 
@@ -29,49 +27,31 @@ export const ProjectDetails = () => {
     }
   }, [projectId]);
 
-  // --- LOGIKA DOKUMENTÓW ---
   const fetchDocuments = async () => {
     try {
       const allDocs = await documentsService.getAll();
-      const projectDocs = allDocs.filter(doc => doc.project.id === projectId);
-      setDocuments(projectDocs);
+      setDocuments(allDocs.filter(doc => doc.project.id === projectId));
     } catch (error) {
       console.error("Błąd pobierania plików:", error);
-    }
-  };
-
-  const handlePreview = async (doc: Document) => {
-    setIsPreviewLoading(true);
-    try {
-      const url = await documentsService.getDownloadUrl(doc.id);
-      window.open(url, '_blank', 'noopener,noreferrer');
-    } catch (error) {
-      console.error("Błąd pobierania linku podglądu:", error);
-      alert("Nie udało się otworzyć podglądu.");
-    } finally {
-      setIsPreviewLoading(false);
     }
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !projectId) return;
-
     setIsUploading(true);
     try {
       await documentsService.upload(projectId, file);
       fetchDocuments();
     } catch (error) {
-      console.error("Błąd wgrywania:", error);
       alert("Nie udało się wgrać pliku.");
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const handleDelete = async (docId: number) => {
-    if (!window.confirm("Na pewno usunąć ten plik? Zniknie z bazy wektorowej Qdrant.")) return;
+    if (!window.confirm("Usunąć ten plik z bazy wektorowej Qdrant?")) return;
     try {
       await documentsService.delete(docId);
       fetchDocuments();
@@ -80,7 +60,6 @@ export const ProjectDetails = () => {
     }
   };
 
-  // --- LOGIKA CZATÓW ---
   const handleCreateChat = async () => {
     try {
       const newChat = await chatsService.createChat(projectId);
@@ -92,72 +71,59 @@ export const ProjectDetails = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 flex flex-col items-center">
-      <div className="w-full max-w-6xl">
-        {/* HEADER */}
-        <div className="text-black py-2 flex items-center mb-4">
-          <button onClick={() => navigate(`/dashboard`)} className="flex items-center gap-1 hover:text-blue-600 transition-colors">
-            <ArrowLeft size={16} /> Powrót do panelu użytkownika
-          </button>
-        </div>
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <Button variant="ghost" onClick={() => navigate(`/dashboard`)} className="pl-0 hover:bg-transparent">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Powrót do panelu
+        </Button>
 
-        {/* SEKCJA DOKUMENTÓW */}
-        <div className="mb-10">
-          <UploadZone isUploading={isUploading} onFileSelect={handleFileSelect} />
-          <h3 className="text-lg font-bold text-gray-900 mt-6 mb-4">Wgrane dokumenty:</h3>
-          <DocumentList
-            documents={documents}
-            isPreviewLoading={isPreviewLoading}
-            onPreview={handlePreview}
-            onDelete={handleDelete}
-          />
-        </div>
+        <Tabs defaultValue="documents" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="documents">Baza Wiedzy</TabsTrigger>
+            <TabsTrigger value="chat">Asystent RAG</TabsTrigger>
+          </TabsList>
 
-        {/* SEKCJA CZATÓW */}
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Przeszukaj bazę wiedzy</h2>
-        <div className="flex h-150 gap-6">
-          
-          {/* LEWA KOLUMNA: Lista czatów */}
-          <div className="w-1/3 flex flex-col gap-4">
-            <button 
-              onClick={handleCreateChat}
-              className="flex items-center justify-center gap-2 w-full bg-emerald-600 text-white p-3 rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-sm"
-            >
-              <Plus size={20} /> Nowy czat z bazą
-            </button>
+          <TabsContent value="documents" className="mt-6 space-y-6">
+            <UploadZone isUploading={isUploading} onFileSelect={handleFileSelect} />
+            <DocumentList documents={documents} isPreviewLoading={false} onPreview={() => {}} onDelete={handleDelete} />
+          </TabsContent>
 
-            <div className="bg-white rounded-xl shadow-sm border p-4 flex-1 overflow-y-auto space-y-2">
-              <h3 className="font-semibold text-gray-500 text-sm mb-3 uppercase tracking-wider">Historia konwersacji</h3>
-              {chats.length === 0 && <p className="text-sm text-gray-400">Brak historii. Rozpocznij nowy czat.</p>}
-              
-              {chats.map(chat => (
-                <button
-                  key={chat.id}
-                  onClick={() => setActiveChatId(chat.id)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${
-                    activeChatId === chat.id ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'hover:bg-gray-50 text-gray-700 border border-transparent'
-                  }`}
-                >
-                  <MessageSquare size={18} className={activeChatId === chat.id ? 'text-blue-600' : 'text-gray-400'} />
-                  <span className="truncate font-medium">{chat.title}</span>
-                </button>
-              ))}
+          <TabsContent value="chat" className="mt-6 h-[700px] flex gap-6">
+            {/* Lista Czatów */}
+            <Card className="w-1/3 flex flex-col">
+              <CardHeader className="p-4 border-b">
+                <Button onClick={handleCreateChat} className="w-full">
+                  <Plus className="mr-2 h-4 w-4" /> Nowy czat
+                </Button>
+              </CardHeader>
+              <CardContent className="flex-1 overflow-y-auto p-4 space-y-2">
+                {chats.map(chat => (
+                  <Button
+                    key={chat.id}
+                    variant={activeChatId === chat.id ? "secondary" : "ghost"}
+                    className="w-full justify-start font-normal"
+                    onClick={() => setActiveChatId(chat.id)}
+                  >
+                    <MessageSquare className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <span className="truncate">{chat.title}</span>
+                  </Button>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Okno Czatu */}
+            <div className="w-2/3">
+              {activeChatId ? (
+                <ChatWindow chatId={activeChatId} />
+              ) : (
+                <Card className="h-full flex flex-col items-center justify-center border-dashed text-muted-foreground">
+                  <MessageSquare className="h-12 w-12 mb-4 opacity-50" />
+                  <p>Wybierz czat z historii lub utwórz nowy</p>
+                </Card>
+              )}
             </div>
-          </div>
-
-          {/* PRAWA KOLUMNA: Okno czatu */}
-          <div className="w-2/3">
-            {activeChatId ? (
-              <ChatWindow key={activeChatId} chatId={activeChatId} />
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center bg-white rounded-xl shadow-sm border border-dashed border-gray-300 text-gray-500">
-                <MessageSquare size={48} className="mb-4 text-gray-300" />
-                <p className="text-lg font-medium">Wybierz czat z historii lub utwórz nowy</p>
-              </div>
-            )}
-          </div>
-
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
