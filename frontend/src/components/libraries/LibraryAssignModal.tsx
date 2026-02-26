@@ -1,7 +1,9 @@
-// src/components/modals/LibraryAssignModal.tsx
 import { useEffect, useState } from 'react';
-import { X, Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import { librariesService, type TemplateLibrary } from '../../api/libraries';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Props {
   templateId: number;
@@ -15,7 +17,6 @@ export const LibraryAssignModal = ({ templateId, onClose }: Props) => {
 
   useEffect(() => {
     librariesService.getAll().then(data => {
-      // Filtrujemy tylko własne biblioteki (bez globalnych)
       setLibraries(data.filter((lib: any) => !lib.is_global));
       setLoading(false);
     });
@@ -34,31 +35,33 @@ export const LibraryAssignModal = ({ templateId, onClose }: Props) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold">Przypisz do biblioteki</h3>
-          <button onClick={onClose}><X size={20} /></button>
-        </div>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Przypisz do biblioteki</DialogTitle>
+        </DialogHeader>
         
-        {loading ? <Loader2 className="animate-spin mx-auto my-4 text-blue-500" /> : (
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {libraries.length === 0 ? <p className="text-gray-500 text-sm">Brak własnych bibliotek.</p> : null}
-            {libraries.map(lib => (
-              <div key={lib.id} className="flex justify-between items-center p-3 border rounded-lg hover:bg-gray-50">
-                <span className="font-medium">{lib.name}</span>
-                <button 
-                  onClick={() => handleAssign(lib.id)}
-                  disabled={processingId === lib.id}
-                  className="text-blue-600 bg-blue-50 p-2 rounded-md hover:bg-blue-100"
-                >
-                  {processingId === lib.id ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-                </button>
-              </div>
-            ))}
-          </div>
+        {loading ? <Loader2 className="animate-spin mx-auto my-8 text-primary h-6 w-6" /> : (
+          <ScrollArea className="max-h-64 mt-4">
+            <div className="space-y-2">
+              {libraries.length === 0 && <p className="text-muted-foreground text-sm text-center">Brak własnych bibliotek.</p>}
+              {libraries.map(lib => (
+                <div key={lib.id} className="flex justify-between items-center p-3 border rounded-md hover:bg-accent transition-colors">
+                  <span className="font-medium text-sm">{lib.name}</span>
+                  <Button 
+                    variant="secondary"
+                    size="icon"
+                    onClick={() => handleAssign(lib.id)}
+                    disabled={processingId === lib.id}
+                  >
+                    {processingId === lib.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

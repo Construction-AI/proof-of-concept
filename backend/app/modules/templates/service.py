@@ -44,6 +44,7 @@ class TemplateService:
         template: Template = TemplateService.get_template_by_id(db=db, template_id=template_id, user_id=user_id)
         if template:
             db.delete(template)
+            db.commit()
             
     @staticmethod
     def create_template(db: Session, name: str, user_id: int, description: Optional[str] = None):

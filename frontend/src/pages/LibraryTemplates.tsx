@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { FileText, Copy, Edit, Loader2, ArrowLeft } from 'lucide-react';
 import { librariesService } from '../api/libraries';
 import { templatesService } from '../api/templates';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 export const LibraryTemplates = () => {
   const { id } = useParams();
@@ -32,47 +34,46 @@ export const LibraryTemplates = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <button onClick={() => navigate('/library')} className="p-2 bg-white rounded-full shadow-sm hover:bg-gray-100">
-            <ArrowLeft size={20} />
-          </button>
-          <h1 className="text-2xl font-bold text-gray-900">Zawartość biblioteki</h1>
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-6xl mx-auto space-y-8">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" onClick={() => navigate('/library')}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-2xl font-bold">Zawartość biblioteki</h1>
         </div>
 
         {loading ? (
-          <Loader2 className="animate-spin mx-auto mt-12 text-emerald-500" size={32} />
+          <Loader2 className="animate-spin mx-auto mt-12 h-8 w-8 text-emerald-500" />
         ) : templates.length === 0 ? (
-          <p className="text-center text-gray-500 py-12">Ta biblioteka nie posiada jeszcze szablonów.</p>
+          <p className="text-center text-muted-foreground py-12">Ta biblioteka nie posiada jeszcze szablonów.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {templates.map(t => (
-              <div key={t.id} className="bg-white p-6 rounded-xl shadow-sm border flex flex-col justify-between hover:shadow-md">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="bg-emerald-50 p-3 rounded-lg">
-                    <FileText className="text-emerald-600" size={24} />
+              <Card key={t.id} className="flex flex-col justify-between">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded-md">
+                      <FileText className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <CardTitle className="text-lg">{t.name}</CardTitle>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900">{t.name}</h3>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  <button 
-                    onClick={() => navigate(`/templates-editor?templateId=${t.id}`)} 
-                    className="flex items-center justify-center gap-2 bg-gray-50 text-gray-700 border px-3 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-                  >
-                    <Edit size={16} /> Edytuj
-                  </button>
-                  <button 
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 gap-2 mt-auto">
+                  <Button variant="outline" onClick={() => navigate(`/templates-editor?templateId=${t.id}`)}>
+                    <Edit className="mr-2 h-4 w-4" /> Edytuj
+                  </Button>
+                  <Button 
+                    variant="secondary"
+                    className="bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400"
                     onClick={() => handleCopy(t.id)} 
                     disabled={copyingId === t.id}
-                    className="flex items-center justify-center gap-2 bg-blue-50 text-blue-600 px-3 py-2 rounded-lg font-medium hover:bg-blue-600 hover:text-white transition-colors disabled:opacity-50"
                   >
-                    {copyingId === t.id ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />} 
+                    {copyingId === t.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Copy className="mr-2 h-4 w-4" />} 
                     Kopiuj
-                  </button>
-                </div>
-              </div>
+                  </Button>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}
