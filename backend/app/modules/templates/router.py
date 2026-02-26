@@ -52,8 +52,6 @@ def delete_template(
 ):
     return TemplateService.delete_template(db=db, template_id=template_id, user_id=current_user.id)
     
-    
-# POST /api/v1/templates/{id}/copy
 @router.post("/{template_id}/copy", response_model=TemplateResponse)
 def copy_template(    
     template_id: int,
