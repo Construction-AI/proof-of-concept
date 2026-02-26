@@ -1,6 +1,7 @@
-// src/components/project/DocumentList.tsx
 import { FileText, Eye, Trash2 } from 'lucide-react';
 import type { Document } from '../../api/documents';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 interface DocumentListProps {
   documents: Document[];
@@ -10,44 +11,32 @@ interface DocumentListProps {
 }
 
 export const DocumentList = ({ documents, isPreviewLoading, onPreview, onDelete }: DocumentListProps) => {
-  if (documents.length === 0) {
-    return <p className="text-gray-500 italic">Brak dokumentów w tym projekcie.</p>;
-  }
+  if (documents.length === 0) return <p className="text-muted-foreground text-sm">Brak dokumentów w projekcie.</p>;
 
   return (
-    <div className="grid gap-4 mb-12">
+    <div className="grid gap-3">
       {documents.map((doc) => (
-        <div key={doc.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between">
+        <Card key={doc.id} className="p-4 flex items-center justify-between hover:border-primary/50 transition-colors">
           <div className="flex items-center gap-4">
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <FileText className="text-blue-600" size={24} />
+            <div className="bg-primary/10 p-2 rounded-md">
+              <FileText className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <p className="font-semibold text-gray-800">{doc.file_name}</p>
-              <p className="text-sm text-gray-500">
+              <p className="font-medium">{doc.file_name}</p>
+              <p className="text-xs text-muted-foreground">
                 Dodano: {new Date(doc.created_at).toLocaleDateString()} • {Math.round(doc.size / 1024)} KB
               </p>
             </div>
           </div>
-
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => onPreview(doc)}
-              disabled={isPreviewLoading}
-              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
-              title="Otwórz dokument"
-            >
-              <Eye size={20} />
-            </button>
-            <button
-              onClick={() => onDelete(doc.id)}
-              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-              title="Usuń dokument"
-            >
-              <Trash2 size={20} />
-            </button>
+            <Button variant="ghost" size="icon" onClick={() => onPreview(doc)} disabled={isPreviewLoading}>
+              <Eye className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => onDelete(doc.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );

@@ -1,5 +1,10 @@
 import { useState } from 'react';
 import { librariesService } from '../../api/libraries';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export const CreateLibraryModal = ({ onClose }: { onClose: () => void }) => {
   const [form, setForm] = useState({ name: '', industry: 'Budownictwo', description: '' });
@@ -8,27 +13,41 @@ export const CreateLibraryModal = ({ onClose }: { onClose: () => void }) => {
     if (!form.name) return;
     await librariesService.create(form.name, form.industry, form.description);
     onClose();
-    window.location.reload(); // Najszybsze odświeżenie siatki po dodaniu
+    window.location.reload(); 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
-        <h3 className="text-xl font-bold mb-4">Utwórz nową bibliotekę</h3>
-        <div className="space-y-4">
-          <input type="text" placeholder="Nazwa" onChange={e => setForm({...form, name: e.target.value})} className="w-full border p-2 rounded-md outline-none" />
-          <select onChange={e => setForm({...form, industry: e.target.value})} className="w-full border p-2 rounded-md outline-none">
-            <option value="Budownictwo">Budownictwo</option>
-            <option value="Architektura">Architektura</option>
-            <option value="BHP">BHP</option>
-          </select>
-          <textarea placeholder="Opis" onChange={e => setForm({...form, description: e.target.value})} className="w-full border p-2 rounded-md outline-none" rows={3}></textarea>
-          <div className="flex justify-end gap-3 mt-4">
-            <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md">Anuluj</button>
-            <button onClick={handleSubmit} disabled={!form.name} className="px-4 py-2 bg-emerald-600 text-white rounded-md">Utwórz</button>
-          </div>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Utwórz nową bibliotekę</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <Input 
+            placeholder="Nazwa" 
+            value={form.name}
+            onChange={e => setForm({...form, name: e.target.value})} 
+          />
+          <Select value={form.industry} onValueChange={v => setForm({...form, industry: v})}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Budownictwo">Budownictwo</SelectItem>
+              <SelectItem value="Architektura">Architektura</SelectItem>
+              <SelectItem value="BHP">BHP</SelectItem>
+            </SelectContent>
+          </Select>
+          <Textarea 
+            placeholder="Opis" 
+            value={form.description}
+            onChange={e => setForm({...form, description: e.target.value})} 
+            rows={3} 
+          />
         </div>
-      </div>
-    </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Anuluj</Button>
+          <Button onClick={handleSubmit} disabled={!form.name} className="bg-emerald-600 hover:bg-emerald-700">Utwórz</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };

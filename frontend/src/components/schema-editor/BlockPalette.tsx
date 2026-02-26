@@ -1,58 +1,56 @@
 import { AlignLeft, LayoutList, Sparkles, Type } from 'lucide-react';
 import { useSchemaStore } from '../../store/schemaStore';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 export const BlockPalette = () => {
   const addNode = useSchemaStore((state) => state.addNode);
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col overflow-y-auto">
-      <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Blocks</h2>
+    <div className="w-64 bg-background border-r p-4 flex flex-col h-full overflow-y-auto">
+      <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Bloki struktury</h2>
       <div className="space-y-2">
-        <button
-          onClick={() => addNode('section', null)}
-          className="w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
-        >
-          <LayoutList className="text-blue-500" size={20} />
-          <div>
-            <p className="font-medium text-gray-900 text-sm">Section</p>
-            <p className="text-xs text-gray-500">Group items together</p>
-          </div>
-        </button>
+        <Card className="p-1 hover:border-primary/50 transition-colors cursor-pointer group" onClick={() => addNode('section', null)}>
+          <Button variant="ghost" className="w-full justify-start h-auto p-2">
+            <LayoutList className="mr-3 h-5 w-5 text-blue-500" />
+            <div className="text-left">
+              <p className="font-medium text-sm">Sekcja</p>
+              <p className="text-xs text-muted-foreground font-normal">Grupuj elementy</p>
+            </div>
+          </Button>
+        </Card>
 
-        <button
-          onClick={() => addNode("static_text", null)}
-          className='w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:border-gray-500 hover:bg-gray-50 transition-colors'
-        >
-          <AlignLeft className="text-gray-500 size={20}" />
-          <div>
-            <p className="font-medium text-gray-900 text-sm">Static Text</p>
-            <p className="text-xs text-gray-500">Fixed Paragraph</p>
-          </div>
-        </button>
+        <Card className="p-1 hover:border-primary/50 transition-colors cursor-pointer group" onClick={() => addNode("static_text", null)}>
+          <Button variant="ghost" className="w-full justify-start h-auto p-2">
+            <AlignLeft className="mr-3 h-5 w-5 text-gray-500" />
+            <div className="text-left">
+              <p className="font-medium text-sm">Stały tekst</p>
+              <p className="text-xs text-muted-foreground font-normal">Niezmienny akapit</p>
+            </div>
+          </Button>
+        </Card>
 
-        <button
-          onClick={() => addNode('rag_extraction', null)}
-          className="w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors"
-        >
-          <div className="p-2 bg-purple-100 rounded-lg">
-            <Sparkles className="text-purple-600" size={18} />
-          </div>
-          <div>
-            <p className="font-medium text-gray-900 text-sm">RAG Extraction</p>
-            <p className="text-xs text-gray-500">AI generated content</p>
-          </div>
-        </button>
+        <Card className="p-1 hover:border-purple-500/50 transition-colors cursor-pointer group bg-purple-50/30 dark:bg-purple-950/20" onClick={() => addNode('rag_extraction', null)}>
+          <Button variant="ghost" className="w-full justify-start h-auto p-2 hover:bg-transparent">
+            <div className="p-1.5 bg-purple-100 dark:bg-purple-900 rounded-md mr-3">
+              <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="text-left">
+              <p className="font-medium text-sm">Ekstrakcja RAG</p>
+              <p className="text-xs text-muted-foreground font-normal">Treść od AI</p>
+            </div>
+          </Button>
+        </Card>
 
-        <button
-          onClick={() => addNode('list', null)}
-          className="w-full flex items-center gap-3 p-3 text-left border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
-        >
-          <Type className="text-green-500" size={20} />
-          <div>
-            <p className="font-medium text-gray-900 text-sm">List</p>
-            <p className="text-xs text-gray-500">Bullet or numbered</p>
-          </div>
-        </button>
+        <Card className="p-1 hover:border-primary/50 transition-colors cursor-pointer group" onClick={() => addNode('list', null)}>
+          <Button variant="ghost" className="w-full justify-start h-auto p-2">
+            <Type className="mr-3 h-5 w-5 text-green-500" />
+            <div className="text-left">
+              <p className="font-medium text-sm">Lista</p>
+              <p className="text-xs text-muted-foreground font-normal">Punktowana / Numerowana</p>
+            </div>
+          </Button>
+        </Card>
       </div>
     </div>
   );
