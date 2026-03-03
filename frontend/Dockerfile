@@ -3,6 +3,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+RUN apk add --no-cache curl
+
 # Kopiujemy tylko pliki pakietów, aby wykorzystać cache warstw Dockera
 COPY package.json package-lock.json* ./
 
