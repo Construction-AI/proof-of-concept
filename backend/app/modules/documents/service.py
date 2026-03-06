@@ -166,3 +166,24 @@ class DocumentService:
         
         file.file.seek(0)
         return hasher.hexdigest()
+    
+    @staticmethod
+    async def validate_document_sync(db: Session, document_id: int) -> dict[str, bool]:
+        response = {
+            "db": False,
+            "vector_store": False,
+            "file_storage": False
+        }
+        
+        doc: Document = DocumentService.get_document_by_id(db=db, document_id=document_id)
+        if not doc:
+            return response
+        
+        response["db"] = True
+        exists_in_vector_store = await vector_store_client.check_document_exists(storage_key=doc.storage_key)
+        exists_in_file_storage = storage_client.check_file_exists(storage_key=doc.storage_key)
+        
+        response["vector_store"] = exists_in_vector_store
+        response["file_storage"] = exists_in_file_storage
+        
+        return response

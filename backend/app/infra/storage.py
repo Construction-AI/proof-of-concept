@@ -66,4 +66,11 @@ class StorageClient:
             expires=timedelta(seconds=expiration)
         )
         
+    def check_file_exists(self, storage_key: str) -> bool:
+        try:
+            self.client.stat_object(bucket_name=self.bucket, object_name=storage_key)
+            return True
+        except:
+            return False        
+        
 storage_client = StorageClient()

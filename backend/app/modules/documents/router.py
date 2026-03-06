@@ -51,3 +51,12 @@ async def delete(
     current_user: auth_models.User = Depends(get_current_user)
 ) -> Any:
     return await DocumentService.delete_document(db=db, document_id=document_id, user_id=current_user.id)
+
+@router.get("/{document_id}/validate")
+async def validate(
+    document_id: int,
+    db: Session = Depends(get_db)
+    # TODO: Maybe add current user
+) -> Any:
+    return await DocumentService.validate_document_sync(db=db, document_id=document_id)
+    

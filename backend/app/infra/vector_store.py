@@ -236,6 +236,9 @@ class VectorStoreClient:
             d.metadata.setdefault("storage_key", identifier.storage_key)
         os.remove(path=file_path)
         return docs
+    
+    async def check_document_exists(self, storage_key: str) -> bool:
+        return await self._nodes_exist_for_storage_key(storage_key=storage_key)
         
     async def _nodes_exist_for_storage_key(self, storage_key: str) -> bool:
         return len(await self._get_nodes_for_storage_key(storage_key=storage_key)) > 0
