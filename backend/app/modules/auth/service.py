@@ -6,9 +6,7 @@ from app.core.logger import get_logger
 
 from datetime import timedelta, datetime, timezone
 
-class AuthService:
-    LOGGER = get_logger("AuthService")
-    
+class AuthService:    
     @staticmethod
     def create_user(db: Session, user: schemas.UserCreate):
         hashed_password = get_password_hash(password=user.password)
@@ -48,18 +46,15 @@ class AuthService:
             data={"sub": str(user.id), "type": "refresh"},
             expires_delta=refresh_token_expires
         )
-        try:
-            db_token = models.RefreshToken(
-                token=refresh_token,
-                expires_at=datetime.now(timezone.utc) + refresh_token_expires,
-                user_id=user.id
-            )
-            db.add(db_token)
-            db.commit()
-            return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
-        except Exception as e:
-            AuthService.LOGGER.error(f"Failed to create tokens for user `{user.id}`: {str(e)}")
-            raise e
+        
+        db_token = models.RefreshToken(
+            token=refresh_token,
+            expires_at=datetime.now(timezone.utc) + refresh_token_expires,
+            user_id=user.id
+        )
+        db.add(db_token)
+        db.commit()
+        return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
     
     @staticmethod
     def rotate_refresh_token(db: Session, refresh_token: str):
