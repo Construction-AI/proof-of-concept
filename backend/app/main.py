@@ -15,6 +15,7 @@ from app.db.session import engine
 from app.db.base import Base
 
 from app.core.config import settings
+from app.core.middleware import TraceIdMiddleware
 
 Base.metadata.create_all(bind=engine)
 
@@ -63,3 +64,5 @@ app.add_middleware(
     allow_methods=["*"],         # Zezwalamy na wszystkie metody (GET, POST, PUT, DELETE)
     allow_headers=["*"],         # Zezwalamy na wszystkie nagłówki (w tym nasz Authorization: Bearer)
 )
+
+app.add_middleware(TraceIdMiddleware)
