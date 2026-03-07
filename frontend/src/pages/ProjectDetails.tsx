@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { documentsService, type Document } from '../api/documents';
+import { documentsService, type Document, type DocumentValidation } from '../api/documents';
 import { chatsService, type Chat } from '../api/chats';
 import { UploadZone } from '../components/project/UploadZone';
 import { DocumentList } from '../components/project/DocumentList';
@@ -19,6 +19,7 @@ export const ProjectDetails = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<number | null>(null);
+  const [validations, setValidations] = useState<Record<number, DocumentValidation>>({});
 
   useEffect(() => {
     if (projectId) {
@@ -30,9 +31,40 @@ export const ProjectDetails = () => {
   const fetchDocuments = async () => {
     try {
       const allDocs = await documentsService.getAll();
-      setDocuments(allDocs.filter(doc => doc.project.id === projectId));
+      const projectDocs = allDocs.filter(doc => doc.project.id === projectId);
+      setDocuments(projectDocs);
+
+      const validationMap: Record<number, DocumentValidation> = {};
+      await Promise.all(
+        projectDocs.map(async (doc) => {
+          try {
+            validationMap[doc.id] = await documentsService.validate(doc.id);
+          } catch (e) {
+            console.error(`Błąd walidacji doc ${doc.id}`);
+          }
+        })
+      );
+      setValidations(validationMap);
     } catch (error) {
       console.error("Błąd pobierania plików:", error);
+    }
+  };
+
+  const handleReindex = async (docId: number) => {
+    try {
+      await documentsService.reindex(docId);
+      fetchDocuments();
+    } catch (e) {
+      alert("Błąd reindeksacji.");
+    }
+  };
+
+  const handleReupload = async (docId: number, file: File) => {
+    try {
+      await documentsService.reupload(docId, file);
+      fetchDocuments();
+    } catch (e) {
+      alert("Błąd ponownego wgrywania pliku.");
     }
   };
 
@@ -99,10 +131,18 @@ export const ProjectDetails = () => {
 
           <TabsContent value="documents" className="mt-6 space-y-6">
             <UploadZone isUploading={isUploading} onFileSelect={handleFileSelect} />
-            <DocumentList documents={documents} isPreviewLoading={false} onPreview={handlePreview} onDelete={handleDelete} />
+            <DocumentList 
+              isPreviewLoading={false}
+              documents={documents}
+              validations={validations}
+              onPreview={handlePreview}
+              onDelete={handleDelete} 
+              onReindex={handleReindex}
+              onReupload={handleReupload}
+            />
           </TabsContent>
 
-          <TabsContent value="chat" className="mt-6 h-[700px] flex gap-6">
+          <TabsContent value="chat" className="mt-6 h-175 flex gap-6">
             {/* Lista Czatów */}
             <Card className="w-1/3 flex flex-col">
               <CardHeader className="p-4 border-b">

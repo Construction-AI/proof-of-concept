@@ -54,6 +54,7 @@ def login_for_access_token(
                 detail="Incorrect email or password",
                 headers={"WWW-Authenticate": "Bearer"}
             )
+        logger.info(f"User has been reauthenticated")
         return AuthService.create_tokens_for_user(db=db, user=user)
     except Exception as e:
         logger.error(f"Failed to authenticate user: {str(e)}")

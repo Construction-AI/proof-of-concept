@@ -58,5 +58,5 @@ async def validate(
     db: Session = Depends(get_db)
     # TODO: Maybe add current user
 ) -> Any:
-    return await DocumentService.validate_document_sync(db=db, document_id=document_id)
-    
+    doc_status: dict[str, bool] = await DocumentService.validate_document_sync(db=db, document_id=document_id)
+    return document_schemas.DocumentValidationResponse(**doc_status)
