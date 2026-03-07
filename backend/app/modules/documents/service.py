@@ -96,7 +96,7 @@ class DocumentService:
             return None
         except Exception as e:
             db.rollback()
-            DocumentService.LOGGER.error(f"[Delete Document] Failed to delete document: {str(e)}")
+            DocumentService.LOGGER.error(f"Failed to delete document: {str(e)}")
             
             # TODO: Add rollbacks
             raise e

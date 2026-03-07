@@ -1,18 +1,30 @@
 import logging
-import sys
+from pythonjsonlogger.json import JsonFormatter
+import contextvars
 
-def configure_logging(level: str = "INFO"):
-    formatter = logging.Formatter(
-        fmt="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
+trace_id_var = contextvars.ContextVar("trace_id", default="SYSTEM")
 
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(formatter)
-
-    root = logging.getLogger()
-    root.setLevel(level)
-    root.addHandler(handler)
-
+class TraceIdFilter(logging.Filter):
+    def filter(self, record):  # type: ignore
+        record.trace_id = trace_id_var.get()
+        return True
+    
 def get_logger(name: str):
-    return logging.getLogger(name)
+    logger = logging.getLogger(name)
+    
+    if not logger.handlers:
+        formatter = JsonFormatter('%(asctime)s %(levelname)s %(name)s %(trace_id)s %(message)s')
+        handler = logging.StreamHandler()
+        handler.setFormatter(formatter)
+        handler.addFilter(TraceIdFilter())
+        
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+        logger.propagate = False 
+        
+    return logger
+
+def setup_global_logging():
+    # Używamy tej samej logiki dla loggerów systemowych (FastAPI/Uvicorn)
+    for logger_name in ("uvicorn", "uvicorn.access", "uvicorn.error", "fastapi"):
+        get_logger(logger_name)

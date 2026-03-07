@@ -6,6 +6,7 @@ from app.modules.rag.schemas import QueryDocsRequest, QueryResponse, QueryProjec
 from app.modules.rag.service import RagService
 
 from app.db.session import get_db
+from app.core.logger import get_logger
 
 from app.modules.auth.dependencies import get_current_user
 from app.modules.auth import models as auth_models
@@ -18,6 +19,7 @@ async def query_docs(
     db: Session = Depends(get_db),
     current_user: auth_models.User = Depends(get_current_user)
 ) -> Any:
+    # logger = get_logger(query_docs.__name__)
     try:
         response: str = await RagService.query_documents(db=db, question=query_in.question, document_ids=query_in.document_ids, user_id=current_user.id)
         return QueryResponse(
@@ -64,9 +66,10 @@ async def ask_rag_dynamic(
     db: Session = Depends(get_db),
     current_user: auth_models.User = Depends(get_current_user)
     ):
+    logger = get_logger(ask_rag_dynamic.__name__)
     target_python_type = TYPE_MAP[request.output_format]
-
     try:
+        logger.info(f"Received RAG query with dynamic type from user: {current_user.id}, instruction: {request.instruction}")
         result = await RagService.query_with_dynamic_type(
             db=db,
             instruction=request.instruction,
@@ -75,6 +78,8 @@ async def ask_rag_dynamic(
             user_id=current_user.id
         )
         return DynamicRAGResponse(**result)
-
     except Exception as e:
+        logger.error(f"Failed to complete RAG query with dynamic type: {str(e)}")
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
