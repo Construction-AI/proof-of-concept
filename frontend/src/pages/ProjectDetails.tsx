@@ -20,6 +20,7 @@ export const ProjectDetails = () => {
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<number | null>(null);
   const [validations, setValidations] = useState<Record<number, DocumentValidation>>({});
+  const [reuploadingId, setReuploadingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (projectId) {
@@ -51,11 +52,14 @@ export const ProjectDetails = () => {
   };
 
   const handleReupload = async (docId: number, file: File) => {
+    setReuploadingId(docId);
     try {
       await documentsService.reupload(docId, file);
       fetchDocuments();
     } catch (e) {
       alert("Błąd ponownego wgrywania pliku.");
+    } finally {
+      setReuploadingId(null);
     }
   };
 
@@ -81,9 +85,9 @@ export const ProjectDetails = () => {
     } catch (error) {
       console.error("Błąd pobierania linku podglądu:", error);
       alert("Nie udało się otworzyć podglądu.");
-    } 
+    }
     // finally {
-      // setIsPreviewLoading(false);
+    // setIsPreviewLoading(false);
     // }
   };
 
@@ -122,12 +126,13 @@ export const ProjectDetails = () => {
 
           <TabsContent value="documents" className="mt-6 space-y-6">
             <UploadZone isUploading={isUploading} onFileSelect={handleFileSelect} />
-            <DocumentList 
+            <DocumentList
               isPreviewLoading={false}
               documents={documents}
               validations={validations}
+              reuploadingId={reuploadingId}
               onPreview={handlePreview}
-              onDelete={handleDelete} 
+              onDelete={handleDelete}
               onReupload={handleReupload}
             />
           </TabsContent>
