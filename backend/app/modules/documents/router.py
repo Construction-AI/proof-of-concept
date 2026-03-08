@@ -1,11 +1,9 @@
 from fastapi import APIRouter, Depends, status, UploadFile, File, Form, HTTPException
-from sqlalchemy.orm import Session
 from typing import Any, List
-
-from app.db.session import get_db
 
 from app.modules.documents import schemas as document_schemas
 from app.modules.documents.service import DocumentService
+from app.modules.documents.dependencies import get_document_service
 
 from app.modules.auth.dependencies import get_current_user
 from app.modules.auth import models as auth_models
@@ -16,12 +14,11 @@ router = APIRouter()
 async def create_document(
     project_id: int = Form(...),
     file: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    current_user: auth_models.User = Depends(get_current_user)
+    current_user: auth_models.User = Depends(get_current_user),
+    document_service: DocumentService = Depends(get_document_service)
 ) -> Any:
     try:
-        document_in = document_schemas.DocumentCreate(project_id=project_id)
-        new_document = await DocumentService.create_document(db=db, file=file, document=document_in, user_id=current_user.id)
+        new_document = await document_service.create_document(file=file, project_id=project_id, user_id=current_user.id)
         return new_document
     except Exception as e:
         raise HTTPException(
@@ -32,31 +29,40 @@ async def create_document(
 @router.get("/download_url/{document_id}")
 def get_download_url_for_document(
     document_id: int,
-    db: Session = Depends(get_db),
     current_user: auth_models.User = Depends(get_current_user),
+    document_service: DocumentService = Depends(get_document_service)
 ) -> Any:
-    return DocumentService.get_document_download_url(db=db, document_id=document_id, user_id=current_user.id)
+    return document_service.get_document_download_url(document_id=document_id, user_id=current_user.id)
 
 @router.get("/", response_model=List[document_schemas.DocumentResponse])
 def read_my_documents(
-    db: Session = Depends(get_db),
-    current_user: auth_models.User = Depends(get_current_user)
+    current_user: auth_models.User = Depends(get_current_user),
+    document_service: DocumentService = Depends(get_document_service)
 ) -> Any:
-    return DocumentService.get_documents_by_owner(db=db, owner_id=current_user.id)
+    return document_service.get_documents_by_owner(owner_id=current_user.id)
 
 @router.delete("/{document_id}")
 async def delete(
     document_id: int,
-    db: Session = Depends(get_db),
-    current_user: auth_models.User = Depends(get_current_user)
+    current_user: auth_models.User = Depends(get_current_user),
+    document_service: DocumentService = Depends(get_document_service)
 ) -> Any:
-    return await DocumentService.delete_document(db=db, document_id=document_id, user_id=current_user.id)
+    return await document_service.delete_document(document_id=document_id, user_id=current_user.id)
 
 @router.get("/{document_id}/validate")
 async def validate(
     document_id: int,
-    db: Session = Depends(get_db)
+    document_service: DocumentService = Depends(get_document_service)
     # TODO: Maybe add current user
 ) -> Any:
-    doc_status: dict[str, bool] = await DocumentService.validate_document_sync(db=db, document_id=document_id)
+    doc_status: dict[str, bool] = await document_service.validate_document_sync(document_id=document_id)
     return document_schemas.DocumentValidationResponse(**doc_status)
+
+@router.post("/{document_id}/reupload")
+async def reupload(
+    document_id: int,
+    file: UploadFile = File(...),
+    current_user: auth_models.User = Depends(get_current_user),
+    document_service: DocumentService = Depends(get_document_service)   
+) -> Any:
+    return await document_service.reupload_document(file=file, document_id=document_id, user_id=current_user.id)
