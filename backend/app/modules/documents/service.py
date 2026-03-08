@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session, joinedload
-from fastapi import UploadFile, HTTPException, status
+from fastapi import UploadFile, HTTPException, status, Depends
 
+from app.db.session import get_db
 from app.core.logger import get_logger
 from app.infra.storage import storage_client
 from app.infra.document_identifier import DocumentIdentifier
@@ -191,3 +192,5 @@ class DocumentService:
         file.file.seek(0)
         return True
         
+def get_document_service(db: Session = Depends(get_db)) -> DocumentService:
+    return DocumentService(db=db)

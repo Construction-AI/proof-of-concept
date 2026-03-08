@@ -2,8 +2,7 @@ from fastapi import APIRouter, Depends, status, UploadFile, File, Form, HTTPExce
 from typing import Any, List
 
 from app.modules.documents import schemas as document_schemas
-from app.modules.documents.service import DocumentService
-from app.modules.documents.dependencies import get_document_service
+from app.modules.documents.service import DocumentService, get_document_service
 
 from app.modules.auth.dependencies import get_current_user
 from app.modules.auth import models as auth_models
