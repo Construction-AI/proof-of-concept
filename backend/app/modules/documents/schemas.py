@@ -29,3 +29,8 @@ class DocumentResponse(BaseModel):
 class DocumentQuery(BaseModel):
     q: str
     document_id: int
+    
+class DocumentValidationResponse(BaseModel):
+    db: bool
+    file_storage: bool
+    vector_store: bool

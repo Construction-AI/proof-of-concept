@@ -12,6 +12,12 @@ export interface Document {
     project: Project;
 };
 
+export interface DocumentValidation {
+    db: boolean;
+    file_storage: boolean;
+    vector_store: boolean;
+}
+
 export const documentsService = {
     getAll: async () => {
         const response = await apiClient.get<Document[]>("/documents");
@@ -39,5 +45,23 @@ export const documentsService = {
     getDownloadUrl: async (documentId: number) => {
         const response = await apiClient.get<string>(`/documents/download_url/${documentId}`);
         return response.data;
-    }
+    },
+
+    validate: async (documentId: number) => {
+        const response = await apiClient.get<DocumentValidation>(`/documents/${documentId}/validate`);
+        return response.data;
+    },
+
+    reupload: async (documentId: number, file: File) => {
+        const formData = new FormData();
+        
+        formData.append("file", file);
+
+        const response = await apiClient.post<Document>(`/documents/${documentId}/reupload`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data"
+            },
+        });
+        return response.data;
+    },
 };
