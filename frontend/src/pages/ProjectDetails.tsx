@@ -50,15 +50,6 @@ export const ProjectDetails = () => {
     }
   };
 
-  const handleReindex = async (docId: number) => {
-    try {
-      await documentsService.reindex(docId);
-      fetchDocuments();
-    } catch (e) {
-      alert("Błąd reindeksacji.");
-    }
-  };
-
   const handleReupload = async (docId: number, file: File) => {
     try {
       await documentsService.reupload(docId, file);
@@ -137,7 +128,6 @@ export const ProjectDetails = () => {
               validations={validations}
               onPreview={handlePreview}
               onDelete={handleDelete} 
-              onReindex={handleReindex}
               onReupload={handleReupload}
             />
           </TabsContent>

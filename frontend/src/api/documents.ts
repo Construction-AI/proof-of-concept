@@ -52,11 +52,16 @@ export const documentsService = {
         return response.data;
     },
 
-    reindex: async (documentId: number) => {
-        return;
-    },
-
     reupload: async (documentId: number, file: File) => {
-        return;
+        const formData = new FormData();
+        
+        formData.append("file", file);
+
+        const response = await apiClient.post<Document>(`/documents/${documentId}/reupload`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data"
+            },
+        });
+        return response.data;
     },
 };

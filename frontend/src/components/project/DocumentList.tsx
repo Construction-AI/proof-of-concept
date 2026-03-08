@@ -1,4 +1,4 @@
-import { FileText, Eye, Trash2, AlertTriangle, RefreshCw, Upload } from 'lucide-react';
+import { FileText, Eye, Trash2, AlertTriangle, Upload } from 'lucide-react';
 import type { Document, DocumentValidation } from '../../api/documents';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -9,11 +9,10 @@ interface DocumentListProps {
   isPreviewLoading: boolean;
   onPreview: (doc: Document) => void;
   onDelete: (id: number) => void;
-  onReindex: (id: number) => void;
   onReupload: (id: number, file: File) => void;
 }
 
-export const DocumentList = ({ documents, validations, isPreviewLoading, onPreview, onDelete, onReindex, onReupload }: DocumentListProps) => {
+export const DocumentList = ({ documents, validations, isPreviewLoading, onPreview, onDelete, onReupload }: DocumentListProps) => {
   if (documents.length === 0) return <p className="text-muted-foreground text-sm">Brak dokumentów w projekcie.</p>;
 
   return (
@@ -49,16 +48,6 @@ export const DocumentList = ({ documents, validations, isPreviewLoading, onPrevi
                       if (e.target.files?.[0]) onReupload(doc.id, e.target.files[0]);
                     }} />
                   </label>
-                </div>
-              )}
-
-              {validation && validation.file_storage && !validation.vector_store && (
-                <div className="flex items-center gap-2 text-orange-500">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span className="text-xs font-medium">Brak w Qdrant</span>
-                  <Button variant="outline" size="sm" className="h-7 text-xs border-orange-500 text-orange-500 hover:bg-orange-50" onClick={() => onReindex(doc.id)}>
-                    <RefreshCw className="mr-1 h-3 w-3" /> Reindeksuj
-                  </Button>
                 </div>
               )}
 
