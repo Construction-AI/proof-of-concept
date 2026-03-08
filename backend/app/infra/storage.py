@@ -49,7 +49,7 @@ class StorageClient:
 
         # 3. Unpack
         self.client.put_object(**args)
-    
+            
     def delete_file(self, object_name: str) -> bool:
         try:
             self.client.remove_object(bucket_name=self.bucket, object_name=object_name)

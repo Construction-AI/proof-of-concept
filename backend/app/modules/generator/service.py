@@ -14,6 +14,7 @@ class DocumentGenerator:
     def __init__(self, db_session: Session):
         self.db = db_session
         self.semaphore = asyncio.Semaphore(3)
+        self.rag_service = RagService(db=db_session)
 
     # =============================
     # TREE BUILDING
@@ -109,8 +110,7 @@ class DocumentGenerator:
         for attempt in range(3):
             try:
                 async with self.semaphore:
-                    return await RagService.query_with_dynamic_type(
-                        db=self.db,
+                    return await self.rag_service.query_with_dynamic_type(
                         instruction=instruction,
                         output_type=output_type,
                         project_id=project_id,
