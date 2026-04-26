@@ -1,16 +1,19 @@
+from fastapi import Depends
 from sqlalchemy.orm import Session
+from datetime import timedelta, datetime, timezone
+
 from app.modules.auth import models, schemas
 from app.core.security import get_password_hash, verify_password, create_token
 from app.core.config import settings
 from app.core.logger import get_logger
+from app.db.session import get_db
 
-from datetime import timedelta, datetime, timezone
-
-class AuthService:
-    LOGGER = get_logger("AuthService")
-    
-    @staticmethod
-    def create_user(db: Session, user: schemas.UserCreate):
+class AuthService:  
+    def __init__(self, db: Session):
+        self.db = db
+        self.logger = get_logger(self.__class__.__name__)
+      
+    def create_user(self, user: schemas.UserCreate):
         hashed_password = get_password_hash(password=user.password)
         
         db_user = models.User(
@@ -21,24 +24,22 @@ class AuthService:
         )
         
         try:
-            db.add(db_user)
-            db.commit()
-            db.refresh(db_user)
+            self.db.add(db_user)
+            self.db.commit()
+            self.db.refresh(db_user)
             return db_user
         except Exception:
-            db.rollback()
+            self.db.rollback()
             return None
         
-    @staticmethod
-    def authenticate_user(db: Session, email: str, password: str):
-        user = db.query(models.User).filter(models.User.email == email).first()
+    def authenticate_user(self, email: str, password: str):
+        user = self.db.query(models.User).filter(models.User.email == email).first()
         
         if not user or not verify_password(password, user.hashed_password):
             return None
         return user
     
-    @staticmethod
-    def create_tokens_for_user(db: Session, user: models.User):        
+    def create_tokens_for_user(self, user: models.User):        
         access_token = create_token(
             data={"sub": str(user.id)},
             expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -48,46 +49,43 @@ class AuthService:
             data={"sub": str(user.id), "type": "refresh"},
             expires_delta=refresh_token_expires
         )
-        try:
-            db_token = models.RefreshToken(
-                token=refresh_token,
-                expires_at=datetime.now(timezone.utc) + refresh_token_expires,
-                user_id=user.id
-            )
-            db.add(db_token)
-            db.commit()
-            return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
-        except Exception as e:
-            AuthService.LOGGER.error(f"Failed to create tokens for user `{user.id}`: {str(e)}")
-            raise e
+        
+        db_token = models.RefreshToken(
+            token=refresh_token,
+            expires_at=datetime.now(timezone.utc) + refresh_token_expires,
+            user_id=user.id
+        )
+        self.db.add(db_token)
+        self.db.commit()
+        return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
     
-    @staticmethod
-    def rotate_refresh_token(db: Session, refresh_token: str):
-        existing_token = db.query(models.RefreshToken).filter(models.RefreshToken.token == refresh_token).first()
+    def rotate_refresh_token(self, refresh_token: str):
+        existing_token = self.db.query(models.RefreshToken).filter(models.RefreshToken.token == refresh_token).first()
         
         if not existing_token:
             return None
         
         if existing_token.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
-            db.delete(existing_token)
-            db.commit()
+            self.db.delete(existing_token)
+            self.db.commit()
             return None
         
         user = existing_token.user
-        db.delete(existing_token)
-        db.commit()
+        self.db.delete(existing_token)
+        self.db.commit()
         
-        return AuthService.create_tokens_for_user(db=db, user=user)
+        return self.create_tokens_for_user(user=user)
     
-    @staticmethod
-    def logout_user(db: Session, refresh_token: str):
-        existing_token = db.query(models.RefreshToken).filter(models.RefreshToken.token == refresh_token).first()
+    def logout_user(self, refresh_token: str):
+        existing_token = self.db.query(models.RefreshToken).filter(models.RefreshToken.token == refresh_token).first()
         if existing_token:
-            db.delete(existing_token)
-            db.commit()
+            self.db.delete(existing_token)
+            self.db.commit()
     
-    @staticmethod
-    def get_user_by_email(db: Session, email: str) -> models.User | None:
-        user = db.query(models.User).filter(models.User.email == email).first()
+    def get_user_by_email(self, email: str) -> models.User | None:
+        user = self.db.query(models.User).filter(models.User.email == email).first()
         return user
     
+
+def get_auth_service(db: Session = Depends(get_db)):
+    return AuthService(db=db)

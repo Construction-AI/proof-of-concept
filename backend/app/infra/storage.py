@@ -31,7 +31,7 @@ class StorageClient:
             if not self.client.bucket_exists(bucket_name=self.bucket):
                 self.client.make_bucket(bucket_name=self.bucket)
         except Exception as e:
-            print(f"Failed to create default bucket: {str(e)}")
+            self.logger.error(f"Failed to create default bucket: {str(e)}")
             self.initialized = False
             
     def upload_file(self, file_obj: UploadFile, object_name: str, content_type: str | None):
@@ -49,7 +49,7 @@ class StorageClient:
 
         # 3. Unpack
         self.client.put_object(**args)
-    
+            
     def delete_file(self, object_name: str) -> bool:
         try:
             self.client.remove_object(bucket_name=self.bucket, object_name=object_name)
