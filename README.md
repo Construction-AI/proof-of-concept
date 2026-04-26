@@ -5,23 +5,24 @@ An asynchronous, containerized Retrieval-Augmented Generation (RAG) backend desi
 ![Logo](./wiki/infra_diagram.svg)
 
 ## Core Engineering Problem
-Processing large documents with LLMs introduces significant latency. A synchronous API would quickly time out or exhaust worker threads under concurrent load. This architecture decouples data ingestion from vector retrieval, ensuring the API remains highly responsive while offloading complex embedding tasks.
+Building a multi-tenant LLM application requires strict isolation of context (per-project data) and asynchronous processing to prevent API timeouts during heavy document ingestion. Furthermore, distributed backend services require robust observability to trace vector search latency and inference bottlenecks.
 
 ## System Architecture & Trade-offs
 
-* **Vector Search Engine (Qdrant):** Selected over in-memory indexes (like FAISS) for production-grade latency and persistence. Qdrant handles high-dimensional similarity searches via an HNSW graph.
-* **Object Storage (MinIO):** Decouples raw file storage from the main database. MinIO provides an S3-compatible API, allowing horizontal scaling of file blobs independent of relational metadata.
-* **Data Orchestration (LlamaIndex):** Handles document parsing, chunking strategy, and embedding pipeline prior to Qdrant insertion.
-* **State Management (SQLite -> PostgreSQL):** Currently utilizing SQLite for MVP metadata storage. The schema and ORM are designed for a zero-friction migration to PostgreSQL to support distributed, concurrent write scaling.
+* **Vector Search Engine (Qdrant):** Handles high-dimensional similarity searches. Chosen over in-memory indexes to support production-grade latency and isolated, per-project vector collections.
+* **Object Storage (MinIO):** Decouples raw file storage from the main database, allowing horizontal scaling of file blobs (PDFs, text) independent of relational metadata.
+* **Data Orchestration (LlamaIndex):** Manages the ETL pipeline—parsing documents, applying chunking strategies, and generating embeddings prior to Qdrant insertion.
+* **Observability Stack (Grafana & Loki):** Integrated telemetry for the backend microservices. Loki aggregates asynchronous worker logs, while Grafana visualizes system metrics (memory, API latency, inference times).
+* **State Management (SQLite -> PostgreSQL):** Currently utilizing SQLite for MVP metadata storage. The schema and ORM are designed for a zero-friction migration to PostgreSQL to support concurrent write scaling.
 
 ## Data Flow
-1.  **Ingestion:** Client uploads PDF/Text -> FastAPI stores raw file in MinIO.
-2.  **Processing:** LlamaIndex extracts text, chunks data, and generates embeddings.
-3.  **Storage:** Vectors pushed to Qdrant; metadata written to SQLite.
-4.  **Retrieval:** Client queries system -> K-NN search on Qdrant -> LLM synthesizes response based on localized context.
+1. **Ingestion:** Client uploads documents to a specific Project Workspace -> FastAPI stores raw files in MinIO.
+2. **Processing:** LlamaIndex extracts text, chunks data, and generates embeddings asynchronously.
+3. **Storage:** Vectors are pushed to Qdrant (segregated by project ID); metadata is written to SQLite.
+4. **Retrieval (Chat / Synthesis):** Client queries the assistant -> K-NN search on Qdrant filters by project -> LLM synthesizes a response or generates a new document based strictly on the localized context.
 
 ## Local Deployment
 ```bash
-# Deploys the entire stack (MinIO, Qdrant, API, Frontend)
+# Deploys the application, databases, and observability stack
 docker-compose up --build -d
 ```
