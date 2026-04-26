@@ -16,10 +16,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpangoft2-1.0-0 \
  && rm -rf /var/lib/apt/lists/*
 
-# Copy and install shared library
-COPY shared_schema/ /shared_schema/
-RUN pip install /shared_schema/
-
 # Copy and install requirements
 COPY backend/requirements.txt .
 RUN pip install --upgrade pip setuptools wheel
